@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-5">
+            <h2 class="text-center text-primary mb-4">Modificar Preinscripción</h2>
+            <p class="text-center text-muted mb-4">Evento: <strong>{{ evento.eve_nombre }}</strong></p>
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Nombre completo</label>
+                    <input type="text" name="nombre" value="{{ participante.par_nombre }}" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Correo electrónico</label>
+                    <input type="email" name="correo" value="{{ participante.par_correo }}" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" name="telefono" value="{{ participante.par_telefono }}" class="form-control" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Documento (opcional para actualizar)</label>
+                    <input type="file" name="documento" class="form-control">
+                    {% if inscripcion.par_eve_documentos %}
+                        <div class="mt-2">
+                            <a href="{{ inscripcion.par_eve_documentos.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                📄 Ver documento actual
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'dashboard_participante_evento' evento.eve_id %}" class="btn btn-outline-secondary">❌ Cancelar</a>
+                    <button type="submit" class="btn btn-success">💾 Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

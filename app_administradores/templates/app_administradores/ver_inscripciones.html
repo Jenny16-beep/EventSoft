@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Inscripciones - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Inscripciones - {{ evento.eve_nombre }}</h2>
+
+    <div class="row text-center">
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'ver_asistentes_evento' evento.eve_id %}" class="btn btn-outline-primary btn-lg w-100 p-4">
+                👥 Gestionar Asistentes
+            </a>
+        </div>
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'ver_participantes_evento' evento.eve_id %}" class="btn btn-outline-success btn-lg w-100 p-4">
+                🧑‍🎓 Gestionar Participantes
+            </a>
+        </div>
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'gestion_evaluadores' evento.eve_id %}" class="btn btn-outline-warning btn-lg w-100 p-4">
+                🧑‍⚖️ Gestionar Evaluadores
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

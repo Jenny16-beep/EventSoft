@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Información Detallada de Evaluaciones - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Detalle de Evaluaciones - {{ evento.eve_nombre }}</h2>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Criterios de Evaluación</h5>
+            <ul class="list-group list-group-flush">
+                {% for criterio in criterios %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ criterio.cri_descripcion }}
+                    <span class="badge bg-primary rounded-pill">{{ criterio.cri_peso }}%</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Participante</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Promedio Ponderado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participantes_info %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ p.participante.usuario.first_name }} {{ p.participante.usuario.last_name }}</td>
+                    <td>{{ p.participante.usuario.email }}</td>
+                    <td>{{ p.participante.usuario.telefono }}</td>
+                    <td>
+                        {% if p.promedio_ponderado %}
+                            <strong>{{ p.promedio_ponderado }}</strong>
+                        {% else %}
+                            <em>Sin calificar</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-info" data-bs-toggle="collapse" data-bs-target="#detalles-{{ p.participante.par_id }}" aria-expanded="false" aria-controls="detalles-{{ p.participante.par_id }}">
+                            Ver Detalles
+                        </button>
+                    </td>
+                </tr>
+                <tr class="collapse" id="detalles-{{ p.participante.par_id }}">
+                    <td colspan="6">
+                        <div class="table-responsive">
+                            <table class="table table-bordered text-center">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Evaluador</th>
+                                        <th>Criterio</th>
+                                        <th>Calificación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for calificacion in p.calificaciones %}
+                                    <tr>
+                                        <td>{{ calificacion.evaluador.usuario.first_name }} {{ calificacion.evaluador.usuario.last_name }}</td>
+                                        <td>{{ calificacion.criterio.cri_descripcion }}</td>
+                                        <td>{{ calificacion.cal_valor }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">
+                        No hay participantes en este evento.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="{% url 'dashboard_evaluacion_administrador' eve_id=evento.eve_id %}" class="btn btn-secondary mt-3">
+        ← Volver al Dashboard
+    </a>
+</div>
+{% endblock %}

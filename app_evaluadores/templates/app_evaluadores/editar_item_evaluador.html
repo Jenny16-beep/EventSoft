@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Editar Ítem</h1>
+
+    <!-- Mostrar el peso total actual y progreso -->
+    <p><strong>Avance Total Instrumento de Evaluación:</strong> {{ peso_total_actual }}%</p>
+
+    <!-- Barra de progreso -->
+    <div class="progress mb-4">
+        <div class="progress-bar" 
+             role="progressbar" 
+             data-width="{{ peso_total_actual }}"  
+             aria-valuenow="{{ peso_total_actual }}" 
+             aria-valuemin="0" 
+             aria-valuemax="100">
+            {{ peso_total_actual }}%
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const bar = document.querySelector('.progress-bar');
+                bar.style.width = bar.dataset.width + '%';  /* Ajuste de la barra con el valor de data-width */
+            });
+        </script>
+    </div>
+
+    <p>Falta {{ peso_restante }}% para completar el instrumento de evaluación.</p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST" id="editItemForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción:</label>
+                    <input type="text"
+                           id="descripcion"
+                           name="descripcion"
+                           class="form-control"
+                           value="{{ criterio.cri_descripcion }}"
+                           required
+                           pattern="\S+.*"
+                           title="La descripción no puede estar vacía ni contener solo espacios.">
+                </div>
+
+                <div class="mb-3">
+                    <label for="peso" class="form-label">Peso:</label>
+                    <input type="number"
+                           id="peso"
+                           name="peso"
+                           class="form-control"
+                           step="0.01"
+                           min="0.01"
+                           value="{{ criterio.cri_peso }}"
+                           required
+                           title="El peso debe ser un número positivo mayor a cero.">
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <a href="{% url 'gestionar_items_evaluador' criterio.cri_evento_fk.pk %}" class="btn btn-secondary">← Volver</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Validación JavaScript adicional -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('editItemForm');
+        const descripcion = document.getElementById('descripcion');
+        const peso = document.getElementById('peso');
+
+        form.addEventListener('submit', function (e) {
+            const descValue = descripcion.value.trim();
+            const pesoValue = parseFloat(peso.value);
+
+            if (!descValue) {
+                e.preventDefault();
+                alert('La descripción no puede estar vacía ni contener solo espacios.');
+                descripcion.focus();
+                return;
+            }
+
+            if (isNaN(pesoValue) || pesoValue <= 0) {
+                e.preventDefault();
+                alert('El peso debe ser un número positivo mayor a cero.');
+                peso.focus();
+                return;
+            }
+        });
+    });
+</script>
+{% endblock %}

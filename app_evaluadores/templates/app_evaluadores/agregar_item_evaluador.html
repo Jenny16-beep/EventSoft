@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Agregar nuevo ítem al evento {{ evento.eve_nombre }}</h1>
+
+    <!-- Mostrar el peso total actual y progreso -->
+    <p><strong>Avance Total Instrumento de Evaluación:</strong> {{ peso_total_actual }}%</p>
+
+    <!-- Barra de progreso -->
+    <div class="progress mb-4">
+        <div class="progress-bar" 
+             role="progressbar" 
+             data-width="{{ peso_total_actual }}"  
+             aria-valuenow="{{ peso_total_actual }}" 
+             aria-valuemin="0" 
+             aria-valuemax="100">
+            {{ peso_total_actual }}%
+        </div>
+    </div>
+
+    <p>Falta {{ peso_restante }}% para completar el instrumento de evaluación.</p>
+
+    <!-- Mensajes de éxito o error -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Formulario para agregar ítem -->
+    <form method="post" id="itemForm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="descripcion" class="form-label">Descripción:</label>
+            <input type="text"
+                   id="descripcion"
+                   name="descripcion"
+                   class="form-control"
+                   required
+                   pattern="\S+.*"
+                   title="La descripción no puede estar vacía ni comenzar con espacios."
+                   placeholder="Ej. Claridad en la presentación">
+        </div>
+
+        <div class="mb-3">
+            <label for="peso" class="form-label">Peso (% del total de evaluación):</label>
+            <input type="number"
+                   id="peso"
+                   name="peso"
+                   class="form-control"
+                   step="0.01"
+                   min="0.01"
+                   required
+                   placeholder="Ej. 25.5">
+        </div>
+
+        <button type="submit" class="btn btn-success">Guardar</button>
+    </form>
+
+    <a href="{% url 'gestionar_items_evaluador' evento.eve_id %}" class="btn btn-secondary mt-3">← Volver</a>
+</div>
+
+<!-- Script de validación -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const bar = document.querySelector('.progress-bar');
+        bar.style.width = bar.dataset.width + '%';
+
+        const form = document.getElementById('itemForm');
+        const pesoInput = document.getElementById('peso');
+        const descripcionInput = document.getElementById('descripcion');
+
+        form.addEventListener('submit', function(e) {
+            const pesoValue = parseFloat(pesoInput.value);
+            const descripcionValue = descripcionInput.value.trim();
+
+            if (!descripcionValue) {
+                e.preventDefault();
+                alert('La descripción no puede estar vacía ni contener solo espacios.');
+                descripcionInput.focus();
+                return;
+            }
+
+            if (isNaN(pesoValue) || pesoValue <= 0) {
+                e.preventDefault();
+                alert('El peso debe ser un número positivo mayor a cero.');
+                pesoInput.focus();
+                return;
+            }
+        });
+    });
+</script>
+{% endblock %}

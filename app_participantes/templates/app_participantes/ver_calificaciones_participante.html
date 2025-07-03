@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow rounded-4 p-4">
+        <h2 class="text-center mb-4 text-primary fw-bold">
+            Calificaciones Obtenidas
+        </h2>
+
+        <div class="list-group">
+            {% for calificacion in calificaciones %}
+            <div class="list-group-item mb-2 rounded-3 border shadow-sm">
+                <h5 class="fw-semibold">{{ calificacion.criterio.cri_descripcion }}</h5>
+                <p><strong>Evaluador:</strong> {{ calificacion.evaluador.eva_nombre }}</p>
+                <p><strong>Puntaje:</strong> {{ calificacion.cal_valor }}</p>
+                <p><strong>Peso del criterio:</strong> {{ calificacion.criterio.cri_peso }}%</p>
+            </div>
+            {% empty %}
+            <p class="text-muted">Aún no se han registrado calificaciones para este participante.</p>
+            {% endfor %}
+        </div>
+
+        <div class="mt-4 text-center">
+            <a href="{% url 'dashboard_participante_evento' evento.eve_id%}" class="btn btn-outline-primary rounded-pill px-4">
+                ← Volver al evento
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

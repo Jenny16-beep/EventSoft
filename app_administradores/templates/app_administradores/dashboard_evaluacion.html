@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluación - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Gestión de Evaluación - {{ evento.eve_nombre }}</h2>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ evento.eve_nombre }}</h5>
+            <p class="card-text">{{ evento.eve_descripcion }}</p>
+            <p class="card-text">
+                <strong>Ciudad:</strong> {{ evento.eve_ciudad }}<br>
+                <strong>Fecha:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }} al {{ evento.eve_fecha_fin|date:"d/m/Y" }}
+            </p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <a href="{% url 'gestion_item_administrador_evento' eve_id=evento.eve_id %}" class="btn btn-outline-primary w-100">
+                🛠️ Gestionar Ítems de Evaluación
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'tabla_posiciones_administrador' eve_id=evento.eve_id %}" class="btn btn-outline-warning w-100">
+                📊 Ver Tabla de Posiciones
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'informacion_detallada_administrador_evento' eve_id=evento.eve_id %}" class="btn btn-outline-info w-100">
+                ℹ️ Información Detallada
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

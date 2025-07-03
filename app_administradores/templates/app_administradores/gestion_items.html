@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Ítems - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Gestión de Ítems de Evaluación - {{ evento.eve_nombre }}</h2>
+
+    <div class="mb-3">
+        <strong>Peso Total Actual:</strong> {{ peso_total_actual }}%
+        {% if peso_total_actual != 100 %}
+            <span class="text-danger">(Debe sumar 100%)</span>
+        {% else %}
+            <span class="text-success">(Correcto)</span>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'agregar_item_administrador_evento' evento.eve_id %}" class="btn btn-success mb-3">Agregar Ítem</a>
+
+    
+
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Descripción</th>
+                <th>Peso (%)</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for criterio in criterios %}
+            <tr>
+                <td>{{ criterio.cri_descripcion }}</td>
+                <td>{{ criterio.cri_peso }}</td>
+                <td>
+                    <a href="{% url 'editar_item_administrador_evento' criterio_id=criterio.cri_id %}" class="btn btn-warning btn-sm">Editar</a>
+                    <a href="{% url 'eliminar_item_administrador_evento' criterio_id=criterio.cri_id %}" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar este ítem?');">Eliminar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">No hay ítems de evaluación registrados aún.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'dashboard_evaluacion_administrador' evento.eve_id %}" class="btn btn-secondary mt-3">
+        ← Volver al Dashboard
+    </a>
+</div>
+{% endblock %}

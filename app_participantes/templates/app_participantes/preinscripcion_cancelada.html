@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="alert alert-info mt-4">
+    <h4>Inscripción cancelada</h4>
+    <p>Has cancelado tu preinscripción al evento. Si fue un error, por favor comunícate con el organizador.</p>
+</div>
+<a href="{% url 'login' %}" class="btn btn-primary">Volver al inicio</a>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<!-- ✅ Estilos institucionales -->
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', Calibri, sans-serif;
+        background-color: #fcfcfc;
+    }
+
+    .btn-primary-custom {
+        background-color: #39A900;
+        border-color: #39A900;
+    }
+
+    .btn-primary-custom:hover {
+        background-color: #2f8a00;
+        border-color: #2f8a00;
+    }
+
+    .btn-secondary-custom {
+        background-color: #007832;
+        border-color: #007832;
+    }
+
+    .btn-secondary-custom:hover {
+        background-color: #005f26;
+        border-color: #005f26;
+    }
+
+    .icon-badge {
+        background-color: #39A900;
+        color: white;
+        padding: 0.4rem;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .evento-img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 12px;
+    }
+
+    .card-custom {
+        border: none;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    }
+
+    .section-title {
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: #007832;
+    }
+
+    .card-text strong {
+        color: #333;
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row gx-5 gy-4">
+        <!-- 🖼 Imagen -->
+        <div class="col-lg-6">
+            {% if evento.eve_imagen %}
+                <img src="{{ evento.eve_imagen.url }}" class="evento-img shadow-sm mb-4" alt="Imagen del evento">
+            {% else %}
+                <img src="{% static 'img/default-evento.jpg' %}" class="evento-img shadow-sm mb-4" alt="Imagen no disponible">
+            {% endif %}
+            
+            <!-- 📄 Info del evento -->
+            <div class="card card-custom">
+                <div class="card-body">
+                    <h2 class="section-title mb-4">{{ evento.eve_nombre }}</h2>
+
+                    <div class="row gy-2">
+                        <div class="col-md-6">
+                            <p class="card-text"><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</p>
+                            <p class="card-text"><strong>Lugar:</strong> {{ evento.eve_lugar }}</p>
+                            <p class="card-text"><strong>Fecha de Inicio:</strong> {{ evento.eve_fecha_inicio }}</p>
+                            <p class="card-text"><strong>Fecha de Fin:</strong> {{ evento.eve_fecha_fin }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="card-text"><strong>Capacidad:</strong> {{ evento.eve_capacidad }}</p>
+                            <p class="card-text"><strong>Tiene Costo:</strong> {{ evento.eve_tienecosto|yesno:"Sí,No" }}</p>
+                            {% if categorias %}
+                                <p class="card-text"><strong>Área:</strong> {{ categorias.0.categoria.cat_area_fk.are_nombre }}</p>
+                                <p class="card-text"><strong>Categorías:</strong>
+                                    {% for c in categorias %}
+                                        {{ c.categoria.cat_nombre }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 mt-3">
+                            <p class="card-text"><strong>Descripción:</strong> {{ evento.eve_descripcion }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎟️ Acciones e inscripción -->
+        <div class="col-lg-6 d-flex flex-column justify-content-between">
+            <div class="card card-custom h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="mb-4">
+                        <div class="alert alert-light border-start border-4" style="border-color: #007832;">
+                            <h5 class="fw-semibold">¿No sabes si ser Asistente o Participante?</h5>
+                            <p class="mb-1"><span class="icon-badge"><i class="bi bi-person"></i></span><strong>Asistente:</strong> Puedes asistir como espectador. Accedes con QR, sin aprobación.</p>
+                            <p class="mb-0"><span class="icon-badge"><i class="bi bi-mortarboard"></i></span><strong>Participante:</strong> Requiere documentos y ser aprobado. Participas activamente.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'ver_eventos' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+
+                        {% if evento.eve_estado == "Inscripciones Cerradas" %}
+                            <button class="btn btn-secondary-custom text-white" disabled>
+                                <i class="bi bi-lock"></i> Inscripciones Asistente cerradas
+                            </button>
+                        {% else %}
+                            <a href="{% url 'inscripcion_asistente' evento.eve_id %}" 
+                               class="btn btn-primary-custom text-white"
+                               data-bs-toggle="tooltip" data-bs-placement="top"
+                               title="Asiste como espectador. Recibirás un QR de ingreso.">
+                                <i class="bi bi-person"></i> Inscribirme como Asistente
+                            </a>
+                        {% endif %}
+
+                        <a href="{% url 'inscripcion_participante' evento.eve_id %}" 
+                           class="btn btn-secondary-custom text-white"
+                           data-bs-toggle="tooltip" data-bs-placement="top"
+                           title="Participa activamente en el evento. Requiere aprobación.">
+                            <i class="bi bi-mortarboard"></i> Inscribirme como Participante
+                        </a>
+
+                        <a href="{% url 'inscripcion_evaluador' evento.eve_id %}" 
+                           class="btn btn-outline-success"
+                           data-bs-toggle="tooltip" data-bs-placement="top"
+                           title="Si eres evaluador, puedes generar una rúbrica y evaluar el evento.">
+                            <i class="bi bi-journal-text"></i> Inscribirme como Evaluador
+                        </a>
+
+                        {% if evento.eve_programacion %}
+                            <a href="{% url 'descargar_programacion_asistente' evento.eve_id%}" 
+                               class="btn btn-outline-primary" 
+                               target="_blank">
+                                <i class="bi bi-file-earmark-pdf"></i> Ver programación del evento (PDF)
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Icons (si no están en base.html) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+<script>
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+</script>
+{% endblock %}

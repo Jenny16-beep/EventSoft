@@ -1,0 +1,33 @@
+from django.urls import path
+from . import views
+
+
+urlpatterns = [
+    path('dashboard/', views.dashboard_adminevento, name='dashboard_adminevento'),
+    path('listar-eventos/', views.listar_eventos, name='listar_eventos'),
+    path('crear-evento/', views.crear_evento, name='crear_evento'),
+    path('obtener-categorias-por-area/<int:area_id>/', views.obtener_categorias_por_area, name='obtener_categorias_por_area'),
+    path('modificar-evento/<int:eve_id>/', views.modificar_evento, name='modificar_evento'),
+    path('eliminar-evento/<int:eve_id>/', views.eliminar_evento, name='eliminar_evento'),
+    path('cerrar-inscripciones/<int:eve_id>/', views.cerrar_inscripciones, name='cerrar_inscripcion_evento'),
+    path('reabrir-inscripciones/<int:eve_id>/', views.reabrir_inscripciones, name='reabrir_inscripcion_evento'),
+    path('ver-inscripciones/<int:eve_id>/', views.ver_inscripciones, name='ver_inscripciones_evento'),
+    path('ver-asistentes/<int:eve_id>/', views.gestion_asistentes, name='ver_asistentes_evento'),
+    path('detalle-asistente/<int:eve_id>/<int:asistente_id>/', views.detalle_asistente, name='detalle_asistente_evento'),
+    path('ver-participantes/<int:eve_id>/', views.gestion_participantes, name='ver_participantes_evento'),
+    path('detalle-participante/<int:eve_id>/<int:participante_id>/', views.detalle_participante, name='detalle_participante_evento'),
+    path('descargar-documento-participante/<int:eve_id>/<int:participante_id>/', views.descargar_documento_participante, name='descargar_documento_participante_evento'),
+    path('estadisticas-evento/<int:eve_id>/', views.estadisticas_evento, name='estadisticas_evento'),
+    path('estaditicas-generales/', views.estadisticas_generales, name='estadisticas_generales'),
+    path('dashboard-evaluacion/<int:eve_id>/', views.dashboard_evaluacion, name='dashboard_evaluacion_administrador'),
+    path('gestion-item-administrador/<int:eve_id>/', views.gestion_item_administrador, name='gestion_item_administrador_evento'),
+    path('agregar-item-administrador/<int:eve_id>/', views.agregar_item_administrador, name='agregar_item_administrador_evento'),
+    path('editar-item-administrador/<int:criterio_id>/', views.editar_item_administrador, name='editar_item_administrador_evento'),
+    path('eliminar-item-administrador/<int:criterio_id>/', views.eliminar_item_administrador, name='eliminar_item_administrador_evento'),
+    path('tabla-posiciones-administrador/<int:eve_id>/', views.ver_tabla_posiciones, name='tabla_posiciones_administrador'),
+    path('informacion-detallada-administrador/<int:eve_id>/', views.info_detallada_admin, name='informacion_detallada_administrador_evento'),
+    path('gestionar-evaluadores/<int:eve_id>/', views.gestion_evaluadores, name='gestion_evaluadores'),
+    path('detalle-evaluador/<int:eve_id>/<int:evaluador_id>/', views.detalle_evaluador, name='detalle_evaluador_evento'),
+    path('descargar-documento-evaluador/<int:eve_id>/<int:evaluador_id>/', views.descargar_documento_evaluador, name='descargar_documento_evaluador_evento')
+
+]

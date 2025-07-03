@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-lg rounded-4 p-4">
+
+        {% if asi_id and clave %}
+          {% if estado == 'Aprobado' and qr_url %}
+            <h3 class="text-center text-success fw-bold mb-4">
+              <i class="bi bi-qr-code-scan me-2"></i>Tu QR para el evento "{{ evento }}"
+            </h3>
+            <p class="text-center text-muted">📱 Escanea o descarga tu código QR para ingresar.</p>
+
+            <div class="text-center mb-4">
+              <img src="{{ qr_url }}" class="img-fluid rounded shadow-sm" style="max-width: 300px;">
+            </div>
+
+            <div class="d-grid gap-2 col-md-6 mx-auto mb-4">
+              <a href="{% url 'descargar_qr_asistente' asi_id clave %}" class="btn btn-success">
+                <i class="bi bi-download me-1"></i> Descargar QR
+              </a>
+            </div>
+
+            <hr class="my-4">
+            <h4 class="text-primary fw-bold mb-3">
+              <i class="bi bi-info-circle-fill me-2"></i>Detalles del evento
+            </h4>
+            <ul class="list-group list-group-flush rounded-3 mb-4">
+              <li class="list-group-item"><strong>📄 Descripción:</strong> {{ detalles_evento.evento.eve_descripcion }}</li>
+              <li class="list-group-item"><strong>🏙️ Ciudad:</strong> {{ detalles_evento.evento.eve_ciudad }}</li>
+              <li class="list-group-item"><strong>📍 Lugar:</strong> {{ detalles_evento.evento.eve_lugar }}</li>
+              <li class="list-group-item"><strong>📅 Fecha Inicio:</strong> {{ detalles_evento.evento.eve_fecha_inicio }}</li>
+              <li class="list-group-item"><strong>📅 Fecha Fin:</strong> {{ detalles_evento.evento.eve_fecha_fin }}</li>
+              <li class="list-group-item"><strong>⚙️ Estado:</strong> {{ detalles_evento.evento.eve_estado }}</li>
+              <li class="list-group-item">
+                <strong>💰 Costo:</strong>
+                {% if detalles_evento.evento.eve_tienecosto == "SI" %}
+                  Sí
+                {% else %}
+                  No
+                {% endif %}
+              </li>
+              <li class="list-group-item"><strong>👥 Capacidad disponible:</strong> {{ detalles_evento.evento.eve_capacidad }}</li>
+              <li class="list-group-item">
+                <strong>🏷️ Categoría:</strong>
+                {% if categoria %}
+                  {{ categoria.cat_nombre }} - {{ categoria.cat_descripcion }}
+                {% else %}
+                  No asignada
+                {% endif %}
+              </li>
+              <li class="list-group-item">
+                <strong>🏛️ Área:</strong>
+                {% if area %}
+                  {{ area.are_nombre }} - {{ area.are_descripcion }}
+                {% else %}
+                  No asignada
+                {% endif %}
+              </li>
+            </ul>
+
+            {% if detalles_evento.evento.eve_programacion %}
+              <div class="d-grid gap-2 col-md-6 mx-auto mb-4">
+                <a href="{{ detalles_evento.evento.eve_programacion.url }}" class="btn btn-outline-primary" target="_blank">
+                  <i class="bi bi-file-earmark-pdf me-1"></i> Ver programación del evento (PDF)
+                </a>
+              </div>
+            {% endif %}
+
+            <form action="{% url 'cancelar_inscripcion_asistente' asi_id clave %}" method="POST" class="text-center mt-4">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger"
+                onclick="return confirm('¿Estás seguro que deseas cancelar tu inscripción? Esta acción no se puede deshacer.')">
+                <i class="bi bi-x-circle-fill me-1"></i> Cancelar inscripción
+              </button>
+            </form>
+
+          {% elif estado %}
+            <div class="alert alert-info text-center mt-4">
+              <i class="bi bi-info-circle me-2"></i>Tu inscripción no está activa actualmente.
+              Si crees que es un error, contacta a los organizadores del evento.
+            </div>
+          {% endif %}
+
+          <div class="text-center mt-4">
+            <a href="{% url 'ver_eventos' %}" class="btn btn-secondary">
+              <i class="bi bi-arrow-left-circle me-1"></i> Volver a eventos
+            </a>
+          </div>
+
+        {% else %}
+          <h3 class="text-center text-primary fw-bold mb-4">
+            <i class="bi bi-qr-code me-2"></i>Consultar QR de acceso
+          </h3>
+          <p class="text-center text-muted mb-4">🔐 Ingresa los datos que recibiste al inscribirte.</p>
+
+          <form method="POST" class="mx-auto" style="max-width: 400px;">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="asi_id" class="form-label">
+                <i class="bi bi-card-text me-1"></i> Documento:
+              </label>
+              <input type="text" name="asi_id" id="asi_id" class="form-control" required placeholder="Ingresa tu documento">
+            </div>
+            <div class="mb-3">
+              <label for="clave" class="form-label">
+                <i class="bi bi-key-fill me-1"></i> Clave de acceso:
+              </label>
+              <input type="text" name="clave" id="clave" class="form-control" required placeholder="Ingresa tu clave">
+            </div>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search me-1"></i> Consultar QR
+              </button>
+            </div>
+          </form>
+
+          
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle del Asistente - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <!-- Botón volver -->
+    <div class="mb-4">
+        <a href="{% url 'ver_asistentes_evento' evento.eve_id %}" class="btn btn-outline-secondary rounded-pill">
+            ← Volver a la lista de asistentes
+        </a>
+    </div>
+
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-4">
+
+            <h3 class="card-title mb-4 fw-bold text-primary">
+                Detalles del Asistente
+            </h3>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>Nombre:</strong> {{ asistente.asistente.usuario.first_name }} {{ asistente.asistente.usuario.last_name }}</p>
+                    <p><strong>Correo:</strong> {{ asistente.asistente.usuario.email }}</p>
+                    <p><strong>Teléfono:</strong> {{ asistente.asistente.usuario.telefono }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Fecha inscripción:</strong> {{ asistente.asi_eve_fecha_hora }}</p>
+                    <p><strong>Estado:</strong>
+                        {% if asistente.asi_eve_estado == "Aprobado" %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Aprobado</span>
+                        {% elif asistente.asi_eve_estado == "Pendiente" %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Pendiente</span>
+                        {% elif asistente.asi_eve_estado == "Rechazado" %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Rechazado</span>
+                        {% endif %}
+                    </p>
+                    {% if asistente.asi_eve_qr %}
+                        <p><strong>QR generado:</strong> ✅ <a href="{{ asistente.asi_eve_qr.url }}" download class="btn btn-sm btn-outline-dark ms-2">Descargar QR</a></p>
+                    {% else %}
+                        <p><strong>QR generado:</strong> ❌</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <div class="form-group mb-3">
+                    <label for="estado" class="form-label"><strong>Actualizar estado:</strong></label>
+                    <select name="estado" id="estado" class="form-select" required>
+                        <option value="">-- Selecciona un estado --</option>
+                        <option value="Aprobado" {% if asistente.asi_eve_estado == "Aprobado" %}selected{% endif %}>Aprobado</option>
+                        <option value="Pendiente" {% if asistente.asi_eve_estado == "Pendiente" %}selected{% endif %}>Pendiente</option>
+                        <option value="Rechazado">Rechazar y eliminar</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-arrow-repeat me-1"></i> Actualizar estado
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toasts Django -->
+{% if messages %}
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+    {% for message in messages %}
+    <div class="toast show align-items-center text-white bg-{{ message.tags }} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                {{ message }}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

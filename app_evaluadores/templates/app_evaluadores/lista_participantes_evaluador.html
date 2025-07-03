@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Participantes en "{{ evento.eve_nombre }}"</h2>
+
+    {% if participantes %}
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participantes %}
+                <tr>
+                    <td>{{ p.participante.usuario.first_name }}</td>
+                    <td>{{ p.participante.usuario.email }}</td>
+                    <td>
+                        {% if p.participante.id not in calificados %}
+                            <a href="{% url 'calificar_participante_evaluador' evento.eve_id p.participante.id %}" class="btn btn-primary btn-sm">Calificar</a>
+                        {% else %}
+                            <button class="btn btn-secondary btn-sm" disabled>Ya Calificado</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info mt-3" role="alert">
+            Todavía no hay participantes inscritos en este evento.
+        </div>
+    {% endif %}
+
+    <div class="mb-3">
+        <a href="{% url 'dashboard_evaluador' %}" class="btn btn-secondary btn-sm">Volver</a>
+    </div>
+</div>
+{% endblock %}

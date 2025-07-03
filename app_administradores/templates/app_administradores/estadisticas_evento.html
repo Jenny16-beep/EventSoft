@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">📊 Estadísticas de "{{ evento.eve_nombre }}"</h2>
+    <p><strong>📍 Ciudad:</strong> {{ evento.eve_ciudad }} | <strong>🏟️ Lugar:</strong> {{ evento.eve_lugar }}</p>
+    <p><strong>📅 Fechas:</strong> {{ evento.eve_fecha_inicio }} a {{ evento.eve_fecha_fin }}</p>
+    <p><strong>📌 Estado:</strong> {{ evento.eve_estado }}</p>
+
+    <hr>
+
+    <div class="row text-white mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-primary shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Capacidad Total Original</h6>
+                    <h3 class="fw-bold">{{ capacidad_total }}</h3>
+                    <small>Incluye los asistentes aprobados</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card bg-success shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Asistentes Aprobados</h6>
+                    <h3 class="fw-bold">{{ asistentes_aprobados }}</h3>
+                    <small>{{ porcentaje_ocupacion }}% Ocupado</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card bg-info shadow-sm text-dark">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Cupos Disponibles</h6>
+                    <h3 class="fw-bold">{{ evento.eve_capacidad }}</h3>
+                    <small>{{ porcentaje_disponible }}% Disponible</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row text-white mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-secondary shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Participantes Aprobados</h6>
+                    <h3 class="fw-bold">{{ participantes_aprobados }}</h3>
+                    <small>No afectan la capacidad</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card bg-dark shadow-sm text-white">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Total Asistentes Registrados</h6>
+                    <h3 class="fw-bold">{{ total_asistentes }}</h3>
+                    <small>Incluye todos los estados</small>
+                </div>
+            </div>
+        </div>
+
+        
+
+    <a href="{% url 'listar_eventos' %}" class="btn btn-outline-secondary">⬅️ Volver</a>
+</div>
+{% endblock %}

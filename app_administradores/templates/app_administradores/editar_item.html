@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Editar Ítem - {{ criterio.cri_descripcion }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Editar Ítem de Evaluación</h2>
+
+    <p><strong>Peso total actual (sin este ítem):</strong> {{ peso_total_actual }}%</p>
+    <p><strong>Peso restante:</strong> {{ peso_restante }}%</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" id="editItemForm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="descripcion" class="form-label">Descripción</label>
+            <input type="text"
+                   name="descripcion"
+                   id="descripcion"
+                   class="form-control"
+                   value="{{ criterio.cri_descripcion }}"
+                   required
+                   pattern="\S+.*"
+                   title="La descripción no puede estar vacía ni contener solo espacios.">
+        </div>
+        <div class="mb-3">
+            <label for="peso" class="form-label">Peso (%)</label>
+            <input type="number"
+                   name="peso"
+                   id="peso"
+                   class="form-control"
+                   step="0.1"
+                   min="0.1"
+                   max="{{ peso_restante|add:criterio.cri_peso }}"
+                   value="{{ criterio.cri_peso }}"
+                   required
+                   title="El peso debe ser un número positivo y no superar el peso restante.">
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        <a href="{% url 'gestion_item_administrador_evento' criterio.cri_evento_fk.pk %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+<!-- Validación JavaScript adicional -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('editItemForm');
+        const descripcion = document.getElementById('descripcion');
+        const peso = document.getElementById('peso');
+        const pesoMaximo = parseFloat(peso.getAttribute('max'));
+
+        form.addEventListener('submit', function (e) {
+            const descValue = descripcion.value.trim();
+            const pesoValue = parseFloat(peso.value);
+
+            if (!descValue) {
+                e.preventDefault();
+                alert('La descripción no puede estar vacía ni contener solo espacios.');
+                descripcion.focus();
+                return;
+            }
+
+            if (isNaN(pesoValue) || pesoValue <= 0) {
+                e.preventDefault();
+                alert('El peso debe ser un número positivo mayor a cero.');
+                peso.focus();
+                return;
+            }
+
+            if (pesoValue > pesoMaximo) {
+                e.preventDefault();
+                alert(`El peso no puede superar el valor restante de ${pesoMaximo}%.`);
+                peso.focus();
+            }
+        });
+    });
+</script>
+{% endblock %}

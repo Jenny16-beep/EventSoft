@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-5">
+            <h2 class="text-center text-primary mb-4">Preinscribirse como Participante</h2>
+            <p class="text-center text-muted mb-4">Evento: <strong>{{ evento.eve_nombre }}</strong></p>
+
+            <form action="{% url 'inscripcion_participante' evento.eve_id %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Identificación</label>
+                        <input type="text" name="par_id" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="par_telefono" class="form-control" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombres</label>
+                        <input type="text" name="par_nombres" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellidos</label>
+                        <input type="text" name="par_apellidos" class="form-control" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Correo Electrónico</label>
+                    <input type="email" name="par_correo" class="form-control" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Documentación Requerida (PDF, ZIP, etc.)</label>
+                    <input type="file" name="documentos" class="form-control" accept=".pdf,.zip,.rar,.doc,.docx,.png,.jpg,.jpeg" required>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'detalle_evento_visitante' evento.eve_id %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Enviar Preinscripción</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row g-4 align-items-start">
+        <!-- Imagen del evento -->
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                {% if evento.eve_imagen %}
+                    <img src="{{ evento.eve_imagen.url }}" alt="Imagen del evento" class="w-100 h-100 object-fit-cover" style="max-height: 400px; object-fit: cover;">
+                {% else %}
+                    <div class="text-center p-5 text-muted">Sin imagen</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Información del evento -->
+        <div class="col-md-7">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h2 class="card-title fw-bold mb-3">{{ evento.eve_nombre }}</h2>
+                    <p class="text-muted mb-3">{{ evento.eve_descripcion }}</p>
+
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item"><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</li>
+                        <li class="list-group-item"><strong>Lugar:</strong> {{ evento.eve_lugar }}</li>
+                        <li class="list-group-item"><strong>Fechas:</strong> {{ evento.eve_fecha_inicio }} – {{ evento.eve_fecha_fin }}</li>
+                        <li class="list-group-item"><strong>Estado inscripción:</strong> {{ relacion.asi_eve_estado }}</li>
+                        <li class="list-group-item"><strong>Clave de inscripción:</strong> {{ relacion.asi_eve_clave }}</li>
+                        <li class="list-group-item">
+                            <strong>Categorías:</strong>
+                            <div class="mt-2">
+                                {% for ec in evento.eventocategoria_set.all %}
+                                    <span class="badge bg-primary me-1 mb-1">{{ ec.categoria.cat_nombre }}</span>
+                                {% empty %}
+                                    <span class="text-muted">Sin categorías</span>
+                                {% endfor %}
+                            </div>
+                        </li>
+                    </ul>
+
+                    <!-- Botones -->
+                    <div class="d-flex flex-wrap gap-2 justify-content-start mt-3">
+                        {% if relacion.asi_eve_qr %}
+                            <a href="{{ relacion.asi_eve_qr.url }}" class="btn btn-outline-dark" download>
+                                <i class="bi bi-qr-code-scan me-1"></i> Descargar QR
+                            </a>
+                        {% endif %}
+
+                        {% if evento.eve_programacion %}
+                            <a href="{{ evento.eve_programacion.url }}" class="btn btn-outline-info" target="_blank">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> Ver programación
+                            </a>
+                        {% endif %}
+
+                        <form method="post" onsubmit="return confirm('¿Estás seguro de cancelar tu inscripción?');">
+                            {% csrf_token %}
+                            <button type="submit" name="cancelar_inscripcion" class="btn btn-danger">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar inscripción
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Botón volver -->
+                    <div class="mt-4">
+                        <a href="{% url 'dashboard_asistente' %}" class="btn btn-outline-secondary rounded-pill">
+                            ← Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

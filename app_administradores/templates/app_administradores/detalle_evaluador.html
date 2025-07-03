@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluador - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold mb-3">Detalle del Evaluador</h2>
+        <h3 class="text-primary fw-semibold">Evento: {{ evento.eve_nombre }}</h3>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            <div class="card shadow rounded-4 border-0 p-4 mb-4 bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0 text-primary">
+                        {{ evaluador.evaluador.first_name }} {{ evaluador.evaluador.last_name }}
+                    </h4>
+                    <span class="badge bg-info text-dark">{{ evaluador.eva_eve_estado }}</span>
+                </div>
+
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item"><strong>Documento:</strong> {{ evaluador.evaluador.documento }}</li>
+                    <li class="list-group-item"><strong>Correo:</strong> {{ evaluador.evaluador.email }}</li>
+                    <li class="list-group-item"><strong>Teléfono:</strong> {{ evaluador.evaluador.telefono }}</li>
+                </ul>
+
+                {% if evaluador.eva_eve_qr %}
+                <div class="text-center mb-3">
+                    <p class="mb-1"><strong>QR de Ingreso:</strong></p>
+                    <img src="{{ evaluador.eva_eve_qr.url }}" alt="QR Evaluador"
+                         class="img-thumbnail" style="max-width: 200px;">
+                </div>
+                {% endif %}
+
+                {% if evaluador.eva_eve_documentos %}
+                <div class="mb-3">
+                    <p><strong>Documentación:</strong></p>
+                    <a href="{{ evaluador.eva_eve_documentos.url }}"
+                       class="btn btn-outline-dark" target="_blank">
+                        <i class="bi bi-file-earmark-arrow-down"></i> Ver Documento
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card shadow-sm rounded-4 border-0 p-4 bg-white">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="estado" class="form-label fw-bold">Actualizar Estado</label>
+                        <select class="form-select" id="estado" name="estado">
+                            <option value="Pendiente" {% if evaluador.eva_eve_estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                            <option value="Aprobado" {% if evaluador.eva_eve_estado == 'Aprobado' %}selected{% endif %}>Aprobado</option>
+                            <option value="Rechazado" {% if evaluador.eva_eve_estado == 'Rechazado' %}selected{% endif %}>Rechazado</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'gestion_evaluadores' eve_id=eve_id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

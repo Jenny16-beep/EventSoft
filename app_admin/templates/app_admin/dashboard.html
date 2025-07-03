@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load evento_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Panel de Eventos</h1>
+
+    <div class="row">
+        {% for estado, color, icono in estados_tarjetas %}
+        <div class="col-md-4 mb-4">
+            <div class="card text-white bg-{{ color }} position-relative">
+                <div class="card-body">
+                    <h5 class="card-title">{{ icono }} {{ estado }}</h5>
+                    {% if notificaciones|get:estado %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ notificaciones|get:estado }}
+                        <span class="visually-hidden">Eventos nuevos</span>
+                    </span>
+                    {% endif %}
+                    <a href="{% url 'listar_eventos_estado' estado %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="col-md-4 mb-4">
+            <div class="card text-white bg-primary position-relative">
+                <div class="card-body">
+                    <h5 class="card-title">➕ Crear Administrador de Evento</h5>
+                    <a href="{% url 'crear_administrador_evento' %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card text-white bg-dark position-relative">
+                <div class="card-body">
+                    <h5 class="card-title">📋 Listar Administradores</h5>
+                    <a href="{% url 'listar_administradores_evento' %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+{% if messages %}
+<div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1200;">
+        {% for message in messages %}
+        <div class="toast align-items-center text-white bg-info border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    🔔 {{ message }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Toast JS -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+    var toastList = toastElList.map(function (toastEl) {
+      return new bootstrap.Toast(toastEl, { delay: 7000 });
+    });
+    toastList.forEach(toast => toast.show());
+  });
+</script>
+{% endblock %}

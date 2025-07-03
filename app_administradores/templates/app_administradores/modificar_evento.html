@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Modificar Evento</h2>
+    <form action="{% url 'modificar_evento' evento.eve_id %}" method="post" enctype="multipart/form-data" class="card p-4 shadow-lg rounded-4">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" name="nombre" class="form-control" value="{{ evento.eve_nombre }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea name="descripcion" class="form-control" rows="3" required>{{ evento.eve_descripcion }}</textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Ciudad</label>
+                <input type="text" name="ciudad" class="form-control" value="{{ evento.eve_ciudad }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Lugar</label>
+                <input type="text" name="lugar" class="form-control" value="{{ evento.eve_lugar }}" required>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha Inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ evento.eve_fecha_inicio|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha Fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ evento.eve_fecha_fin|date:'Y-m-d' }}" required>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Capacidad</label>
+            <input type="number" name="capacidad" class="form-control" value="{{ evento.eve_capacidad }}" required>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">¿Tiene Costo?</label>
+                <select name="tienecosto" class="form-select" required>
+                    <option value="SI" {% if evento.eve_tienecosto == "SI" %}selected{% endif %}>Sí</option>
+                    <option value="NO" {% if evento.eve_tienecosto == "NO" %}selected{% endif %}>No</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Áreas y Categorías -->
+        <div class="mb-3">
+            <label class="form-label">Áreas y Categorías</label>
+            <div id="areaCategoriaContainer">
+                {% for cat in categorias_info %}
+                <div class="row mb-2 area-categoria-item align-items-end">
+                    <div class="col-md-5">
+                        <select class="form-select area-select" required>
+                            <option value="">Seleccione un área</option>
+                            {% for area in todas_areas %}
+                                <option value="{{ area.are_codigo }}" {% if area.are_codigo == cat.area_id %}selected{% endif %}>{{ area.are_nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <select name="categoria_id[]" class="form-select categoria-select" required data-selected="{{ cat.categoria_id }}">
+                            <option value="">Seleccione una categoría</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-remove d-none">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-secondary mt-2" id="agregarAreaCategoria">Agregar otra categoría</button>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Imagen del Evento</label>
+            <input type="file" name="imagen" accept="image/*" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Archivo de Programación (PDF)</label>
+            <input type="file" name="programacion" accept=".pdf" class="form-control">
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{% url 'dashboard_adminevento' %}" class="btn btn-outline-secondary">⬅️ Volver</a>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+    </form>
+</div>
+
+<!-- Script JS -->
+<script>
+    const obtenerCategoriasUrl = "{% url 'obtener_categorias_por_area' 0 %}".replace('/0/', '/');
+
+    function cargarCategorias(areaSelect, categoriaSelect, selectedValue = null) {
+        const areaId = areaSelect.value;
+        if (!areaId) return;
+
+        fetch(`${obtenerCategoriasUrl}${areaId}/`)
+            .then(response => response.json())
+            .then(data => {
+                categoriaSelect.innerHTML = '<option value="">Seleccione una categoría</option>';
+                data.forEach(cat => {
+                    const selected = selectedValue && cat.cat_codigo == selectedValue ? 'selected' : '';
+                    categoriaSelect.innerHTML += `<option value="${cat.cat_codigo}" ${selected}>${cat.cat_nombre}</option>`;
+                });
+            });
+    }
+
+    function actualizarVisibilidadBotones() {
+        const items = document.querySelectorAll('.area-categoria-item');
+        items.forEach((item, index) => {
+            const btn = item.querySelector('.btn-remove');
+            if (items.length > 1) {
+                btn.classList.remove('d-none');
+            } else {
+                btn.classList.add('d-none');
+            }
+        });
+    }
+
+    document.addEventListener('change', function (e) {
+        if (e.target.classList.contains('area-select')) {
+            const categoriaSelect = e.target.closest('.area-categoria-item').querySelector('.categoria-select');
+            cargarCategorias(e.target, categoriaSelect);
+        }
+    });
+
+    document.getElementById('agregarAreaCategoria').addEventListener('click', function () {
+        const container = document.getElementById('areaCategoriaContainer');
+        const nuevoItem = container.querySelector('.area-categoria-item').cloneNode(true);
+
+        nuevoItem.querySelector('.area-select').value = '';
+        const categoriaSelect = nuevoItem.querySelector('.categoria-select');
+        categoriaSelect.innerHTML = '<option value="">Seleccione una categoría</option>';
+
+        container.appendChild(nuevoItem);
+        actualizarVisibilidadBotones();
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.btn-remove')) {
+            const item = e.target.closest('.area-categoria-item');
+            const container = document.getElementById('areaCategoriaContainer');
+            if (container.children.length > 1) {
+                item.remove();
+                actualizarVisibilidadBotones();
+            }
+        }
+    });
+
+    // Al cargar, aplicar los valores iniciales
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.area-categoria-item').forEach(function (item) {
+            const areaSelect = item.querySelector('.area-select');
+            const categoriaSelect = item.querySelector('.categoria-select');
+            const selectedCategoria = categoriaSelect.dataset.selected;
+            if (areaSelect && categoriaSelect) {
+                cargarCategorias(areaSelect, categoriaSelect, selectedCategoria);
+            }
+        });
+
+        actualizarVisibilidadBotones();
+    });
+</script>
+{% endblock %}

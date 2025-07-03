@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Eventos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Mis Eventos</h2>
+
+    {% if eventos %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Ciudad</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evento in eventos %}
+                    <tr>
+                        <td>{{ evento.eve_nombre }}</td>
+                        <td>{{ evento.eve_ciudad }}</td>
+                        <td>{{ evento.eve_fecha_inicio }}</td>
+                        <td>{{ evento.eve_fecha_fin }}</td>
+                        <td>
+                            {% if evento.eve_estado == 'aprobado' %}
+                                <span class="badge bg-success">Activo</span>
+                            {% elif evento.eve_estado == 'inscripciones cerradas' %}
+                                <span class="badge bg-warning text-dark">Inscripciones Cerradas</span>
+                            {% elif evento.eve_estado == 'Finalizado' %}
+                                <span class="badge bg-secondary">Finalizado</span>
+                            {% elif evento.eve_estado == 'cancelado' %}
+                                <span class="badge bg-danger">Cancelado</span>
+                            {% else %}
+                                <span class="badge bg-dark">{{ evento.eve_estado }}</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td>
+                            <a href="{% url 'modificar_evento' evento.eve_id %}" class="btn btn-sm btn-outline-primary mb-1">
+                                ✏️ Editar
+                            </a>
+
+                            <a href="{% url 'eliminar_evento' evento.eve_id %}" class="btn btn-sm btn-outline-danger mb-1" onclick="return confirm('¿Estás seguro de cancelar este evento?');">
+                                ❌ Cancelar Evento
+                            </a>
+
+                            <a href="{% url 'ver_inscripciones_evento' evento.eve_id %}" class="btn btn-sm btn-outline-info mb-1">
+                                👥 Ver Inscripciones
+                            </a>
+
+                            {% if evento.eve_estado == 'Aprobado' %}
+                            <a href="{% url 'cerrar_inscripcion_evento' evento.eve_id %}" class="btn btn-sm btn-outline-warning mb-1">
+                                🚫 Cerrar Inscripciones
+                            </a>
+                            {% endif %}
+
+                            {% if evento.eve_estado == 'Inscripciones Cerradas' %}
+                            <a href="{% url 'reabrir_inscripcion_evento' evento.eve_id %}" class="btn btn-sm btn-outline-success mb-1">
+                                🔄 Reabrir Inscripciones
+                            </a>
+                            {% endif %}
+
+                            {% if evento.eve_estado == 'Aprobado' or evento.eve_estado == 'Inscripciones Cerradas' %}
+                            <a href="{% url 'estadisticas_evento' evento.eve_id %}" class="btn btn-sm btn-outline-secondary mb-1">
+                                📊 Ver Estadísticas
+                            </a>
+
+                            <a href="{% url 'dashboard_evaluacion_administrador' evento.eve_id%}" class="btn btn-sm btn-outline-dark mb-1">
+                                📝 Gestión de Evaluación
+                            </a>
+                            {% endif %}
+
+                            
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">No tienes eventos registrados.</div>
+    {% endif %}
+    <div class="mt-4">
+        <a href="{% url 'dashboard_adminevento' %}" class="btn btn-secondary">
+            ⬅️ Volver al Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

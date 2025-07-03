@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow-lg border-0 rounded-4">
+        <!-- Cabecera -->
+        <div class="card-header bg-primary text-white rounded-top-4">
+            <h2 class="text-center fw-bold">Instrumento de Evaluación</h2>
+            <p class="text-center mb-0 fs-5">{{ evento.eve_nombre }}</p>
+            <p class="text-center fst-italic fs-6">Participante: {{ request.user.participante.par_nombre }}</p>
+        </div>
+
+        <!-- Cuerpo -->
+        <div class="card-body">
+            <div class="mb-4 text-center">
+                <div class="alert alert-secondary">
+                    <i class="bi bi-info-circle me-2"></i> La calificación se realizará en una escala del <strong>1 al 5</strong>. Cada criterio tiene un peso porcentual sobre la nota final.
+                </div>
+            </div>
+
+            {% if criterios %}
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+                {% for criterio in criterios %}
+                <div class="col">
+                    <div class="card h-100 border-start border-5 border-primary shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary fw-semibold">
+                                <i class="bi bi-check2-circle me-1"></i> {{ criterio.cri_descripcion }}
+                            </h5>
+                            <p class="card-text mb-1">
+                                <i class="bi bi-percent me-1"></i> <strong>Peso:</strong> {{ criterio.cri_peso }}%
+                            </p>
+                            <p class="text-muted small fst-italic">Escala esperada: 1 = Muy bajo, 5 = Excelente</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-warning text-center mt-4">
+                <i class="bi bi-exclamation-circle me-2"></i> No hay criterios registrados para este evento.
+            </div>
+            {% endif %}
+
+            <!-- Botón regresar -->
+            <div class="text-center mt-5">
+                <a href="{% url 'dashboard_participante_evento' evento.eve_id %}" class="btn btn-outline-primary rounded-pill px-4 py-2">
+                    <i class="bi bi-arrow-left-circle me-2"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-5">👨‍💼 Panel del Administrador de Evento</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow rounded-4 border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success mb-3">Crear Nuevo Evento</h5>
+                    <a href="{% url 'crear_evento' %}" class="btn btn-success w-100">
+                        ➕ Crear Evento
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow rounded-4 border-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary mb-3">Modificar Evento</h5>
+                    <a href="{% url 'listar_eventos'%}" class="btn btn-primary w-100">
+                        ✏️ Modificar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow rounded-4 border-info">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-info mb-3">Estadísticas Generales</h5>
+                    <a href="{% url 'estadisticas_generales' %}" class="btn btn-outline-info w-100">
+                        📈 Ver Estadísticas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

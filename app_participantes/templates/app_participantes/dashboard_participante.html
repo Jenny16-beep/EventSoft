@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow rounded-4 p-4">
+        <h2 class="text-center mb-4 text-primary fw-bold">
+            <i class="bi bi-person-circle me-2"></i>Bienvenido, {{ datos.par_nombre }}
+        </h2>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-secondary fw-bold">
+                            <i class="bi bi-calendar-event me-2"></i>Evento
+                        </h5>
+                        <p class="card-text">{{ datos.eve_nombre }}</p>
+
+                        <h6 class="fw-bold mt-3">
+                            <i class="bi bi-info-circle me-1"></i>Estado de inscripción
+                        </h6>
+                        <span class="badge 
+                            {% if datos.par_eve_estado == 'Pendiente' %}bg-warning text-dark
+                            {% elif datos.par_eve_estado == 'Aprobado' %}bg-success
+                            {% elif datos.par_eve_estado == 'Rechazado' %}bg-danger
+                            {% elif datos.par_eve_estado == 'Cancelado' %}bg-secondary
+                            {% endif %}">
+                            {{ datos.par_eve_estado }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-secondary fw-bold">
+                            <i class="bi bi-envelope-fill me-2"></i>Contacto
+                        </h5>
+                        <p class="mb-1"><strong>Correo:</strong> {{ datos.par_correo }}</p>
+                        <p><strong>Teléfono:</strong> {{ datos.par_telefono }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        {% if datos.par_eve_estado == 'Pendiente' %}
+            <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+                <a href="{% url 'modificar_preinscripcion_participante' datos.eve_id %}" class="btn btn-warning">
+                    <i class="bi bi-pencil-square me-1"></i>Modificar inscripción
+                </a>
+                <form method="post" action="{% url 'cancelar_preinscripcion_participante'%}"
+                      onsubmit="return confirm('¿Estás seguro de que deseas cancelar tu inscripción?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar inscripción
+                    </button>
+                </form>
+            </div>
+
+        {% elif datos.par_eve_estado == 'Aprobado' %}
+            <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+                <a href="{% url 'ver_qr_participante' datos.eve_id  %}" class="btn btn-success">
+                    <i class="bi bi-qr-code me-1"></i>Ver QR
+                </a>
+                <a href="{% url 'instrumento_evaluacion_participante'  datos.eve_id %}" class="btn btn-info">
+                    <i class="bi bi-file-earmark-check me-1"></i> Ver Instrumento de Evaluación
+                </a>
+                <a href="{% url 'calificaciones_participante' datos.eve_id  %}" class="btn btn-success">
+                    <i class="bi bi-star me-1"></i> Ver Calificación Obtenida
+                </a>
+                {% if datos.eve_programacion %}
+                    <a href="{% url 'ver_evento_completo_participante' datos.eve_id %}" class="btn btn-info">
+                        <i class="bi bi-file-earmark-text me-1"></i>Ver información del evento
+                    </a>
+                {% endif %}
+            </div>
+
+        {% elif datos.par_eve_estado == 'Rechazado' %}
+            <div class="alert alert-danger mt-3 text-center">
+                <i class="bi bi-x-octagon me-1"></i>Tu preinscripción fue rechazada. Contacta al organizador.
+            </div>
+
+        {% elif datos.par_eve_estado == 'Cancelado' %}
+            <div class="alert alert-warning mt-3 text-center">
+                <i class="bi bi-exclamation-triangle me-1"></i>Tu inscripción fue cancelada.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

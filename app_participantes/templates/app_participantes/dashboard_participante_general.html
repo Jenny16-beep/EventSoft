@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow rounded-4 p-4">
+        <h2 class="text-center mb-4 text-primary fw-bold">
+            <i class="bi bi-calendar-range me-2"></i>Mis Eventos
+        </h2>
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for evento in eventos %}
+            <div class="col">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ evento.eve_nombre }}</h5>
+                        <p><strong>Fecha:</strong> {{ evento.eve_fecha_inicio }} a {{ evento.eve_fecha_fin }}</p>
+                        <p><strong>Estado:</strong>
+                            <span class="badge 
+                                {% if evento.par_eve_estado == 'Pendiente' %}bg-warning text-dark
+                                {% elif evento.par_eve_estado == 'Aprobado' %}bg-success
+                                {% elif evento.par_eve_estado == 'Rechazado' %}bg-danger
+                                {% elif evento.par_eve_estado == 'Cancelado' %}bg-secondary
+                                {% endif %}">
+                                {{ evento.par_eve_estado }}
+                            </span>
+                        </p>
+                        <a href="{% url 'dashboard_participante_evento' evento.eve_id %}" class="btn btn-primary mt-3">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Ver detalle
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

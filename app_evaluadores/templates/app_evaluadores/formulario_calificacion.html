@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Calificar a "{{ participante.par_nombre }}"</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% for c in criterios %}
+            <div class="mb-3">
+                <label for="criterio_{{ c.cri_id }}" class="form-label">
+                    {{ c.cri_descripcion }} ({{ c.cri_peso }}%)
+                </label>
+                <select name="criterio_{{ c.cri_id }}" id="criterio_{{ c.cri_id }}" class="form-select" required>
+                    <option value="">Selecciona una opción</option>
+                    {% for i in "12345" %}
+                        <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-success mt-3">Guardar Calificación</button>
+        <a href="{% url 'lista_participantes_evaluador' evento.eve_id %}" class="btn btn-secondary mt-3">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

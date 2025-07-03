@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold">{{ evento.eve_nombre }}</h1>
+        <p class="text-muted">{{ evento.eve_ciudad }} - {{ evento.eve_lugar }}</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Descripción</h5>
+                    <p class="card-text">{{ evento.eve_descripcion }}</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Detalles del Evento</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Fecha:</strong> {{ evento.eve_fecha_inicio }} a {{ evento.eve_fecha_fin }}</li>
+                        <li class="list-group-item"><strong>Estado:</strong> {{ evento.eve_estado }}</li>
+                        <li class="list-group-item"><strong>Capacidad:</strong> {{ evento.eve_capacidad }} personas</li>
+                        <li class="list-group-item"><strong>¿Tiene costo?:</strong> {{ evento.tiene_costo_legible }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Categorías y Áreas</h5>
+                    {% for cat in evento.categorias %}
+                        <p class="mb-2">
+                            <strong>Categoría:</strong> {{ cat.cat_nombre }}<br>
+                            <small class="text-muted">{{ cat.cat_descripcion }}</small><br>
+                            <strong>Área:</strong> {{ cat.are_nombre }}<br>
+                            <small class="text-muted">{{ cat.are_descripcion }}</small>
+                        </p>
+                        {% if not forloop.last %}
+                            <hr>
+                        {% endif %}
+                    {% empty %}
+                        <p class="text-muted">Este evento no tiene categorías asociadas.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Administrador</h5>
+                    <p><strong>{{ evento.adm_nombre }}</strong><br>
+                    <small class="text-muted">{{ evento.adm_correo }}</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if evento.eve_programacion %}
+    <div class="d-flex justify-content-between mb-4">
+        <a href="{{ evento.eve_programacion.url }}" target="_blank" class="btn btn-outline-primary">
+            Descargar programación (PDF)
+        </a>
+
+        <a href="{% url 'dashboard_participante_evento' evento.eve_id%}" 
+        class="btn btn-outline-secondary rounded-pill px-4 py-2">
+            <i class="bi bi-arrow-left-circle me-2"></i> Volver
+        </a>
+    </div>
+    {% endif %}
+
+
+</div>
+{% endblock %}

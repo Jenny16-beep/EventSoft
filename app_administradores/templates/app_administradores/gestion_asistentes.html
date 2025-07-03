@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Asistentes - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Asistentes inscritos en "{{ evento.eve_nombre }}"</h2>
+
+    {% if asistentes %}
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Estado</th>
+                    <th>QR</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in asistentes %}
+                <tr>
+                    <td>{{ a.asistente.usuario.first_name }} {{ a.asistente.usuario.last_name }}</td>
+                    <td>{{ a.asistente.usuario.email }}</td>
+                    <td>{{ a.asistente.usuario.telefono }}</td>
+                    <td>{{ a.asi_eve_estado }}</td>
+                    <td>
+                        {% if a.asi_eve_qr %}
+                            ✅
+                        {% else %}
+                            ❌
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'detalle_asistente_evento' evento.eve_id a.asistente.pk %}" class="btn btn-primary btn-sm">
+                            Validar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">No hay asistentes inscritos en este evento.</div>
+    {% endif %}
+</div>
+{% endblock %}

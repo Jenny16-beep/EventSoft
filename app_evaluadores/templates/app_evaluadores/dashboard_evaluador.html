@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Bienvenido, {{ evaluador.usuario.first_name }} {{ evaluador.usuario.last_name }}</h1>
+
+    <div class="row">
+        {% for inscripcion in inscripciones %}
+        {% with evento=inscripcion.evento estado=inscripcion.eva_eve_estado %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title d-flex justify-content-between">
+                        {{ evento.eve_nombre }}
+                        <span class="badge 
+                            {% if estado == 'Aprobado' %}bg-success
+                            {% elif estado == 'Pendiente' %}bg-warning text-dark
+                            {% else %}bg-secondary
+                            {% endif %}">
+                            {{ estado }}
+                        </span>
+                    </h5>
+
+                    <p class="card-text">{{ evento.eve_descripcion|truncatechars:100 }}</p>
+                    <p class="card-text text-muted">
+                        {{ evento.eve_ciudad }} |
+                        {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}
+                    </p>
+
+                    <div class="d-grid gap-2 mt-3">
+                        {% if estado != 'Pendiente' %}
+                            <a href="{% url 'gestionar_items_evaluador' evento.eve_id %}" class="btn btn-primary btn-sm">Gestionar Ítems</a>
+                            <a href="{% url 'lista_participantes_evaluador' evento.eve_id %}" class="btn btn-success btn-sm">Calificar Participante</a>
+                            <a href="{% url 'tabla_posiciones_evaluador' evento.eve_id %}" class="btn btn-warning btn-sm">Tabla de Posiciones</a>
+                            <a href="{% url 'informacion_detallada_evaluador' evento.eve_id %}" class="btn btn-info btn-sm">Información Detallada</a>
+                        {% endif %}
+
+                        {% if estado == 'Pendiente' %}
+                            <a href="{% url 'modificar_inscripcion_evaluador' evento.eve_id %}" class="btn btn-outline-secondary btn-sm">Modificar Preinscripción</a>
+                            <a href="{% url 'cancelar_inscripcion_evaluador' evento.eve_id %}" class="btn btn-outline-danger btn-sm">Cancelar Inscripción</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center" role="alert">
+                No estás asociado a ningún evento aún.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

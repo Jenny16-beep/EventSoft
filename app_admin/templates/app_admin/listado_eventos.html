@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Eventos con estado: {{ estado }}</h2>
+        <a href="{% url 'dashboard_superadmin' %}" class="btn btn-outline-secondary">
+            ⬅️ Volver al panel
+        </a>
+    </div>
+
+    {% if eventos_por_admin %}
+        {% for admin, eventos in eventos_por_admin %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        👤 <strong>Administrador:</strong> {{ admin.adm_nombre }}
+                    </h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for evento in eventos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Título:</strong> {{ evento.eve_nombre }}<br>
+                                <small class="text-muted">
+                                    📅 <strong>Fecha:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                            <a href="{% url 'detalle_evento_admin' eve_id=evento.eve_id %}" class="btn btn-sm btn-outline-primary">Validar</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">No hay eventos con este estado.</div>
+    {% endif %}
+</div>
+{% endblock %}

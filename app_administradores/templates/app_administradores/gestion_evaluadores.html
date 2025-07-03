@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluadores - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Evaluadores inscritos en "{{ evento.eve_nombre }}"</h2>
+
+    {% if evaluadores %}
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Documento</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for evaluador in evaluadores %}
+                <tr>
+                    <td>{{ evaluador.evaluador.documento }}</td>
+                    <td>{{ evaluador.evaluador.first_name }} {{ evaluador.evaluador.last_name }}</td>
+                    <td>{{ evaluador.evaluador.email }}</td>
+                    <td>{{ evaluador.eva_eve_estado }}</td>
+                    <td>
+                        <a href="{% url 'detalle_evaluador_evento' eve_id=eve_id evaluador_id=evaluador.evaluador.id %}" class="btn btn-primary btn-sm">
+                            Ver / Validar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">No hay evaluadores inscritos en este evento.</div>
+    {% endif %}
+</div>
+{% endblock %}

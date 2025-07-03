@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Inscripción Evaluador - {{ evento.eve_nombre }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-5">
+            <h2 class="text-center text-primary mb-4">Inscribirse como Evaluador</h2>
+            <p class="text-center text-muted mb-3">Evento: <strong>{{ evento.eve_nombre }}</strong></p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Documento</label>
+                        <input type="text" name="eva_id" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="eva_telefono" class="form-control">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombres</label>
+                        <input type="text" name="eva_nombres" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellidos</label>
+                        <input type="text" name="eva_apellidos" class="form-control" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Correo</label>
+                    <input type="email" name="eva_correo" class="form-control" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Documentación (PDF, DOC)</label>
+                    <input type="file" name="documentacion" class="form-control">
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Inscribirme</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

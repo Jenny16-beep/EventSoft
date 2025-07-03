@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+
+  <div class="card shadow-lg border-0 rounded-4">
+    <div class="card-body p-4">
+
+      <h3 class="card-title text-center text-primary mb-5">
+        <i class="bi bi-qr-code-scan"></i> QR de Inscripción
+      </h3>
+
+      <div class="text-center mb-4">
+        {% if datos.qr_url %}
+          <img src="{{ datos.qr_url }}" 
+               alt="QR de inscripción" 
+               class="img-fluid rounded shadow-sm mb-3" 
+               style="max-width: 300px;">
+          <p class="text-muted">📱 Presenta este código QR para ingresar al evento.</p>
+        {% else %}
+          <div class="alert alert-warning mt-3">⚠️ No se ha generado un código QR para esta inscripción.</div>
+        {% endif %}
+      </div>
+
+      <div class="text-center mb-4">
+        <h5 class="text-primary">{{ datos.eve_nombre }}</h5>
+        <p><strong>📍 Lugar:</strong> {{ datos.eve_lugar }}</p>
+        {% if datos.eve_descripcion %}
+          <p><strong>📝 Descripción:</strong> {{ datos.eve_descripcion }}</p>
+        {% endif %}
+      </div>
+
+      <div class="text-center">
+        <a href="{% url 'descargar_qr_participante' evento_id %}" class="btn btn-success mt-2 px-4">
+          <i class="bi bi-download"></i> Descargar QR
+        </a>
+      </div>
+
+      <div class="text-center mt-5">
+        <a href="{% url 'dashboard_participante_general'%}" class="btn btn-outline-secondary px-4">
+          <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

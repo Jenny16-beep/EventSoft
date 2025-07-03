@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-5">
+            <h2 class="text-center text-primary mb-4">Inscribirse como Asistente</h2>
+            <p class="text-center text-muted mb-4">
+                Evento: <strong>{{ evento.eve_nombre }}</strong>
+            </p>
+            <form action="{% url 'inscripcion_asistente' evento.eve_id %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Documento</label>
+                        <input type="text" name="asi_id" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="asi_telefono" class="form-control" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombres</label>
+                        <input type="text" name="asi_nombres" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellidos</label>
+                        <input type="text" name="asi_apellidos" class="form-control" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Correo electrónico</label>
+                    <input type="email" name="asi_correo" class="form-control" required>
+                </div>
+                {% if evento.eve_tienecosto == 'SI' %}
+                <div class="mb-3">
+                    <label class="form-label">Comprobante de pago</label>
+                    <input type="file" name="soporte_pago" accept="image/*,application/pdf" class="form-control" required>
+                </div>
+                {% endif %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'detalle_evento_visitante' evento.eve_id %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Inscribirme</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

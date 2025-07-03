@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Tabla de Posiciones - "{{ evento.eve_nombre }}"</h2>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-dark">
+                <tr class="text-center">
+                    <th>Posición</th>
+                    <th>Nombre del Participante</th>
+                    <th>Correo</th>
+                    <th>Puntaje Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in posiciones %}
+                <tr class="text-center
+                    {% if forloop.counter == 1 %}table-warning
+                    {% elif forloop.counter == 2 %}table-info
+                    {% elif forloop.counter == 3 %}table-success
+                    {% endif %}">
+                    <td>
+                        <strong>#{{ forloop.counter }}</strong>
+                        {% if forloop.counter == 1 %}
+                            🥇
+                        {% elif forloop.counter == 2 %}
+                            🥈
+                        {% elif forloop.counter == 3 %}
+                            🥉
+                        {% endif %}
+                    </td>
+                    <td>{{ p.participante.usuario.first_name }} {{ p.participante.usuario.last_name }}</td>
+                    <td>{{ p.participante.usuario.email }}</td>
+                    <td><strong>{{ p.puntaje }}</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay participantes calificados aún.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="{% url 'dashboard_evaluacion_administrador' evento.eve_id %}" class="btn btn-secondary mt-3">
+        ← Volver al Dashboard
+    </a>
+</div>
+{% endblock %}

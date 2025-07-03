@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Detalle de Evaluaciones - {{ evento.eve_nombre }}</h2>
+
+   
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Criterios de Evaluación</h5>
+            <ul class="list-group list-group-flush">
+                {% for criterio in criterios %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ criterio.cri_descripcion }}
+                    <span class="badge bg-primary rounded-pill">{{ criterio.cri_peso }}%</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Participante</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Evaluados</th>
+                    <th>Total Criterios</th>
+                    <th>Estado</th>
+                    <th>Promedio</th>
+                    <th>Detalles</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participantes_info %}
+                <tr class="{% if p.evaluado %}table-success{% else %}table-warning{% endif %}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ p.participante.usuario.first_name }} {{ p.participante.usuario.last_name }}</td>
+                    <td>{{ p.participante.usuario.email }}</td>
+                    <td>{{ p.participante.usuario.telefono }}</td>
+                    <td>{{ p.evaluados }}</td>
+                    <td>{{ p.total_criterios }}</td>
+                    <td>
+                        {% if p.evaluado %}
+                        <span class="badge bg-success">Completado</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.promedio_ponderado is not None %}
+                        <strong>{{ p.promedio_ponderado }}</strong>
+                        {% else %}
+                        <em>Sin calificar</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#detalle{{ forloop.counter }}">
+                            Ver
+                        </button>
+                    </td>
+                </tr>
+                <tr class="collapse bg-light" id="detalle{{ forloop.counter }}">
+                    <td colspan="9">
+                        <strong>Detalle de Calificaciones:</strong>
+                        {% if p.calificaciones %}
+                        <ul class="list-group mt-2">
+                            {% for c in p.calificaciones %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="text-start">
+                                    <strong>{{ c.criterio.cri_descripcion }}</strong><br>
+                                    Nota: {{ c.cal_valor }}<br>
+                                    Peso: {{ c.criterio.cri_peso }}%
+                                </div>
+                                <span class="badge bg-secondary">
+                                    Aporte: {{ c.aporte|floatformat:2 }}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <em>Este participante aún no ha sido evaluado.</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">No hay participantes en este evento.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="{% url 'dashboard_evaluador' %}" class="btn btn-secondary mt-3">
+        ← Volver al Dashboard
+    </a>
+</div>
+{% endblock %}

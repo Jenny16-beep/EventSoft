@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Estadísticas Generales{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h2 class="mb-4 text-center">📊 Estadísticas Generales de tus Eventos</h2>
+
+    <!-- Tarjetas Resumen -->
+    <div class="row text-white">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5>Total de Eventos</h5>
+                    <h3>{{ total_eventos }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5>Capacidad Utilizada (Asistentes)</h5>
+                    <h3>{{ capacidad_utilizada }}/{{ capacidad_total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5>Asistentes Aprobados</h5>
+                    <h3>{{ capacidad_utilizada }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-secondary shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5>Participantes Aprobados</h5>
+                    <h3>{{ total_participantes_aprobados }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ocupación Global -->
+    <div class="row text-white mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5>Ocupación Global (Solo Asistentes)</h5>
+                    <h3>{{ ocupacion_global }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficas -->
+    <div class="row my-4">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow rounded-4">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Eventos por Estado</h5>
+                    <canvas id="estadoEventosChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow rounded-4">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Capacidad Utilizada</h5>
+                    <canvas id="ocupacionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla resumen por evento -->
+    <div class="card shadow rounded-4">
+        <div class="card-body">
+            <h5 class="card-title">Detalle por Evento</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th>Evento</th>
+                            <th>Estado</th>
+                            <th>Capacidad (Original)</th>
+                            <th>Ocupados (Asistentes)</th>
+                            <th>% Ocupación</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-center">
+                        {% for evento in datos_eventos %}
+                        <tr>
+                            <td>{{ evento.nombre }}</td>
+                            <td>{{ evento.estado }}</td>
+                            <td>{{ evento.capacidad }}</td>
+                            <td>{{ evento.ocupados }}</td>
+                            <td>{{ evento.porcentaje }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <a href="{% url 'dashboard_adminevento' %}" class="btn btn-secondary">
+            ⬅️ Volver al Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- JSON seguro para JS -->
+{{ etiquetas_estado|json_script:"etiquetasEstado" }}
+{{ datos_estado|json_script:"datosEstado" }}
+
+<script>
+    const etiquetasEstado = JSON.parse(document.getElementById('etiquetasEstado').textContent);
+    const datosEstado = JSON.parse(document.getElementById('datosEstado').textContent);
+
+    const capacidadOcupada = Number("{{ capacidad_utilizada|default:0 }}");
+    const capacidadTotal = Number("{{ capacidad_total|default:0 }}");
+    const capacidadDisponible = capacidadTotal - capacidadOcupada;
+
+    const estadoEventosChart = new Chart(document.getElementById('estadoEventosChart'), {
+        type: 'bar',
+        data: {
+            labels: etiquetasEstado,
+            datasets: [{
+                label: 'Cantidad',
+                data: datosEstado,
+                backgroundColor: ['#0d6efd', '#ffc107', '#dc3545', '#20c997', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    const ocupacionChart = new Chart(document.getElementById('ocupacionChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Ocupados', 'Disponibles'],
+            datasets: [{
+                data: [capacidadOcupada, capacidadDisponible],
+                backgroundColor: ['#198754', '#dee2e6']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+</script>
+{% endblock %}

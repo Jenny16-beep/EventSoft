@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">Mis Eventos Inscritos</h2>
+
+    {% if relaciones %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for relacion in relaciones %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        {% if relacion.evento.eve_imagen %}
+                            <div class="ratio ratio-16x9">
+                                <img src="{{ relacion.evento.eve_imagen.url }}" class="card-img-top object-fit-cover" alt="Imagen del evento" style="object-fit: cover;">
+                            </div>
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ relacion.evento.eve_nombre }}</h5>
+                            <p class="card-text flex-grow-1">{{ relacion.evento.eve_descripcion|truncatewords:25 }}</p>
+                            <p><strong>Estado:</strong> {{ relacion.asi_eve_estado }}</p>
+                            <p>
+                                <strong>QR:</strong>
+                                {% if relacion.asi_eve_qr %}
+                                    ✅ Disponible
+                                {% else %}
+                                    ❌ No generado
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'detalle_evento_asistente' relacion.evento.eve_id %}" class="btn btn-outline-primary mt-auto">
+                                Ver Detalles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted text-center">No estás inscrito en ningún evento.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Participantes - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Participantes inscritos en "{{ evento.eve_nombre }}"</h2>
+
+    {% if participantes %}
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Documento</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participante in participantes %}
+                <tr>
+                    <td>{{ participante.participante.usuario.documento }}</td>
+                    <td>{{ participante.participante.usuario.first_name }} {{ participante.participante.usuario.last_name }}</td>
+                    <td>{{ participante.participante.usuario.email }}</td>
+                    <td>{{ participante.par_eve_estado }}</td>
+                    <td>
+                        <a href="{% url 'detalle_participante_evento' eve_id=eve_id participante_id=participante.participante.id %}" class="btn btn-primary btn-sm">
+                            Ver / Validar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">No hay participantes inscritos en este evento.</div>
+    {% endif %}
+</div>
+{% endblock %}
