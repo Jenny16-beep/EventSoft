@@ -1,3 +1,6 @@
+from django.http import HttpResponse
+from weasyprint import HTML
+from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.urls import reverse
@@ -5,8 +8,9 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, FileResponse
 from django.core.files.base import ContentFile
 from django.utils.crypto import get_random_string
+from django.conf import settings
 
-from .models import AdministradorEvento
+from .models import AdministradorEvento, CodigoInvitacionAdminEvento
 from app_eventos.models import Evento
 from app_eventos.models import EventoCategoria
 from app_areas.models import Area, Categoria
@@ -23,12 +27,26 @@ import io
 import mimetypes
 import os
 
+from django.template.loader import render_to_string
+from django.core.mail import EmailMessage
+from app_usuarios.models import Rol, RolUsuario
+
+from django.template import Context, Template
+from app_eventos.models import ConfiguracionCertificado
+from django.contrib import messages
+from django.core.files.images import get_image_dimensions
+from django.conf import settings
+import os
+
+
+
 
 
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def dashboard_adminevento(request):
     return render(request, 'dashboard_adminevento.html')
+
 
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
@@ -52,11 +70,30 @@ def crear_evento(request):
 
         estado = 'Pendiente'
         try:
-            administrador = request.user.administrador  # ← aquí está el cambio clave
+            administrador = request.user.administrador
         except AdministradorEvento.DoesNotExist:
             messages.error(request, "Tu cuenta no está asociada como Administrador de Evento.")
             return redirect('ver_eventos')
 
+        # Validar código de invitación
+        invitacion = CodigoInvitacionAdminEvento.objects.filter(usuario_asignado=request.user).order_by('-fecha_creacion').first()
+        if not invitacion:
+            messages.error(request, "No tienes un código de invitación válido asociado a tu cuenta.")
+            return redirect('dashboard_adminevento')
+
+        # Validar tiempo límite de creación (si existe)
+        if invitacion.tiempo_limite_creacion:
+            from django.utils import timezone
+            if timezone.now() > invitacion.tiempo_limite_creacion:
+                messages.error(request, "El tiempo límite para crear eventos con tu código de invitación ha expirado.")
+                return redirect('dashboard_adminevento')
+
+        # Validar cupos disponibles
+        if invitacion.limite_eventos < 1:
+            messages.error(request, "Ya has alcanzado el límite de eventos permitidos por tu código de invitación.")
+            return redirect('dashboard_adminevento')
+
+        # Crear evento y descontar cupo
         evento = Evento.objects.create(
             eve_nombre=nombre,
             eve_descripcion=descripcion,
@@ -71,16 +108,38 @@ def crear_evento(request):
             eve_administrador_fk=administrador,
             eve_programacion=programacion
         )
-
+        invitacion.limite_eventos -= 1
+        invitacion.save()
         categoria_ids = request.POST.getlist('categoria_id[]')
         for cat_id in categoria_ids:
             EventoCategoria.objects.create(evento=evento, categoria_id=cat_id)
+        # Enviar correo a los superadmin       
+        try:
+            rol_superadmin = Rol.objects.get(nombre__iexact='superadmin')
+            usuarios_superadmin = RolUsuario.objects.filter(rol=rol_superadmin).select_related('usuario')
+            correos_superadmin = [ru.usuario.email for ru in usuarios_superadmin if ru.usuario.email]
+        except Rol.DoesNotExist:
+            correos_superadmin = []
+
+        if correos_superadmin:
+            cuerpo_html = render_to_string('correo_nuevo_evento_superadmin.html', {
+                'evento': evento,
+                'creador': request.user,
+            })
+            email = EmailMessage(
+                subject=f'Nuevo evento creado: {evento.eve_nombre}',
+                body=cuerpo_html,
+                to=correos_superadmin,
+            )
+            email.content_subtype = 'html'
+            email.send(fail_silently=True)
 
         messages.success(request, "Evento creado exitosamente.")
         return redirect(reverse('dashboard_adminevento'))
     else:
         areas = Area.objects.all()
         return render(request, 'crear_evento.html', {'areas': areas})
+    
     
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
@@ -97,7 +156,8 @@ def obtener_categorias_por_area(request, area_id):
 def listar_eventos(request):
     administrador = request.user.administrador
     eventos = Evento.objects.filter(eve_administrador_fk=administrador)
-    return render(request, 'listar_eventos.html', {'eventos': eventos})
+    accion = request.GET.get('accion', None)  # Para distinguir si viene de gestión de certificados
+    return render(request, 'listar_eventos.html', {'eventos': eventos, 'accion': accion})
 
 
 @login_required
@@ -190,7 +250,7 @@ def ver_inscripciones(request, eve_id):
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def gestion_asistentes(request, eve_id):
     evento = get_object_or_404(Evento, eve_id=eve_id)
-    asistentes = AsistenteEvento.objects.select_related('asistente').filter(evento__eve_id=eve_id)
+    asistentes = AsistenteEvento.objects.select_related('asistente').filter(evento__eve_id=eve_id, confirmado=True)
     return render(request, 'gestion_asistentes.html', {
         'evento': evento,
         'asistentes': asistentes,
@@ -214,18 +274,24 @@ def detalle_asistente(request, eve_id, asistente_id):
     if request.method == 'POST':
         nuevo_estado = request.POST.get('estado')
         estado_actual = asistente_evento.asi_eve_estado
+        enviar_qr = False
+        qr_buffer = None
 
         if nuevo_estado == "Aprobado":
             if estado_actual == "Pendiente":
                 evento.eve_capacidad = max(evento.eve_capacidad - 1, 0)
 
             if not asistente_evento.asi_eve_qr:
+                
                 data_qr = f"Asistente: {asistente_evento.asistente.usuario.get_full_name()} - Evento: {evento.eve_nombre}"
                 img = qrcode.make(data_qr)
-                buffer = io.BytesIO()
-                img.save(buffer, format='PNG')
+                qr_buffer = io.BytesIO()
+                img.save(qr_buffer, format='PNG')
                 filename = f"qr_asistente_{asistente_id}_evento_{evento.eve_id}.png"
-                asistente_evento.asi_eve_qr.save(filename, ContentFile(buffer.getvalue()), save=False)
+                asistente_evento.asi_eve_qr.save(filename, ContentFile(qr_buffer.getvalue()), save=False)
+                enviar_qr = True
+            else:
+                enviar_qr = True
 
             asistente_evento.asi_eve_estado = nuevo_estado
             evento.save()
@@ -262,6 +328,27 @@ def detalle_asistente(request, eve_id, asistente_id):
             else:
                 messages.success(request, "Asistente rechazado y eliminado del evento")
 
+        # Enviar correo al asistente
+        usuario_asistente = asistente_evento.asistente.usuario
+        if usuario_asistente and usuario_asistente.email:
+            
+            cuerpo_html = render_to_string('correo_estado_asistente.html', {
+                'evento': evento,
+                'asistente': usuario_asistente,
+                'nuevo_estado': nuevo_estado,
+            })
+            email = EmailMessage(
+                subject=f'Actualización de estado de tu inscripción como asistente en {evento.eve_nombre}',
+                body=cuerpo_html,
+                to=[usuario_asistente.email],
+            )
+            email.content_subtype = 'html'
+            if nuevo_estado == "Aprobado" and asistente_evento.asi_eve_qr:
+                # Adjuntar QR
+                qr_path = asistente_evento.asi_eve_qr.path
+                email.attach_file(qr_path)
+            email.send(fail_silently=True)
+
         return redirect('ver_asistentes_evento', eve_id=eve_id)
 
     return render(request, 'detalle_asistente.html', {
@@ -273,7 +360,7 @@ def detalle_asistente(request, eve_id, asistente_id):
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def gestion_participantes(request, eve_id):
     evento = get_object_or_404(Evento, pk=eve_id)
-    participantes = ParticipanteEvento.objects.filter(evento=evento).select_related('participante')
+    participantes = ParticipanteEvento.objects.filter(evento=evento, confirmado=True).select_related('participante')
     context = {
         'evento': evento,
         'participantes': participantes,
@@ -296,6 +383,7 @@ def detalle_participante(request, eve_id, participante_id):
         nuevo_estado = request.POST.get('estado')
         if nuevo_estado:
             usuario = participante.usuario
+            enviar_qr = False
             if nuevo_estado == 'Aprobado':
                 if not participante_evento.par_eve_qr:
                     data_qr = f"Participante: {usuario.first_name} {usuario.last_name} - Evento: {evento.eve_nombre}"
@@ -304,6 +392,9 @@ def detalle_participante(request, eve_id, participante_id):
                     img.save(buffer, format='PNG')
                     file_name = f"qr_{get_random_string(8)}.png"
                     participante_evento.par_eve_qr.save(file_name, ContentFile(buffer.getvalue()), save=False)
+                    enviar_qr = True
+                else:
+                    enviar_qr = True
                 participante_evento.par_eve_estado = nuevo_estado
                 participante_evento.save()
                 messages.success(request, "Inscripción aprobada")
@@ -324,6 +415,26 @@ def detalle_participante(request, eve_id, participante_id):
                 else:
                     messages.warning(request, "Inscripción rechazada y eliminado del evento")
                     return redirect('ver_participantes_evento', eve_id=eve_id)
+
+            # Enviar correo al participante
+            usuario_participante = participante.usuario
+            if usuario_participante and usuario_participante.email:
+                cuerpo_html = render_to_string('correo_estado_participante.html', {
+                    'evento': evento,
+                    'participante': usuario_participante,
+                    'nuevo_estado': nuevo_estado,
+                })
+                email = EmailMessage(
+                    subject=f'Actualización de estado de tu inscripción como participante en {evento.eve_nombre}',
+                    body=cuerpo_html,
+                    to=[usuario_participante.email],
+                )
+                email.content_subtype = 'html'
+                if nuevo_estado == 'Aprobado' and participante_evento.par_eve_qr:
+                    qr_path = participante_evento.par_eve_qr.path
+                    email.attach_file(qr_path)
+                email.send(fail_silently=True)
+
             return redirect('detalle_participante_evento', eve_id=eve_id, participante_id=participante_id)
     return render(request, 'detalle_participante.html', {
         'participante': participante_evento,
@@ -358,7 +469,7 @@ def descargar_documento_participante(request, eve_id, participante_id):
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def gestion_evaluadores(request, eve_id):
     evento = get_object_or_404(Evento, pk=eve_id)
-    evaluadores = EvaluadorEvento.objects.filter(evento=evento).select_related('evaluador')
+    evaluadores = EvaluadorEvento.objects.filter(evento=evento, confirmado=True).select_related('evaluador__usuario')
     context = {
         'evento': evento,
         'evaluadores': evaluadores,
@@ -372,10 +483,11 @@ def gestion_evaluadores(request, eve_id):
 def detalle_evaluador(request, eve_id, evaluador_id):
     evento = get_object_or_404(Evento, pk=eve_id)
     evaluador_evento = get_object_or_404(EvaluadorEvento, evento=evento, evaluador__id=evaluador_id)
-    usuario = evaluador_evento.evaluador
+    usuario = evaluador_evento.evaluador.usuario
     if request.method == 'POST':
         nuevo_estado = request.POST.get('estado')
         if nuevo_estado:
+            enviar_qr = False
             if nuevo_estado == 'Aprobado':
                 if not evaluador_evento.eva_eve_qr:
                     data_qr = f"Evaluador: {usuario.first_name} {usuario.last_name} - Evento: {evento.eve_nombre}"
@@ -384,6 +496,9 @@ def detalle_evaluador(request, eve_id, evaluador_id):
                     img.save(buffer, format='PNG')
                     file_name = f"qr_{get_random_string(8)}.png"
                     evaluador_evento.eva_eve_qr.save(file_name, ContentFile(buffer.getvalue()), save=False)
+                    enviar_qr = True
+                else:
+                    enviar_qr = True
                 evaluador_evento.eva_eve_estado = nuevo_estado
                 evaluador_evento.save()
                 messages.success(request, "Inscripción aprobada")
@@ -405,6 +520,26 @@ def detalle_evaluador(request, eve_id, evaluador_id):
                 else:
                     messages.warning(request, "Inscripción rechazada y eliminado del evento")
                     return redirect('ver_evaluadores_evento', eve_id=eve_id)
+
+            # Enviar correo al evaluador
+            usuario_evaluador = usuario
+            if usuario_evaluador and usuario_evaluador.email:
+                cuerpo_html = render_to_string('correo_estado_evaluador.html', {
+                    'evento': evento,
+                    'evaluador': usuario_evaluador,
+                    'nuevo_estado': nuevo_estado,
+                })
+                email = EmailMessage(
+                    subject=f'Actualización de estado de tu inscripción como evaluador en {evento.eve_nombre}',
+                    body=cuerpo_html,
+                    to=[usuario_evaluador.email],
+                )
+                email.content_subtype = 'html'
+                if nuevo_estado == 'Aprobado' and evaluador_evento.eva_eve_qr:
+                    qr_path = evaluador_evento.eva_eve_qr.path
+                    email.attach_file(qr_path)
+                email.send(fail_silently=True)
+
             return redirect('detalle_evaluador_evento', eve_id=eve_id, evaluador_id=evaluador_id)
     return render(request, 'detalle_evaluador.html', {
         'evaluador': evaluador_evento,
@@ -442,6 +577,9 @@ def descargar_documento_evaluador(request, eve_id, evaluador_id):
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def estadisticas_evento(request, eve_id):
     evento = get_object_or_404(Evento, pk=eve_id)
+    if evento.eve_estado.lower() != 'aprobado':
+        messages.error(request, "Solo puedes ver estadísticas de eventos aprobados.")
+        return redirect('listar_eventos')
     asistentes_aprobados = AsistenteEvento.objects.filter(evento=evento, asi_eve_estado='Aprobado').count()
     total_asistentes = AsistenteEvento.objects.filter(evento=evento).count()  
     total_participantes = ParticipanteEvento.objects.filter(evento=evento).count()
@@ -537,6 +675,9 @@ def dashboard_evaluacion(request, eve_id):
     if evento.eve_administrador_fk != administrador:
         messages.error(request, "No tienes permisos para acceder a este evento.")
         return redirect('listar_eventos')
+    if evento.eve_estado.lower() != 'aprobado':
+        messages.error(request, "Solo puedes acceder a esta función si el evento está aprobado.")
+        return redirect('listar_eventos')
     context = {
         'evento': evento,
     }
@@ -547,6 +688,9 @@ def dashboard_evaluacion(request, eve_id):
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def gestion_item_administrador(request, eve_id):
     evento = get_object_or_404(Evento, pk=eve_id)
+    if evento.eve_estado.lower() != 'aprobado':
+        messages.error(request, "Solo puedes acceder a esta función si el evento está aprobado.")
+        return redirect('listar_eventos')
     criterios = Criterio.objects.filter(cri_evento_fk=evento)
     peso_total_actual = sum(c.cri_peso for c in criterios if c.cri_peso is not None)
     context = {
@@ -561,6 +705,9 @@ def gestion_item_administrador(request, eve_id):
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def agregar_item_administrador(request, eve_id):
     evento = get_object_or_404(Evento, pk=eve_id)
+    if evento.eve_estado.lower() != 'aprobado':
+        messages.error(request, "Solo puedes acceder a esta función si el evento está aprobado.")
+        return redirect('listar_eventos')
     if request.method == 'POST':
         descripcion = request.POST.get('descripcion')
         peso_str = request.POST.get('peso')
@@ -597,7 +744,11 @@ def agregar_item_administrador(request, eve_id):
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def editar_item_administrador(request, criterio_id):
     criterio = get_object_or_404(Criterio, pk=criterio_id)
-    criterios_evento = Criterio.objects.filter(cri_evento_fk=criterio.cri_evento_fk)
+    evento = criterio.cri_evento_fk
+    if evento.eve_estado.lower() != 'aprobado':
+        messages.error(request, "Solo puedes acceder a esta función si el evento está aprobado.")
+        return redirect('listar_eventos')
+    criterios_evento = Criterio.objects.filter(cri_evento_fk=evento)
     peso_total_actual = sum(c.cri_peso for c in criterios_evento if c.pk != criterio.pk)
     peso_restante = 100 - peso_total_actual
     if request.method == 'POST':
@@ -638,6 +789,9 @@ def eliminar_item_administrador(request, criterio_id):
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def ver_tabla_posiciones(request, eve_id):
     evento = get_object_or_404(Evento, pk=eve_id)
+    if evento.eve_estado.lower() != 'aprobado':
+        messages.error(request, "Solo puedes acceder a esta función si el evento está aprobado.")
+        return redirect('listar_eventos')
     criterios = Criterio.objects.filter(cri_evento_fk=evento)
     peso_total = sum(c.cri_peso for c in criterios) or 1
     participantes_evento = ParticipanteEvento.objects.filter(
@@ -678,6 +832,9 @@ def info_detallada_admin(request, eve_id):
     if evento.eve_administrador_fk != administrador:
         messages.error(request, "No tienes permisos para acceder a este evento.")
         return redirect('listar_eventos')
+    if evento.eve_estado.lower() != 'aprobado':
+        messages.error(request, "Solo puedes acceder a esta función si el evento está aprobado.")
+        return redirect('listar_eventos')
     criterios = Criterio.objects.filter(cri_evento_fk=evento)
     participantes_evento = ParticipanteEvento.objects.filter(
         evento=evento,
@@ -714,3 +871,128 @@ def info_detallada_admin(request, eve_id):
         'participantes_info': participantes_info
     }
     return render(request, 'info_detallada_admin.html', context)
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def gestionar_notificaciones(request):
+    administrador = request.user.administrador
+    eventos = Evento.objects.filter(eve_administrador_fk=administrador, eve_estado__iexact='Aprobado')
+    tipo = request.GET.get('tipo', 'asistentes')
+    evento_id = request.GET.get('evento')
+    filtro_nombre = request.GET.get('nombre', '').strip()
+    filtro_documento = request.GET.get('documento', '').strip()
+    filtro_correo = request.GET.get('correo', '').strip()
+    filtro_estado = request.GET.get('estado', '')
+    filtro_confirmado = request.GET.get('confirmado', '')
+    destinatarios = []
+    evento_seleccionado = None
+    estados = ['Pendiente', 'Aprobado', 'Rechazado']
+    if evento_id:
+        evento_seleccionado = get_object_or_404(Evento, pk=evento_id, eve_administrador_fk=administrador)
+        if tipo == 'asistentes':
+            qs = AsistenteEvento.objects.select_related('asistente__usuario').filter(evento=evento_seleccionado)
+            if filtro_nombre:
+                qs = qs.filter(Q(asistente__usuario__first_name__icontains=filtro_nombre) | Q(asistente__usuario__last_name__icontains=filtro_nombre))
+            if filtro_documento:
+                qs = qs.filter(asistente__usuario__documento__icontains=filtro_documento)
+            if filtro_correo:
+                qs = qs.filter(asistente__usuario__email__icontains=filtro_correo)
+            if filtro_estado:
+                qs = qs.filter(asi_eve_estado__iexact=filtro_estado)
+            if filtro_confirmado:
+                qs = qs.filter(confirmado=(filtro_confirmado == 'true'))
+            destinatarios = list(qs)
+        elif tipo == 'participantes':
+            qs = ParticipanteEvento.objects.select_related('participante__usuario').filter(evento=evento_seleccionado)
+            if filtro_nombre:
+                qs = qs.filter(Q(participante__usuario__first_name__icontains=filtro_nombre) | Q(participante__usuario__last_name__icontains=filtro_nombre))
+            if filtro_documento:
+                qs = qs.filter(participante__usuario__documento__icontains=filtro_documento)
+            if filtro_correo:
+                qs = qs.filter(participante__usuario__email__icontains=filtro_correo)
+            if filtro_estado:
+                qs = qs.filter(par_eve_estado__iexact=filtro_estado)
+            if filtro_confirmado:
+                qs = qs.filter(confirmado=(filtro_confirmado == 'true'))
+            destinatarios = list(qs)
+        elif tipo == 'evaluadores':
+            qs = EvaluadorEvento.objects.select_related('evaluador__usuario').filter(evento=evento_seleccionado)
+            if filtro_nombre:
+                qs = qs.filter(Q(evaluador__usuario__first_name__icontains=filtro_nombre) | Q(evaluador__usuario__last_name__icontains=filtro_nombre))
+            if filtro_documento:
+                qs = qs.filter(evaluador__usuario__documento__icontains=filtro_documento)
+            if filtro_correo:
+                qs = qs.filter(evaluador__usuario__email__icontains=filtro_correo)
+            if filtro_estado:
+                qs = qs.filter(eva_eve_estado__iexact=filtro_estado)
+            if filtro_confirmado:
+                qs = qs.filter(confirmado=(filtro_confirmado == 'true'))
+            destinatarios = list(qs)
+
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo')
+        evento_id = request.POST.get('evento')
+        asunto = request.POST.get('asunto', '').strip()
+        mensaje = request.POST.get('mensaje', '').strip()
+        seleccionados = request.POST.getlist('seleccionados')
+        if not asunto or not mensaje or not seleccionados:
+            messages.error(request, 'Debes completar el asunto, mensaje y seleccionar al menos un destinatario.')
+        else:
+            enviados = 0
+            if tipo == 'asistentes':
+                qs = AsistenteEvento.objects.select_related('asistente__usuario').filter(pk__in=seleccionados)
+                for ae in qs:
+                    usuario = ae.asistente.usuario
+                    if usuario.email:
+                        email = EmailMessage(
+                            subject=asunto,
+                            body=mensaje,
+                            to=[usuario.email],
+                        )
+                        email.content_subtype = 'html'
+                        email.send(fail_silently=True)
+                        enviados += 1
+            elif tipo == 'participantes':
+                qs = ParticipanteEvento.objects.select_related('participante__usuario').filter(pk__in=seleccionados)
+                for pe in qs:
+                    usuario = pe.participante.usuario
+                    if usuario.email:
+                        email = EmailMessage(
+                            subject=asunto,
+                            body=mensaje,
+                            to=[usuario.email],
+                        )
+                        email.content_subtype = 'html'
+                        email.send(fail_silently=True)
+                        enviados += 1
+            elif tipo == 'evaluadores':
+                qs = EvaluadorEvento.objects.select_related('evaluador__usuario').filter(pk__in=seleccionados)
+                for ee in qs:
+                    usuario = ee.evaluador.usuario
+                    if usuario.email:
+                        email = EmailMessage(
+                            subject=asunto,
+                            body=mensaje,
+                            to=[usuario.email],
+                        )
+                        email.content_subtype = 'html'
+                        email.send(fail_silently=True)
+                        enviados += 1
+            messages.success(request, f'Notificaciones enviadas a {enviados} destinatario(s).')
+            return redirect('gestionar_notificaciones')
+
+    return render(request, 'gestionar_notificaciones.html', {
+        'eventos': eventos,
+        'tipo': tipo,
+        'evento_id': evento_id,
+        'destinatarios': destinatarios,
+        'estados': estados,
+        'filtro_nombre': filtro_nombre,
+        'filtro_documento': filtro_documento,
+        'filtro_correo': filtro_correo,
+        'filtro_estado': filtro_estado,
+        'filtro_confirmado': filtro_confirmado,
+        'evento_seleccionado': evento_seleccionado,
+    })
+
+

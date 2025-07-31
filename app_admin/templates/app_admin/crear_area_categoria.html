@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Crear Área y Categoría</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">Crear Área</div>
+                <div class="card-body">
+                    {% if mensaje %}
+                        <div class="alert alert-info">{{ mensaje }}</div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="nombre_area" class="form-label">Nombre del Área</label>
+                            <input type="text" class="form-control" id="nombre_area" name="nombre_area" maxlength="45" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion_area" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion_area" name="descripcion_area" maxlength="400"></textarea>
+                        </div>
+                        <button type="submit" name="crear_area" class="btn btn-primary">Crear Área</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">Crear Categoría</div>
+                <div class="card-body">
+                    {% if mensaje_categoria %}
+                        <div class="alert alert-info">{{ mensaje_categoria }}</div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="nombre_categoria" class="form-label">Nombre de la Categoría</label>
+                            <input type="text" class="form-control" id="nombre_categoria" name="nombre_categoria" maxlength="45" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion_categoria" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion_categoria" name="descripcion_categoria" maxlength="400"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="area_id" class="form-label">Área</label>
+                            <select class="form-select" id="area_id" name="area_id" required>
+                                <option value="">Seleccione un área</option>
+                                {% for area in areas %}
+                                    <option value="{{ area.are_codigo }}">{{ area.are_nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" name="crear_categoria" class="btn btn-success">Crear Categoría</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4>Áreas existentes</h4>
+            <ul class="list-group">
+                {% for area in areas %}
+                    <li class="list-group-item">
+                        <strong>{{ area.are_nombre }}</strong> - {{ area.are_descripcion }}
+                        <ul class="ms-3">
+                            {% for categoria in area.categorias.all %}
+                                <li>{{ categoria.cat_nombre }} - {{ categoria.cat_descripcion }}</li>
+                            {% empty %}
+                                <li class="text-muted">Sin categorías</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No hay áreas registradas.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

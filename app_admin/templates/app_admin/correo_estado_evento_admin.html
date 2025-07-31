@@ -1,0 +1,15 @@
+<div style="font-family: Arial, sans-serif;">
+    <h2 style="color: #2c3e50;">Actualización de estado de tu evento</h2>
+    <p>Hola {{ admin.get_full_name|default:admin.email }},</p>
+    <p>El estado de tu evento ha sido actualizado en la plataforma Eventsoft.</p>
+    <ul>
+        <li><strong>Nombre del evento:</strong> {{ evento.eve_nombre }}</li>
+        <li><strong>Nuevo estado:</strong> <span style="color: #007bff;">{{ nuevo_estado|capfirst }}</span></li>
+        <li><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</li>
+        <li><strong>Lugar:</strong> {{ evento.eve_lugar }}</li>
+        <li><strong>Fecha de inicio:</strong> {{ evento.eve_fecha_inicio }}</li>
+        <li><strong>Fecha de fin:</strong> {{ evento.eve_fecha_fin }}</li>
+    </ul>
+    <p>Por favor, ingresa a la plataforma para más detalles o para gestionar tu evento.</p>
+    <p style="color: #888; font-size: 0.9em;">Este es un mensaje automático de Eventsoft.</p>
+</div>

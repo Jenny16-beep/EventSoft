@@ -59,6 +59,17 @@
                 <label for="password" class="form-label">Contraseña</label>
                 <input type="password" class="form-control" name="password" id="password" placeholder="••••••••" required>
             </div>
+            <div class="mb-3">
+                <label for="rol" class="form-label">Rol</label>
+                <select class="form-select" name="rol" id="rol" required>
+                    <option value="">Seleccione un rol</option>
+                    <option value="superadmin">Superadmin</option>
+                    <option value="administrador_evento">Administrador de evento</option>
+                    <option value="evaluador">Evaluador</option>
+                    <option value="participante">Participante</option>
+                    <option value="asistente">Asistente</option>
+                </select>
+            </div>
             <button type="submit" class="btn btn-primary-custom w-100">
                 <i class="bi bi-box-arrow-in-right"></i> Ingresar
             </button>

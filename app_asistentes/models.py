@@ -15,7 +15,7 @@ class AsistenteEvento(models.Model):
     asi_eve_estado = models.CharField(max_length=45)
     asi_eve_soporte = models.FileField(upload_to='asistentes/soportes/', null=True, blank=True)
     asi_eve_qr = models.ImageField(upload_to='asistentes/qr/', null=True, blank=True)
-    asi_eve_clave = models.CharField(max_length=45)
+    confirmado = models.BooleanField(default=False)
 
     class Meta:
         unique_together = (('asistente', 'evento'),)

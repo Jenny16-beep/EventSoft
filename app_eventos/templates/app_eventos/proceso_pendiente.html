@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card shadow-lg p-4 rounded-4 border-0" style="max-width: 500px; margin: 0 auto;">
+        <h2 class="mb-3 text-warning">Proceso de confirmación pendiente</h2>
+        <p class="fs-5">Hola <strong>{{ nombre }}</strong>,</p>
+        <p>Ya existe un proceso de confirmación pendiente para el evento <strong>{{ evento }}</strong>.</p>
+        <p>Por favor revisa tu correo electrónico <strong>{{ correo }}</strong> y sigue el enlace para finalizar tu registro.</p>
+        <div class="alert alert-info mt-3">
+            ¿No recibiste el correo? <a href="{{ reenviar_url }}" class="fw-bold">Haz clic aquí para reenviar el enlace de confirmación</a>.
+        </div>
+        <a href="{% url 'ver_eventos' %}" class="btn btn-primary mt-4">Volver a eventos</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Registro confirmado</title>
+</head>
+<body>
+    <h2>¡Registro confirmado!</h2>
+    <p>Hola {{ nombre }},</p>
+    <p>Tu inscripción al evento <strong>{{ evento }}</strong> ha sido confirmada y tu cuenta está activa.</p>
+    <p>Revisa tu correo electrónico para obtener tu clave de acceso.</p>
+    <a href="{% url 'ver_eventos' %}">Ir al inicio</a>
+</body>
+</html>

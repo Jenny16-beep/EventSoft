@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <circle cx="60" cy="60" r="50" fill="#3498db" stroke="#2c3e50" stroke-width="3"/>
+  <text x="60" y="45" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">EVENTO</text>
+  <text x="60" y="65" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12">SOFT</text>
+  <text x="60" y="80" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10">2024</text>
+</svg>

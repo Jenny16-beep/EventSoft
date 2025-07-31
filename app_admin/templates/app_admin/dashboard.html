@@ -1,42 +1,158 @@
 {% extends 'base.html' %}
-
 {% load static %}
 {% load evento_filters %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4">Panel de Eventos</h1>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', Calibri, sans-serif;
+        background-color: #f9fafb;
+    }
+
+    .section-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #007832;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-card {
+        border: none;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card .card-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .icon-circle {
+        background-color: #39A900;
+        color: white;
+        font-size: 1.2rem;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .badge-notif {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #FFC107;
+        color: #212529;
+        font-size: 0.75rem;
+        padding: 0.4em 0.6em;
+        border-radius: 12px;
+    }
+
+    .toast-body {
+        font-size: 0.95rem;
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="section-title text-center">Panel Administrador</h1>
 
     <div class="row">
         {% for estado, color, icono in estados_tarjetas %}
         <div class="col-md-4 mb-4">
-            <div class="card text-white bg-{{ color }} position-relative">
+            <div class="card dashboard-card">
                 <div class="card-body">
-                    <h5 class="card-title">{{ icono }} {{ estado }}</h5>
+                    <h5 class="card-title">
+                        <span class="icon-circle"><i class="bi {{ icono }}"></i></span>
+                        {{ estado }}
+                    </h5>
                     {% if notificaciones|get:estado %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        {{ notificaciones|get:estado }}
-                        <span class="visually-hidden">Eventos nuevos</span>
-                    </span>
+                        <span class="badge-notif">
+                            {{ notificaciones|get:estado }} nuevo{{ notificaciones|get:estado|pluralize }}
+                        </span>
                     {% endif %}
                     <a href="{% url 'listar_eventos_estado' estado %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
         {% endfor %}
+
+
         <div class="col-md-4 mb-4">
-            <div class="card text-white bg-primary position-relative">
+            <div class="card dashboard-card">
                 <div class="card-body">
-                    <h5 class="card-title">➕ Crear Administrador de Evento</h5>
+                    <h5 class="card-title">
+                        <span class="icon-circle bg-secondary"><i class="bi bi-person-plus"></i></span>
+                        Crear Administrador de Evento
+                    </h5>
                     <a href="{% url 'crear_administrador_evento' %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
+
         <div class="col-md-4 mb-4">
-            <div class="card text-white bg-dark position-relative">
+            <div class="card dashboard-card">
                 <div class="card-body">
-                    <h5 class="card-title">📋 Listar Administradores</h5>
+                    <h5 class="card-title">
+                        <span class="icon-circle bg-success"><i class="bi bi-envelope-plus"></i></span>
+                        Generar Código de Invitación (Admin Evento)
+                    </h5>
+                    <a href="{% url 'crear_codigo_invitacion_admin' %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="icon-circle bg-info"><i class="bi bi-key"></i></span>
+                        Gestionar Códigos de Invitación
+                    </h5>
+                    <a href="{% url 'listar_codigos_invitacion_admin' %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="icon-circle bg-dark"><i class="bi bi-person-lines-fill"></i></span>
+                        Listar Administradores
+                    </h5>
                     <a href="{% url 'listar_administradores_evento' %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+
+       <div class="col-md-4 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="icon-circle bg-dark"><i class="bi bi-person-lines-fill"></i></span>
+                        Crear Área y Categoría
+                    </h5>
+                    <a href="{% url 'crear_area_categoria' %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
@@ -44,15 +160,16 @@
     </div>
 </div>
 
+
 <!-- Toast Notifications -->
 {% if messages %}
 <div aria-live="polite" aria-atomic="true" class="position-relative">
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1200;">
         {% for message in messages %}
-        <div class="toast align-items-center text-white bg-info border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast align-items-center text-white bg-accent border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="background-color: #007832;">
             <div class="d-flex">
                 <div class="toast-body">
-                    🔔 {{ message }}
+                    <i class="bi bi-bell me-2"></i> {{ message }}
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
@@ -62,14 +179,15 @@
 </div>
 {% endif %}
 
-<!-- Toast JS -->
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var toastElList = [].slice.call(document.querySelectorAll('.toast'));
-    var toastList = toastElList.map(function (toastEl) {
-      return new bootstrap.Toast(toastEl, { delay: 7000 });
+    document.addEventListener('DOMContentLoaded', function () {
+        const toastElList = [].slice.call(document.querySelectorAll('.toast'));
+        const toastList = toastElList.map(el => new bootstrap.Toast(el, { delay: 7000 }));
+        toastList.forEach(toast => toast.show());
     });
-    toastList.forEach(toast => toast.show());
-  });
 </script>
+
+<!-- Bootstrap Icons CDN (por si no está en base.html) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
 {% endblock %}

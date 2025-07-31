@@ -13,17 +13,18 @@
         <div class="col-md-8">
 
             <div class="card shadow rounded-4 border-0 p-4 mb-4 bg-light">
+
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="mb-0 text-primary">
-                        {{ evaluador.evaluador.first_name }} {{ evaluador.evaluador.last_name }}
+                        {{ evaluador.evaluador.usuario.first_name }} {{ evaluador.evaluador.usuario.last_name }}
                     </h4>
                     <span class="badge bg-info text-dark">{{ evaluador.eva_eve_estado }}</span>
                 </div>
 
                 <ul class="list-group list-group-flush mb-3">
-                    <li class="list-group-item"><strong>Documento:</strong> {{ evaluador.evaluador.documento }}</li>
-                    <li class="list-group-item"><strong>Correo:</strong> {{ evaluador.evaluador.email }}</li>
-                    <li class="list-group-item"><strong>Teléfono:</strong> {{ evaluador.evaluador.telefono }}</li>
+                    <li class="list-group-item"><strong>Documento:</strong> {{ evaluador.evaluador.usuario.documento }}</li>
+                    <li class="list-group-item"><strong>Correo:</strong> {{ evaluador.evaluador.usuario.email }}</li>
+                    <li class="list-group-item"><strong>Teléfono:</strong> {{ evaluador.evaluador.usuario.telefono }}</li>
                 </ul>
 
                 {% if evaluador.eva_eve_qr %}

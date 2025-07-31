@@ -1,41 +1,148 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center mb-5">👨‍💼 Panel del Administrador de Evento</h2>
 
-    <div class="row justify-content-center">
-        <div class="col-md-4 mb-4">
-            <div class="card shadow rounded-4 border-success">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-success mb-3">Crear Nuevo Evento</h5>
-                    <a href="{% url 'crear_evento' %}" class="btn btn-success w-100">
-                        ➕ Crear Evento
-                    </a>
+<!-- Estilos personalizados -->
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', Calibri, sans-serif;
+        background-color: #f9f9f9;
+    }
+
+    .admin-panel {
+        max-width: 1200px;
+        margin: auto;
+        padding: 2rem;
+    }
+
+    .card-action {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        background: white;
+        padding: 2rem;
+        height: 100%;
+    }
+
+    .card-action:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .icon-circle {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .primary {
+        background-color: #39A9001a;
+        color: #39A900;
+    }
+
+    .secondary {
+        background-color: #0078321a;
+        color: #007832;
+    }
+
+    .accent {
+        background-color: #ffc1071a;
+        color: #ffc107;
+    }
+
+    .warning {
+        background-color: #ff8c001a;
+        color: #ff8c00;
+    }
+
+    .btn-custom {
+        font-weight: 600;
+        border-radius: 12px;
+    }
+
+    h2.section-title {
+        font-weight: 700;
+        color: #007832;
+        margin-bottom: 2.5rem;
+        text-align: center;
+    }
+
+    @media (max-width: 768px) {
+        .card-action {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<div class="admin-panel">
+    <h2 class="section-title">Panel del Administrador de Evento</h2>
+
+    <div class="row g-4">
+        <!-- Crear Evento -->
+        <div class="col-md-4">
+            <div class="card-action h-100 text-center">
+                <div class="icon-circle primary">
+                    <i class="bi bi-calendar-plus"></i>
                 </div>
+                <h5 class="mb-3 fw-semibold text-success">Crear Nuevo Evento</h5>
+                <p class="text-muted mb-4">Configura y publica un nuevo evento desde cero.</p>
+                <a href="{% url 'crear_evento' %}" class="btn btn-success btn-custom w-100">
+                    <i class="bi bi-plus-circle"></i> Crear Evento
+                </a>
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
-            <div class="card shadow rounded-4 border-primary">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-primary mb-3">Modificar Evento</h5>
-                    <a href="{% url 'listar_eventos'%}" class="btn btn-primary w-100">
-                        ✏️ Modificar
-                    </a>
+        <!-- Modificar Evento -->
+        <div class="col-md-4">
+            <div class="card-action h-100 text-center">
+                <div class="icon-circle secondary">
+                    <i class="bi bi-pencil-square"></i>
                 </div>
+                <h5 class="mb-3 fw-semibold text-success">Modificar Evento</h5>
+                <p class="text-muted mb-4">Edita la información de tus eventos existentes.</p>
+                <a href="{% url 'listar_eventos' %}" class="btn btn-outline-success btn-custom w-100">
+                    <i class="bi bi-pencil"></i> Editar Eventos
+                </a>
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
-            <div class="card shadow rounded-4 border-info">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-info mb-3">Estadísticas Generales</h5>
-                    <a href="{% url 'estadisticas_generales' %}" class="btn btn-outline-info w-100">
-                        📈 Ver Estadísticas
-                    </a>
+        <!-- Estadísticas -->
+        <div class="col-md-4">
+            <div class="card-action h-100 text-center">
+                <div class="icon-circle accent">
+                    <i class="bi bi-bar-chart-line"></i>
                 </div>
+                <h5 class="mb-3 fw-semibold text-success">Estadísticas</h5>
+                <p class="text-muted mb-4">Visualiza métricas y desempeño general de tus eventos.</p>
+                <a href="{% url 'estadisticas_generales' %}" class="btn btn-warning btn-custom w-100">
+                    <i class="bi bi-graph-up"></i> Ver Estadísticas
+                </a>
             </div>
         </div>
+
+        <!-- Gestionar Notificaciones -->
+        <div class="col-md-4">
+            <div class="card-action h-100 text-center">
+                <div class="icon-circle primary">
+                    <i class="bi bi-envelope-paper"></i>
+                </div>
+                <h5 class="mb-3 fw-semibold text-success">Gestionar Notificaciones</h5>
+                <p class="text-muted mb-4">Envía notificaciones personalizadas a asistentes, participantes o evaluadores de tus eventos.</p>
+                <a href="{% url 'gestionar_notificaciones' %}" class="btn btn-info btn-custom w-100">
+                    <i class="bi bi-envelope-arrow-up"></i> Gestionar Notificaciones
+                </a>
+            </div>
+        </div>
+               
     </div>
 </div>
+
 {% endblock %}

@@ -1,4 +1,6 @@
 from django.urls import path
+
+
 from . import views
 
 
@@ -28,6 +30,9 @@ urlpatterns = [
     path('informacion-detallada-administrador/<int:eve_id>/', views.info_detallada_admin, name='informacion_detallada_administrador_evento'),
     path('gestionar-evaluadores/<int:eve_id>/', views.gestion_evaluadores, name='gestion_evaluadores'),
     path('detalle-evaluador/<int:eve_id>/<int:evaluador_id>/', views.detalle_evaluador, name='detalle_evaluador_evento'),
-    path('descargar-documento-evaluador/<int:eve_id>/<int:evaluador_id>/', views.descargar_documento_evaluador, name='descargar_documento_evaluador_evento')
+    path('descargar-documento-evaluador/<int:eve_id>/<int:evaluador_id>/', views.descargar_documento_evaluador, name='descargar_documento_evaluador_evento'),
+    path('gestionar-notificaciones/', views.gestionar_notificaciones, name='gestionar_notificaciones'),
+    
 
-]
+
+] 

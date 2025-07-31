@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Generar código de invitación para Administrador de Evento</h2>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="email_destino" class="form-label">Correo electrónico destino</label>
+            <input type="email" class="form-control" id="email_destino" name="email_destino" required>
+        </div>
+        <div class="mb-3">
+            <label for="limite_eventos" class="form-label">Límite de eventos</label>
+            <input type="number" class="form-control" id="limite_eventos" name="limite_eventos" min="1" value="1" required>
+        </div>
+        <div class="mb-3">
+            <label for="fecha_expiracion" class="form-label">Fecha de expiración</label>
+            <input type="datetime-local" class="form-control" id="fecha_expiracion" name="fecha_expiracion" required>
+        </div>
+        <div class="mb-3">
+            <label for="tiempo_limite_creacion" class="form-label">Tiempo límite para crear evento (opcional)</label>
+            <input type="datetime-local" class="form-control" id="tiempo_limite_creacion" name="tiempo_limite_creacion">
+        </div>
+        <button type="submit" class="btn btn-primary">Generar y enviar código</button>
+    </form>
+</div>
+{% endblock %}

@@ -2,33 +2,133 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4 text-center">Mis Eventos Inscritos</h2>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', Calibri, sans-serif;
+        background-color: #f5f7f9;
+    }
+
+    .section-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #007832;
+        margin-bottom: 2rem;
+    }
+
+    .evento-card {
+        border: none;
+        border-radius: 16px;
+        background-color: #fff;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .evento-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .evento-img {
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        height: 220px;
+        object-fit: cover;
+        width: 100%;
+    }
+
+    .evento-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #007832;
+    }
+
+    .evento-desc {
+        font-size: 0.95rem;
+        color: #444;
+        line-height: 1.5;
+    }
+
+    .evento-info {
+        font-size: 0.9rem;
+        color: #555;
+        margin-top: 0.5rem;
+    }
+
+    .badge-status {
+        background-color: #39A900;
+        color: white;
+        font-size: 0.75rem;
+        padding: 0.4em 0.6em;
+        border-radius: 12px;
+    }
+
+    .qr-status {
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.4rem;
+    }
+
+    .qr-status i {
+        font-size: 1.2rem;
+    }
+
+    .btn-ver {
+        background-color: #39A900;
+        border-color: #39A900;
+        color: white;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-ver:hover {
+        background-color: #2e8600;
+        border-color: #2e8600;
+    }
+
+    @media (max-width: 576px) {
+        .section-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<div class="container" style="margin-top: 100px;">
+    <h2 class="section-title text-center">Mis Eventos Inscritos</h2>
 
     {% if relaciones %}
-        <div class="row row-cols-1 row-cols-md-2 g-4">
+        <div class="row g-4">
             {% for relacion in relaciones %}
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card evento-card h-100">
                         {% if relacion.evento.eve_imagen %}
-                            <div class="ratio ratio-16x9">
-                                <img src="{{ relacion.evento.eve_imagen.url }}" class="card-img-top object-fit-cover" alt="Imagen del evento" style="object-fit: cover;">
-                            </div>
+                            <img src="{{ relacion.evento.eve_imagen.url }}" alt="Imagen del evento" class="evento-img">
                         {% endif %}
                         <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ relacion.evento.eve_nombre }}</h5>
-                            <p class="card-text flex-grow-1">{{ relacion.evento.eve_descripcion|truncatewords:25 }}</p>
-                            <p><strong>Estado:</strong> {{ relacion.asi_eve_estado }}</p>
-                            <p>
-                                <strong>QR:</strong>
-                                {% if relacion.asi_eve_qr %}
-                                    ✅ Disponible
-                                {% else %}
-                                    ❌ No generado
-                                {% endif %}
-                            </p>
-                            <a href="{% url 'detalle_evento_asistente' relacion.evento.eve_id %}" class="btn btn-outline-primary mt-auto">
-                                Ver Detalles
+                            <h5 class="evento-title">{{ relacion.evento.eve_nombre }}</h5>
+                            <p class="evento-desc">{{ relacion.evento.eve_descripcion|truncatewords:25 }}</p>
+
+                            <div class="evento-info mt-auto">
+                                <span class="badge-status">
+                                    <i class="bi bi-info-circle"></i> {{ relacion.asi_eve_estado }}
+                                </span>
+
+                                <div class="qr-status mt-2">
+                                    <i class="bi bi-qr-code"></i>
+                                    {% if relacion.asi_eve_qr %}
+                                        <span class="text-success">QR Disponible</span>
+                                    {% else %}
+                                        <span class="text-danger">QR No generado</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <a href="{% url 'detalle_evento_asistente' relacion.evento.eve_id %}" class="btn btn-ver w-100 mt-3">
+                                <i class="bi bi-eye"></i> Ver Detalles
                             </a>
                         </div>
                     </div>
@@ -36,7 +136,11 @@
             {% endfor %}
         </div>
     {% else %}
-        <p class="text-muted text-center">No estás inscrito en ningún evento.</p>
+        <p class="text-muted text-center mt-4">No estás inscrito en ningún evento.</p>
     {% endif %}
 </div>
+
+<!-- Bootstrap Icons (por si no están en base.html) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
 {% endblock %}

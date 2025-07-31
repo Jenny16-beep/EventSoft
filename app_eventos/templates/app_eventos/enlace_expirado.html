@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card shadow-lg p-4 rounded-4 border-0" style="max-width: 500px; margin: 0 auto;">
+        <h2 class="mb-3 text-danger fw-bold">
+            Enlace de confirmación expirado
+        </h2>
+        <div class="alert alert-danger mt-3" role="alert">
+            El enlace de confirmación ha expirado o ya no es válido.<br>
+            Si deseas inscribirte, por favor realiza nuevamente el proceso de registro.
+        </div>
+        <a href="{% url 'ver_eventos' %}" class="btn btn-primary mt-4">Volver al listado de eventos</a>
+    </div>
+</div>
+{% endblock %}

@@ -36,36 +36,66 @@
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <span class="dropdown-item-text">
-                                        Rol: {{ request.user.rol|capfirst }}
+                                        Rol: {{ request.session.rol_sesion|capfirst|default:request.user.rol_principal|capfirst }}
                                     </span>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
 
-                                {% if request.user.rol == 'superadmin' %}
+                                {% if request.session.rol_sesion == 'superadmin' %}
                                     <li>
                                         <a class="dropdown-item" href="{% url 'dashboard_superadmin' %}">
                                             <i class="bi bi-speedometer2"></i> Dashboard
                                         </a>
                                     </li>
-                                {% elif request.user.rol == 'administrador_evento' %}
+                                {% elif request.session.rol_sesion == 'administrador_evento' %}
                                     <li>
                                         <a class="dropdown-item" href="{% url 'dashboard_adminevento' %}">
                                             <i class="bi bi-speedometer2"></i> Dashboard
                                         </a>
                                     </li>
-                                {% elif request.user.rol == 'evaluador' %}
+                                {% elif request.session.rol_sesion == 'evaluador' %}
                                     <li>
                                         <a class="dropdown-item" href="{% url 'dashboard_evaluador' %}">
                                             <i class="bi bi-speedometer2"></i> Dashboard
                                         </a>
                                     </li>
-                                {% elif request.user.rol == 'participante' %}
+                                {% elif request.session.rol_sesion == 'participante' %}
                                     <li>
                                         <a class="dropdown-item" href="{% url 'dashboard_participante_general' %}">
                                             <i class="bi bi-speedometer2"></i> Dashboard
                                         </a>
                                     </li>
-                                {% elif request.user.rol == 'asistente' %}
+                                {% elif request.session.rol_sesion == 'asistente' %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'dashboard_asistente' %}">
+                                            <i class="bi bi-speedometer2"></i> Dashboard
+                                        </a>
+                                    </li>
+                                {% elif request.user.rol_principal == 'superadmin' %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'dashboard_superadmin' %}">
+                                            <i class="bi bi-speedometer2"></i> Dashboard
+                                        </a>
+                                    </li>
+                                {% elif request.user.rol_principal == 'administrador_evento' %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'dashboard_adminevento' %}">
+                                            <i class="bi bi-speedometer2"></i> Dashboard
+                                        </a>
+                                    </li>
+                                {% elif request.user.rol_principal == 'evaluador' %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'dashboard_evaluador' %}">
+                                            <i class="bi bi-speedometer2"></i> Dashboard
+                                        </a>
+                                    </li>
+                                {% elif request.user.rol_principal == 'participante' %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'dashboard_participante_general' %}">
+                                            <i class="bi bi-speedometer2"></i> Dashboard
+                                        </a>
+                                    </li>
+                                {% elif request.user.rol_principal == 'asistente' %}
                                     <li>
                                         <a class="dropdown-item" href="{% url 'dashboard_asistente' %}">
                                             <i class="bi bi-speedometer2"></i> Dashboard

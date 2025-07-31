@@ -1,0 +1,17 @@
+<div style="font-family: Arial, sans-serif;">
+    <h2 style="color: #2c3e50;">Actualización de estado de tu inscripción como asistente</h2>
+    <p>Hola {{ asistente.get_full_name|default:asistente.email }},</p>
+    <p>El estado de tu inscripción como asistente en el evento <b>{{ evento.eve_nombre }}</b> ha cambiado.</p>
+    <ul>
+        <li><strong>Nuevo estado:</strong> <span style="color: #007bff;">{{ nuevo_estado|capfirst }}</span></li>
+        <li><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</li>
+        <li><strong>Lugar:</strong> {{ evento.eve_lugar }}</li>
+        <li><strong>Fecha de inicio:</strong> {{ evento.eve_fecha_inicio }}</li>
+        <li><strong>Fecha de fin:</strong> {{ evento.eve_fecha_fin }}</li>
+    </ul>
+    {% if nuevo_estado|lower == 'aprobado' %}
+    <p>Adjunto encontrarás tu código QR para el ingreso al evento.</p>
+    {% endif %}
+    <p>Por favor, revisa la plataforma para más detalles.</p>
+    <p style="color: #888; font-size: 0.9em;">Este es un mensaje automático de Eventsoft.</p>
+</div>

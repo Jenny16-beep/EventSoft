@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Códigos de Invitación - Administradores de Evento</h2>
+    <table class="table table-bordered table-hover mt-3">
+        <thead class="table-light">
+            <tr>
+                <th>Código</th>
+                <th>Correo</th>
+                <th>Estado</th>
+                <th>Fecha Expiración</th>
+                <th>Fecha Uso</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in codigos %}
+            <tr>
+                <td style="font-family: monospace; font-size: 0.95em;">{{ c.codigo }}</td>
+                <td>{{ c.email_destino }}</td>
+                <td>
+                    {% if c.estado == 'activo' %}
+                        <span class="badge bg-success">Activo</span>
+                    {% elif c.estado == 'suspendido' %}
+                        <span class="badge bg-warning text-dark">Suspendido</span>
+                    {% elif c.estado == 'usado' %}
+                        <span class="badge bg-primary">Usado</span>
+                    {% elif c.estado == 'expirado' or c.fecha_expiracion < now %}
+                        <span class="badge bg-secondary">Expirado</span>
+                    {% elif c.estado == 'cancelado' %}
+                        <span class="badge bg-danger">Cancelado</span>
+                    {% endif %}
+                </td>
+                <td>{{ c.fecha_expiracion|date:'d/m/Y H:i' }}</td>
+                <td>{% if c.fecha_uso %}{{ c.fecha_uso|date:'d/m/Y H:i' }}{% else %}-{% endif %}</td>
+                <td>
+                    {% if c.estado == 'usado' %}
+                        <span class="text-muted">Ya se usó</span>
+                    {% elif c.estado == 'expirado' or c.fecha_expiracion < now %}
+                        <a href="{% url 'accion_codigo_invitacion_admin' c.codigo 'cancelar' %}" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar este código?')">Cancelar</a>
+                    {% elif c.estado == 'activo' %}
+                        <a href="{% url 'accion_codigo_invitacion_admin' c.codigo 'suspender' %}" class="btn btn-warning btn-sm">Suspender</a>
+                        <a href="{% url 'accion_codigo_invitacion_admin' c.codigo 'cancelar' %}" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar este código?')">Cancelar</a>
+                    {% elif c.estado == 'suspendido' %}
+                        <a href="{% url 'accion_codigo_invitacion_admin' c.codigo 'activar' %}" class="btn btn-success btn-sm">Activar</a>
+                        <a href="{% url 'accion_codigo_invitacion_admin' c.codigo 'cancelar' %}" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar este código?')">Cancelar</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="text-center">No hay códigos generados.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

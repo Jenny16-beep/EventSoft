@@ -16,8 +16,8 @@ class ParticipanteEvento(models.Model):
     par_eve_documentos = models.FileField(upload_to='participantes/documentos/', null=True, blank=True)
     par_eve_estado = models.CharField(max_length=45)
     par_eve_qr = models.ImageField(upload_to='participantes/qr/', null=True, blank=True)
-    par_eve_clave = models.CharField(max_length=45)
     par_eve_valor = models.IntegerField(null=True, blank=True)
+    confirmado = models.BooleanField(default=False)
 
     class Meta:
         unique_together = (('participante', 'evento'),)

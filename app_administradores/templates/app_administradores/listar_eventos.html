@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 
-{% block title %}Mis Eventos{% endblock %}
+{% block title %}
+    Mis Eventos
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -49,10 +51,6 @@
                                 ❌ Cancelar Evento
                             </a>
 
-                            <a href="{% url 'ver_inscripciones_evento' evento.eve_id %}" class="btn btn-sm btn-outline-info mb-1">
-                                👥 Ver Inscripciones
-                            </a>
-
                             {% if evento.eve_estado == 'Aprobado' %}
                             <a href="{% url 'cerrar_inscripcion_evento' evento.eve_id %}" class="btn btn-sm btn-outline-warning mb-1">
                                 🚫 Cerrar Inscripciones
@@ -66,6 +64,10 @@
                             {% endif %}
 
                             {% if evento.eve_estado == 'Aprobado' or evento.eve_estado == 'Inscripciones Cerradas' %}
+                            <a href="{% url 'ver_inscripciones_evento' evento.eve_id %}" class="btn btn-sm btn-outline-info mb-1">
+                                👥 Ver Inscripciones
+                            </a>
+                            
                             <a href="{% url 'estadisticas_evento' evento.eve_id %}" class="btn btn-sm btn-outline-secondary mb-1">
                                 📊 Ver Estadísticas
                             </a>
@@ -74,8 +76,6 @@
                                 📝 Gestión de Evaluación
                             </a>
                             {% endif %}
-
-                            
                         </td>
                     </tr>
                     {% endfor %}

@@ -91,7 +91,13 @@
                         </div>
                         <div class="col-md-6">
                             <p class="card-text"><strong>Capacidad:</strong> {{ evento.eve_capacidad }}</p>
-                            <p class="card-text"><strong>Tiene Costo:</strong> {{ evento.eve_tienecosto|yesno:"Sí,No" }}</p>
+                            <p class="card-text"><strong>Tiene Costo:</strong> 
+                            {% if evento.eve_tienecosto == True or evento.eve_tienecosto == 1 or evento.eve_tienecosto == "SI" %}
+                                SI
+                            {% else %}
+                                NO
+                            {% endif %}
+                            </p>
                             {% if categorias %}
                                 <p class="card-text"><strong>Área:</strong> {{ categorias.0.categoria.cat_area_fk.are_nombre }}</p>
                                 <p class="card-text"><strong>Categorías:</strong>

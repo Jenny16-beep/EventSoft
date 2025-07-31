@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card shadow-lg p-4 rounded-4 border-0" style="max-width: 500px; margin: 0 auto;">
+        <h2 class="mb-3 text-success">¡Registro pendiente de confirmación!</h2>
+        <p class="fs-5">Hola <strong>{{ nombre }}</strong>,</p>
+        <p>Te has registrado para el evento <strong>{{ evento }}</strong>.</p>
+        <p>Hemos enviado un correo de confirmación a <strong>{{ correo }}</strong>. Por favor, revisa tu bandeja de entrada y sigue el enlace para confirmar tu registro.</p>
+        <p class="text-muted">Si no recibes el correo en unos minutos, revisa la carpeta de spam o comunícate con el soporte.</p>
+        {% if reenviar_url %}
+        <div class="alert alert-info mt-3">
+            ¿No recibiste el correo? <a href="{{ reenviar_url }}" class="fw-bold">Haz clic aquí para reenviar el enlace de confirmación</a>.
+        </div>
+        {% endif %}
+        <a href="{% url 'ver_eventos' %}" class="btn btn-primary mt-4">Volver a eventos</a>
+    </div>
+</div>
+{% endblock %}

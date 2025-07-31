@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="80" viewBox="0 0 150 80">
+  <!-- Firma cursiva -->
+  <path d="M10 50 Q30 30, 50 50 T90 50 Q100 40, 110 50 Q120 60, 140 45" 
+        fill="none" stroke="#2c3e50" stroke-width="2.5"/>
+  <path d="M15 55 Q25 45, 35 55 Q45 65, 55 55 Q65 45, 75 55" 
+        fill="none" stroke="#2c3e50" stroke-width="1.5"/>
+  <!-- Línea de firma -->
+  <line x1="10" y1="65" x2="140" y2="65" stroke="#333" stroke-width="1"/>
+  <text x="75" y="76" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="8">Dr. Administrador</text>
+</svg>

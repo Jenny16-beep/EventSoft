@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4 text-success">Gestionar Notificaciones</h2>
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label for="evento" class="form-label">Evento</label>
+            <select name="evento" id="evento" class="form-select" onchange="this.form.submit()">
+                <option value="">Selecciona un evento</option>
+                {% for ev in eventos %}
+                    <option value="{{ ev.eve_id }}" {% if evento_id|default:'' == ev.eve_id|stringformat:'s' %}selected{% endif %}>{{ ev.eve_nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="tipo" class="form-label">Tipo</label>
+            <select name="tipo" id="tipo" class="form-select" onchange="this.form.submit()">
+                <option value="asistentes" {% if tipo == 'asistentes' %}selected{% endif %}>Asistentes</option>
+                <option value="participantes" {% if tipo == 'participantes' %}selected{% endif %}>Participantes</option>
+                <option value="evaluadores" {% if tipo == 'evaluadores' %}selected{% endif %}>Evaluadores</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" name="nombre" id="nombre" value="{{ filtro_nombre }}" class="form-control" placeholder="Nombre" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+            <label for="documento" class="form-label">Documento</label>
+            <input type="text" name="documento" id="documento" value="{{ filtro_documento }}" class="form-control" placeholder="Documento" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+            <label for="correo" class="form-label">Correo</label>
+            <input type="text" name="correo" id="correo" value="{{ filtro_correo }}" class="form-control" placeholder="Correo" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+            <label for="estado" class="form-label">Estado</label>
+            <select name="estado" id="estado" class="form-select">
+                <option value="">Todos</option>
+                {% for est in estados %}
+                    <option value="{{ est }}" {% if filtro_estado == est %}selected{% endif %}>{{ est }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="confirmado" class="form-label">Confirmado</label>
+            <select name="confirmado" id="confirmado" class="form-select">
+                <option value="">Todos</option>
+                <option value="true" {% if filtro_confirmado == 'true' %}selected{% endif %}>Sí</option>
+                <option value="false" {% if filtro_confirmado == 'false' %}selected{% endif %}>No</option>
+            </select>
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-outline-success w-100"><i class="bi bi-funnel"></i> Filtrar</button>
+        </div>
+    </form>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <input type="hidden" name="tipo" value="{{ tipo }}">
+        <input type="hidden" name="evento" value="{{ evento_id }}">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="asunto" class="form-label">Asunto</label>
+                <input type="text" name="asunto" id="asunto" class="form-control" required maxlength="120">
+            </div>
+            <div class="col-md-6">
+                <label for="mensaje" class="form-label">Mensaje</label>
+                <textarea name="mensaje" id="mensaje" class="form-control" rows="2" required maxlength="1000"></textarea>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Selecciona destinatarios (puedes filtrar y seleccionar todos o algunos):</label>
+            <div class="table-responsive" style="max-height: 350px;">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th><input type="checkbox" id="select_all"></th>
+                            <th>Nombre</th>
+                            <th>Documento</th>
+                            <th>Correo</th>
+                            <th>Estado</th>
+                            <th>Confirmado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in destinatarios %}
+                            <tr>
+                                <td><input type="checkbox" name="seleccionados" value="{{ d.pk }}"></td>
+                                <td>
+                                    {% if tipo == 'asistentes' %}
+                                        {{ d.asistente.usuario.first_name }} {{ d.asistente.usuario.last_name }}
+                                    {% elif tipo == 'participantes' %}
+                                        {{ d.participante.usuario.first_name }} {{ d.participante.usuario.last_name }}
+                                    {% elif tipo == 'evaluadores' %}
+                                        {{ d.evaluador.usuario.first_name }} {{ d.evaluador.usuario.last_name }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tipo == 'asistentes' %}
+                                        {{ d.asistente.usuario.documento }}
+                                    {% elif tipo == 'participantes' %}
+                                        {{ d.participante.usuario.documento }}
+                                    {% elif tipo == 'evaluadores' %}
+                                        {{ d.evaluador.usuario.documento }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tipo == 'asistentes' %}
+                                        {{ d.asistente.usuario.email }}
+                                    {% elif tipo == 'participantes' %}
+                                        {{ d.participante.usuario.email }}
+                                    {% elif tipo == 'evaluadores' %}
+                                        {{ d.evaluador.usuario.email }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tipo == 'asistentes' %}
+                                        {{ d.asi_eve_estado }}
+                                    {% elif tipo == 'participantes' %}
+                                        {{ d.par_eve_estado }}
+                                    {% elif tipo == 'evaluadores' %}
+                                        {{ d.eva_eve_estado }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if d.confirmado %}<span class="badge bg-success">Sí</span>{% else %}<span class="badge bg-danger">No</span>{% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted">No hay destinatarios para mostrar.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-success"><i class="bi bi-send"></i> Enviar Notificaciones</button>
+        </div>
+    </form>
+</div>
+<script>
+    document.getElementById('select_all')?.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
+        for (const cb of checkboxes) {
+            cb.checked = this.checked;
+        }
+    });
+</script>
+{% endblock %}

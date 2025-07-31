@@ -15,7 +15,7 @@ from app_usuarios.models import Usuario
 @user_passes_test(es_evaluador, login_url='login')
 def dashboard_evaluador(request):
     evaluador = request.user.evaluador
-    inscripciones = EvaluadorEvento.objects.select_related('evento').filter(evaluador=request.user)
+    inscripciones = EvaluadorEvento.objects.select_related('evento').filter(evaluador=evaluador)
 
     return render(request, 'dashboard_evaluador.html', {
         'evaluador': evaluador,
@@ -28,11 +28,12 @@ def dashboard_evaluador(request):
 def gestionar_items(request, eve_id):
     evento = get_object_or_404(Evento, pk=eve_id)
     try:
-        inscripcion = EvaluadorEvento.objects.get(evaluador=request.user, evento=evento)
+        evaluador = request.user.evaluador
+        inscripcion = EvaluadorEvento.objects.get(evaluador=evaluador, evento=evento)
         if inscripcion.eva_eve_estado != 'Aprobado':
             messages.warning(request, "Tu inscripción como evaluador no ha sido aprobada para este evento.")
             return redirect('dashboard_evaluador')
-    except EvaluadorEvento.DoesNotExist:
+    except (EvaluadorEvento.DoesNotExist, Evaluador.DoesNotExist):
         messages.error(request, "No estás inscrito como evaluador en este evento.")
         return redirect('dashboard_evaluador')
     criterios = evento.criterios.all()
@@ -139,15 +140,15 @@ def lista_participantes(request, eve_id):
 def calificar_participante(request, eve_id, participante_id):
     evento = get_object_or_404(Evento, pk=eve_id)
     try:
-        inscripcion = EvaluadorEvento.objects.get(evaluador=request.user, evento=evento)
+        evaluador = request.user.evaluador
+        inscripcion = EvaluadorEvento.objects.get(evaluador=evaluador, evento=evento)
         if inscripcion.eva_eve_estado != 'Aprobado':
             messages.warning(request, "Tu inscripción como evaluador aún no ha sido aprobada para este evento.")
             return redirect('dashboard_evaluador')
-    except EvaluadorEvento.DoesNotExist:
+    except (EvaluadorEvento.DoesNotExist, Evaluador.DoesNotExist):
         messages.error(request, "No estás inscrito como evaluador en este evento.")
         return redirect('dashboard_evaluador')
-    usuario = get_object_or_404(Usuario, pk=participante_id)
-    participante = get_object_or_404(Participante, usuario=usuario)
+    participante = get_object_or_404(Participante, pk=participante_id)
     participacion = ParticipanteEvento.objects.filter(
         evento=evento,
         participante=participante,
@@ -195,11 +196,12 @@ def calificar_participante(request, eve_id, participante_id):
 def ver_tabla_posiciones(request, eve_id):
     evento = get_object_or_404(Evento, pk=eve_id)
     try:
-        inscripcion = EvaluadorEvento.objects.get(evaluador=request.user, evento=evento)
+        evaluador = request.user.evaluador
+        inscripcion = EvaluadorEvento.objects.get(evaluador=evaluador, evento=evento)
         if inscripcion.eva_eve_estado != 'Aprobado':
             messages.warning(request, "Tu inscripción a este evento aún no ha sido aprobada.")
             return redirect('dashboard_evaluador')
-    except EvaluadorEvento.DoesNotExist:
+    except (EvaluadorEvento.DoesNotExist, Evaluador.DoesNotExist):
         messages.error(request, "No estás inscrito en este evento.")
         return redirect('dashboard_evaluador')
     criterios = Criterio.objects.filter(cri_evento_fk=evento)
@@ -240,11 +242,12 @@ def informacion_detallada(request, eve_id):
     evaluador = request.user.evaluador
     evento = get_object_or_404(Evento, pk=eve_id)
     try:
-        inscripcion = EvaluadorEvento.objects.get(evaluador=request.user, evento=evento)
+        evaluador = request.user.evaluador
+        inscripcion = EvaluadorEvento.objects.get(evaluador=evaluador, evento=evento)
         if inscripcion.eva_eve_estado != 'Aprobado':
             messages.warning(request, "No tienes acceso a este evento porque tu inscripción no está aprobada.")
             return redirect('dashboard_evaluador')
-    except EvaluadorEvento.DoesNotExist:
+    except (EvaluadorEvento.DoesNotExist, Evaluador.DoesNotExist):
         messages.error(request, "No estás inscrito en este evento.")
         return redirect('dashboard_evaluador')
     criterios = Criterio.objects.filter(cri_evento_fk=evento)
@@ -295,13 +298,14 @@ def informacion_detallada(request, eve_id):
 def cancelar_inscripcion_evaluador(request, evento_id):
     evaluador_usuario = request.user
     evento = get_object_or_404(Evento, pk=evento_id)
-    inscripcion = get_object_or_404(EvaluadorEvento, evaluador=evaluador_usuario, evento=evento)
+    evaluador = evaluador_usuario.evaluador
+    inscripcion = get_object_or_404(EvaluadorEvento, evaluador=evaluador, evento=evento)
     if inscripcion.eva_eve_estado != "Pendiente":
         messages.error(request, "No puedes cancelar la inscripción porque ya fue aprobada.")
         return redirect('dashboard_evaluador')
     if request.method == 'POST':
         inscripcion.delete()
-        otros_eventos = EvaluadorEvento.objects.filter(evaluador=evaluador_usuario).count()
+        otros_eventos = EvaluadorEvento.objects.filter(evaluador=evaluador).count()
         if otros_eventos == 0:
             Evaluador.objects.filter(usuario=evaluador_usuario).delete()
             usuario_username = evaluador_usuario.username
@@ -319,7 +323,8 @@ def cancelar_inscripcion_evaluador(request, evento_id):
 def modificar_inscripcion_evaluador(request, evento_id):
     usuario = request.user
     evento = get_object_or_404(Evento, pk=evento_id)
-    inscripcion = get_object_or_404(EvaluadorEvento, evaluador=usuario, evento=evento)
+    evaluador = usuario.evaluador
+    inscripcion = get_object_or_404(EvaluadorEvento, evaluador=evaluador, evento=evento)
     if inscripcion.eva_eve_estado != "Pendiente":
         messages.error(request, "Solo puedes modificar la inscripción si está en estado Pendiente.")
         return redirect('dashboard_evaluador')

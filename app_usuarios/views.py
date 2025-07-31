@@ -13,30 +13,43 @@ def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
+        rol = request.POST.get('rol')
         user = authenticate(request, email=email, password=password)
         if user is not None:
-            rol = user.rol
-            modelos_por_rol = {
-                'superadmin': None,
-                'administrador_evento': 'administrador',
-                'evaluador': 'evaluador',
-                'participante': 'participante',
-                'asistente': 'asistente',
-            }
-            relacion = modelos_por_rol.get(rol)
-            if relacion and not hasattr(user, relacion):
-                messages.error(request, f"Tu cuenta no está registrada como {rol.replace('_', ' ')}.")
+            # Verificar si el usuario tiene el rol seleccionado
+            if not user.roles.filter(rol__nombre=rol).exists():
+                messages.error(request, f"No tienes asignado el rol seleccionado.")
                 return redirect('login')
+            # Validar confirmación según el rol
             if rol == 'asistente':
-                if not AsistenteEvento.objects.filter(asistente=user.asistente, asi_eve_estado='Aprobado').exists():
-                    messages.error(request, "Tu inscripción como asistente aún no ha sido aprobada.")
+                if not hasattr(user, 'asistente'):
+                    messages.error(request, "Tu cuenta no está registrada como asistente.")
                     return redirect('login')
+                if not AsistenteEvento.objects.filter(asistente=user.asistente, confirmado=True).exists():
+                    messages.error(request, "Aún no has confirmado tu inscripción como asistente.")
+                    return redirect('login')
+            elif rol == 'participante':
+                if not hasattr(user, 'participante'):
+                    messages.error(request, "Tu cuenta no está registrada como participante.")
+                    return redirect('login')
+                if not ParticipanteEvento.objects.filter(participante=user.participante, confirmado=True).exists():
+                    messages.error(request, "Aún no has confirmado tu inscripción como participante.")
+                    return redirect('login')
+            elif rol == 'evaluador':
+                if not hasattr(user, 'evaluador'):
+                    messages.error(request, "Tu cuenta no está registrada como evaluador.")
+                    return redirect('login')
+                if not EvaluadorEvento.objects.filter(evaluador=user.evaluador, confirmado=True).exists():
+                    messages.error(request, "Aún no has confirmado tu inscripción como evaluador.")
+                    return redirect('login')
+            # Guardar el rol elegido en la sesión
+            request.session['rol_sesion'] = rol
             login(request, user)
             return redirect_por_rol(rol)
         else:
             messages.error(request, "Correo o contraseña incorrectos.")
             return redirect('login')
-    return render(request, 'login.html')
+    return render(request, 'login.html', {})
 
 
 def redirect_por_rol(rol):
@@ -52,6 +65,17 @@ def redirect_por_rol(rol):
         return redirect('dashboard_asistente')
     else:
         return redirect('login')
+    
+def obtener_rol_nombre(user):
+    if not user.is_authenticated:
+        return ''
+    from django.utils.functional import SimpleLazyObject
+    request = getattr(user, '_request', None)
+    if request and 'rol_sesion' in request.session:
+        return request.session['rol_sesion']
+    # fallback: primer rol
+    rol_usuario = user.roles.first()
+    return rol_usuario.rol.nombre if rol_usuario else ''
 
 @login_required
 def cambiar_contrasena(request):
@@ -60,6 +84,8 @@ def cambiar_contrasena(request):
         nueva = request.POST.get('nueva')
         confirmar = request.POST.get('confirmar')
         user = request.user
+        rol_usuario = user.roles.first()
+        rol = rol_usuario.rol.nombre if rol_usuario else None
         if not check_password(actual, user.password):
             messages.error(request, 'La contraseña actual no es correcta.')
         elif nueva != confirmar:
@@ -68,15 +94,15 @@ def cambiar_contrasena(request):
             user.set_password(nueva)
             user.save()
             update_session_auth_hash(request, user)
-            if user.rol == 'asistente':
+            if rol == 'asistente':
                 from app_asistentes.models import AsistenteEvento
                 AsistenteEvento.objects.filter(asistente__usuario=user).update(asi_eve_clave=nueva)
-            elif user.rol == 'participante':
+            elif rol == 'participante':
                 from app_participantes.models import ParticipanteEvento
                 ParticipanteEvento.objects.filter(participante__usuario=user).update(par_eve_clave=nueva)
-            elif user.rol == 'evaluador':
+            elif rol == 'evaluador':
                 from app_evaluadores.models import EvaluadorEvento
                 EvaluadorEvento.objects.filter(evaluador=user).update(eva_eve_clave=nueva)
             messages.success(request, 'La contraseña ha sido actualizada correctamente.')
             return redirect('ver_eventos')
-    return render(request, 'cambiar_contrasena.html')
+    return render(request, 'cambiar_contrasena.html', {'rol_nombre': obtener_rol_nombre(request.user)})

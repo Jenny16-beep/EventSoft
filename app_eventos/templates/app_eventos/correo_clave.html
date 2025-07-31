@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Tu clave de acceso</title>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Work Sans', Calibri, sans-serif;
+        }
+        .card-custom {
+            border: 1px solid #e0e0e0;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            max-width: 420px;
+            margin: 40px auto;
+            padding: 32px 28px;
+        }
+        .card-custom h2 {
+            color: #39A900;
+            font-weight: 700;
+        }
+        .clave-box {
+            background: #f1f8e9;
+            border: 1px dashed #39A900;
+            border-radius: 8px;
+            padding: 18px 0;
+            margin: 18px 0 10px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2f8a00;
+            letter-spacing: 2px;
+        }
+        .qr-section {
+            margin: 18px 0 0 0;
+        }
+        .qr-section img {
+            max-width: 180px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(57,169,0,0.08);
+        }
+        .info {
+            color: #555;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card-custom">
+        <h2>¡Registro confirmado!</h2>
+        <p>Hola <strong>{{ nombre }}</strong>,</p>
+        <p>Tu inscripción al evento <strong>{{ evento }}</strong> ha sido confirmada.</p>
+        <div class="clave-box">
+            Tu clave de acceso: <span>{{ clave }}</span>
+        </div>
+        <p class="info">Guárdala en un lugar seguro. Puedes iniciar sesión en el sistema con tu correo y esta clave.</p>
+        {% if qr_url %}
+        <div class="qr-section">
+            <p class="mb-2">Presenta este código QR para tu ingreso:</p>
+            <img src="{{ qr_url }}" alt="QR de acceso">
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

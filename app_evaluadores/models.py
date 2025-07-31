@@ -11,13 +11,13 @@ class Evaluador(models.Model):
 
 
 class EvaluadorEvento(models.Model):
-    evaluador = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    evaluador = models.ForeignKey(Evaluador, on_delete=models.CASCADE)
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
     eva_eve_documentos = models.FileField(upload_to='evaluadores/documentos/', null=True, blank=True)
     eva_eve_fecha_hora = models.DateTimeField()
     eva_eve_estado = models.CharField(max_length=45)
     eva_eve_qr = models.ImageField(upload_to='evaluadores/qr/', null=True, blank=True)
-    eva_eve_clave = models.CharField(max_length=45, blank=True, null=True)
+    confirmado = models.BooleanField(default=False)
 
     class Meta:
         unique_together = (('evaluador', 'evento'),)

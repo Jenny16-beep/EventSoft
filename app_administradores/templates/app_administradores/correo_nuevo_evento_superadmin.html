@@ -1,0 +1,17 @@
+<div style="font-family: Arial, sans-serif;">
+    <h2 style="color: #2c3e50;">Nuevo evento creado en Eventsoft</h2>
+    <p>Hola Superadmin,</p>
+    <p>Se ha creado un nuevo evento en la plataforma. Aquí tienes los detalles:</p>
+    <ul>
+        <li><strong>Nombre del evento:</strong> {{ evento.eve_nombre }}</li>
+        <li><strong>Descripción:</strong> {{ evento.eve_descripcion }}</li>
+        <li><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</li>
+        <li><strong>Lugar:</strong> {{ evento.eve_lugar }}</li>
+        <li><strong>Fecha de inicio:</strong> {{ evento.eve_fecha_inicio }}</li>
+        <li><strong>Fecha de fin:</strong> {{ evento.eve_fecha_fin }}</li>
+        <li><strong>Capacidad:</strong> {{ evento.eve_capacidad }}</li>
+        <li><strong>Creado por:</strong> {{ creador.get_full_name|default:creador.email }}</li>
+    </ul>
+    <p>Puedes revisar el evento en el panel de administración.</p>
+    <p style="color: #888; font-size: 0.9em;">Este es un mensaje automático de Eventsoft.</p>
+</div>

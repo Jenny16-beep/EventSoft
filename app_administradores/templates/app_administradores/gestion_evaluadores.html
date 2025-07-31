@@ -20,9 +20,9 @@
             <tbody>
                 {% for evaluador in evaluadores %}
                 <tr>
-                    <td>{{ evaluador.evaluador.documento }}</td>
-                    <td>{{ evaluador.evaluador.first_name }} {{ evaluador.evaluador.last_name }}</td>
-                    <td>{{ evaluador.evaluador.email }}</td>
+                    <td>{{ evaluador.evaluador.usuario.documento }}</td>
+                    <td>{{ evaluador.evaluador.usuario.first_name }} {{ evaluador.evaluador.usuario.last_name }}</td>
+                    <td>{{ evaluador.evaluador.usuario.email }}</td>
                     <td>{{ evaluador.eva_eve_estado }}</td>
                     <td>
                         <a href="{% url 'detalle_evaluador_evento' eve_id=eve_id evaluador_id=evaluador.evaluador.id %}" class="btn btn-primary btn-sm">

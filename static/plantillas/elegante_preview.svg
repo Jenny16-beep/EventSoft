@@ -1,0 +1,31 @@
+<svg width="200" height="150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="elegantGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f5f0"/>
+      <stop offset="100%" style="stop-color:#ffffff"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Fondo con gradiente -->
+  <rect width="200" height="150" fill="url(#elegantGradient)" stroke="#d4af37" stroke-width="3"/>
+  
+  <!-- Título -->
+  <text x="100" y="25" text-anchor="middle" font-family="Times New Roman" font-size="14" fill="#d4af37" font-weight="bold">Certificado</text>
+  
+  <!-- Subtítulo -->
+  <text x="100" y="40" text-anchor="middle" font-family="Times New Roman" font-size="8" fill="#333">CERTIFICADO DE ASISTENCIA</text>
+  
+  <!-- Contenido -->
+  <text x="100" y="60" text-anchor="middle" font-family="Times New Roman" font-size="7" fill="#444">Certificamos que</text>
+  <text x="100" y="75" text-anchor="middle" font-family="Times New Roman" font-size="9" fill="#d4af37" font-weight="bold">[Nombre del Asistente]</text>
+  <text x="100" y="90" text-anchor="middle" font-family="Times New Roman" font-size="7" fill="#444">ha asistido exitosamente al evento</text>
+  <text x="100" y="105" text-anchor="middle" font-family="Times New Roman" font-size="8" fill="#333" font-weight="bold">[Nombre del Evento]</text>
+  
+  <!-- Línea de firma -->
+  <line x1="50" y1="130" x2="100" y2="130" stroke="#333" stroke-width="1"/>
+  <text x="75" y="142" text-anchor="middle" font-family="Times New Roman" font-size="5" fill="#333">Firma Autorizada</text>
+  
+  <!-- Logo placeholder -->
+  <rect x="120" y="120" width="25" height="25" fill="#f0f0f0" stroke="#ddd" stroke-width="1"/>
+  <text x="132" y="135" text-anchor="middle" font-family="Arial" font-size="5" fill="#999">Logo</text>
+</svg>
