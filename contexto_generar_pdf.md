@@ -40,7 +40,7 @@ Luego vuelve a verificar:
 
 ```bash
 python -m weasyprint --info
-```
+``` 
 
 ---
 

@@ -66,16 +66,6 @@ def redirect_por_rol(rol):
     else:
         return redirect('login')
     
-def obtener_rol_nombre(user):
-    if not user.is_authenticated:
-        return ''
-    from django.utils.functional import SimpleLazyObject
-    request = getattr(user, '_request', None)
-    if request and 'rol_sesion' in request.session:
-        return request.session['rol_sesion']
-    # fallback: primer rol
-    rol_usuario = user.roles.first()
-    return rol_usuario.rol.nombre if rol_usuario else ''
 
 @login_required
 def cambiar_contrasena(request):
@@ -105,4 +95,4 @@ def cambiar_contrasena(request):
                 EvaluadorEvento.objects.filter(evaluador=user).update(eva_eve_clave=nueva)
             messages.success(request, 'La contraseña ha sido actualizada correctamente.')
             return redirect('ver_eventos')
-    return render(request, 'cambiar_contrasena.html', {'rol_nombre': obtener_rol_nombre(request.user)})
+    return render(request, 'cambiar_contrasena.html')

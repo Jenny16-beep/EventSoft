@@ -9,6 +9,9 @@ from django.http import JsonResponse, FileResponse
 from django.core.files.base import ContentFile
 from django.utils.crypto import get_random_string
 from django.conf import settings
+import base64
+import os
+import mimetypes
 
 from .models import AdministradorEvento, CodigoInvitacionAdminEvento
 from app_eventos.models import Evento
@@ -36,6 +39,7 @@ from app_eventos.models import ConfiguracionCertificado
 from django.contrib import messages
 from django.core.files.images import get_image_dimensions
 from django.conf import settings
+from django.utils import timezone
 import os
 
 
@@ -45,7 +49,7 @@ import os
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def dashboard_adminevento(request):
-    return render(request, 'dashboard_adminevento.html')
+    return render(request, 'app_administradores/dashboard_adminevento.html')
 
 
 @login_required
@@ -83,7 +87,7 @@ def crear_evento(request):
 
         # Validar tiempo límite de creación (si existe)
         if invitacion.tiempo_limite_creacion:
-            from django.utils import timezone
+            
             if timezone.now() > invitacion.tiempo_limite_creacion:
                 messages.error(request, "El tiempo límite para crear eventos con tu código de invitación ha expirado.")
                 return redirect('dashboard_adminevento')
@@ -156,8 +160,7 @@ def obtener_categorias_por_area(request, area_id):
 def listar_eventos(request):
     administrador = request.user.administrador
     eventos = Evento.objects.filter(eve_administrador_fk=administrador)
-    accion = request.GET.get('accion', None)  # Para distinguir si viene de gestión de certificados
-    return render(request, 'listar_eventos.html', {'eventos': eventos, 'accion': accion})
+    return render(request, 'listar_eventos.html', {'eventos': eventos})
 
 
 @login_required
@@ -994,5 +997,489 @@ def gestionar_notificaciones(request):
         'filtro_confirmado': filtro_confirmado,
         'evento_seleccionado': evento_seleccionado,
     })
+
+
+# ===============================
+# FUNCIONES HELPER
+# ===============================
+
+def imagen_to_base64(imagen_field):
+    """Convierte un campo de imagen de Django a base64 para usar en PDFs"""
+    if imagen_field and hasattr(imagen_field, 'path'):
+        try:
+            with open(imagen_field.path, 'rb') as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                # Detectar el formato de la imagen
+                mime_type, _ = mimetypes.guess_type(imagen_field.path)
+                if mime_type:
+                    format_name = mime_type.split('/')[1]
+                else:
+                    # Fallback basado en la extensión
+                    ext = os.path.splitext(imagen_field.path)[1].lower()
+                    if ext in ['.jpg', '.jpeg']:
+                        format_name = 'jpeg'
+                    elif ext == '.png':
+                        format_name = 'png'
+                    elif ext == '.gif':
+                        format_name = 'gif'
+                    else:
+                        format_name = 'jpeg'  # default
+                
+                return encoded_string, format_name
+        except Exception as e:
+            print(f"Error al convertir imagen a base64: {e}")
+            return None, None
+    return None, None
+
+
+# ===============================
+# GESTIÓN DE CERTIFICADOS
+# ===============================
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def gestionar_certificados(request):
+    """Vista principal para gestionar certificados"""
+    administrador = request.user.administrador
+    eventos = Evento.objects.filter(eve_administrador_fk=administrador)
+    return render(request, 'app_administradores/gestionar_certificados.html', {
+        'eventos': eventos
+    })
+
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def seleccionar_tipo_certificado(request, eve_id):
+    """Vista para seleccionar el tipo de certificado (asistencia, participación, evaluador)"""
+    evento = get_object_or_404(Evento, eve_id=eve_id)
+    
+    # Verificar que el usuario sea el administrador del evento
+    if evento.eve_administrador_fk != request.user.administrador:
+        messages.error(request, "No tienes permisos para gestionar certificados de este evento.")
+        return redirect('gestionar_certificados')
+    
+    return render(request, 'app_administradores/seleccionar_tipo_certificado.html', {
+        'evento': evento
+    })
+
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def configurar_certificado(request, eve_id, tipo):
+    """Vista para configurar el certificado según el tipo"""
+    evento = get_object_or_404(Evento, eve_id=eve_id)
+    
+    # Verificar que el usuario sea el administrador del evento
+    if evento.eve_administrador_fk != request.user.administrador:
+        messages.error(request, "No tienes permisos para gestionar certificados de este evento.")
+        return redirect('gestionar_certificados')
+    
+    # Verificar que el tipo sea válido
+    tipos_validos = ['asistencia', 'participacion', 'evaluador', 'premiacion']
+    if tipo not in tipos_validos:
+        messages.error(request, "Tipo de certificado no válido.")
+        return redirect('seleccionar_tipo_certificado', eve_id=eve_id)
+    
+    # Mensajes por defecto según el tipo
+    if tipo == 'asistencia':
+        mensaje_defecto = 'Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** ha asistido al evento **EVENTO** realizado el **FECHA** en **CIUDAD**.'
+    elif tipo == 'participacion':
+        mensaje_defecto = 'Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** ha participado activamente en el evento **EVENTO** realizado el **FECHA** en **CIUDAD**.'
+    elif tipo == 'evaluador':
+        mensaje_defecto = 'Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** se ha desempeñado como evaluador en el evento **EVENTO** realizado el **FECHA** en **CIUDAD**.'
+    elif tipo == 'premiacion':
+        mensaje_defecto = '¡Felicitaciones! Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** obtuvo un destacado desempeño y calificación en el evento **EVENTO** realizado el **FECHA** en **CIUDAD**, alcanzando el **PUESTO** lugar con una puntuación sobresaliente.'
+    else:
+        mensaje_defecto = 'Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** ha participado en el evento **EVENTO** realizado el **FECHA** en **CIUDAD**.'
+    
+    # Buscar configuración existente o crear una nueva
+    configuracion, created = ConfiguracionCertificado.objects.get_or_create(
+        evento=evento,
+        tipo=tipo,
+        defaults={
+            'titulo': f'Certificado de {tipo.title()}',
+            'cuerpo': mensaje_defecto,
+            'plantilla': 'elegante'
+        }
+    )
+    
+    if request.method == 'POST':
+        # Actualizar configuración
+        configuracion.titulo = request.POST.get('titulo', configuracion.titulo)
+        configuracion.cuerpo = request.POST.get('cuerpo', configuracion.cuerpo)
+        configuracion.plantilla = request.POST.get('plantilla', configuracion.plantilla)
+        
+        # Manejar logo
+        if 'logo' in request.FILES:
+            configuracion.logo = request.FILES['logo']
+        
+        # Manejar firma
+        if 'firma' in request.FILES:
+            configuracion.firma = request.FILES['firma']
+        
+        configuracion.save()
+        messages.success(request, f"Configuración del certificado de {tipo} guardada correctamente.")
+        return redirect('previsualizar_certificado', eve_id=eve_id, tipo=tipo)
+    
+    return render(request, 'app_administradores/configurar_certificado.html', {
+        'evento': evento,
+        'tipo': tipo,
+        'configuracion': configuracion,
+        'plantillas': ConfiguracionCertificado.PLANTILLA_CHOICES
+    })
+
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def previsualizar_certificado(request, eve_id, tipo):
+    """Vista para previsualizar el certificado"""
+    evento = get_object_or_404(Evento, eve_id=eve_id)
+    
+    # Verificar que el usuario sea el administrador del evento
+    if evento.eve_administrador_fk != request.user.administrador:
+        messages.error(request, "No tienes permisos para gestionar certificados de este evento.")
+        return redirect('gestionar_certificados')
+    
+    try:
+        configuracion = ConfiguracionCertificado.objects.get(evento=evento, tipo=tipo)
+    except ConfiguracionCertificado.DoesNotExist:
+        messages.error(request, "Debe configurar el certificado primero.")
+        return redirect('configurar_certificado', eve_id=eve_id, tipo=tipo)
+    
+    # Datos de ejemplo para la previsualización usando datos reales del evento
+    datos_ejemplo = {
+        'NOMBRE': 'Ana García López',
+        'DOCUMENTO': '1023456789',
+        'EVENTO': evento.eve_nombre,
+        'FECHA': evento.eve_fecha_inicio.strftime('%d de %B de %Y'),
+        'CIUDAD': evento.eve_ciudad,
+        'LUGAR': evento.eve_lugar,
+    }
+    
+    # Agregar datos específicos para premiación
+    if tipo == 'premiacion':
+        datos_ejemplo['PUESTO'] = '1°'
+        datos_ejemplo['PUNTUACION'] = '95'
+    
+    # Renderizar el cuerpo con datos de ejemplo
+    cuerpo_con_datos = configuracion.cuerpo
+    for clave, valor in datos_ejemplo.items():
+        cuerpo_con_datos = cuerpo_con_datos.replace(f'**{clave}**', valor)
+    
+    if request.GET.get('formato') == 'pdf':
+        # Convertir imágenes a base64 para el PDF
+        logo_base64, logo_format = imagen_to_base64(configuracion.logo)
+        firma_base64, firma_format = imagen_to_base64(configuracion.firma)
+        
+        # Generar PDF de previsualización
+        html_content = render_to_string('app_administradores/certificado_plantilla.html', {
+            'configuracion': configuracion,
+            'cuerpo_renderizado': cuerpo_con_datos,
+            'datos': datos_ejemplo,
+            'es_preview': True,
+            'logo_base64': logo_base64,
+            'logo_format': logo_format,
+            'firma_base64': firma_base64,
+            'firma_format': firma_format,
+        })
+        
+        pdf_file = HTML(string=html_content, base_url=request.build_absolute_uri()).write_pdf()
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="preview_certificado_{tipo}.pdf"'
+        return response
+    
+    return render(request, 'app_administradores/previsualizar_certificado.html', {
+        'evento': evento,
+        'tipo': tipo,
+        'configuracion': configuracion,
+        'cuerpo_renderizado': cuerpo_con_datos,
+        'datos_ejemplo': datos_ejemplo
+    })
+
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def enviar_certificados(request, eve_id, tipo):
+    """Vista para enviar certificados a destinatarios"""
+    evento = get_object_or_404(Evento, eve_id=eve_id)
+    
+    # Verificar que el usuario sea el administrador del evento
+    if evento.eve_administrador_fk != request.user.administrador:
+        messages.error(request, "No tienes permisos para gestionar certificados de este evento.")
+        return redirect('gestionar_certificados')
+    
+    try:
+        configuracion = ConfiguracionCertificado.objects.get(evento=evento, tipo=tipo)
+    except ConfiguracionCertificado.DoesNotExist:
+        messages.error(request, "Debe configurar el certificado primero.")
+        return redirect('configurar_certificado', eve_id=eve_id, tipo=tipo)
+    
+    # Obtener destinatarios según el tipo
+    destinatarios = []
+    if tipo == 'asistencia':
+        destinatarios = AsistenteEvento.objects.filter(
+            evento=evento, 
+            confirmado=True,
+            asi_eve_estado='Aprobado'
+        ).select_related('asistente__usuario')
+    elif tipo == 'participacion':
+        destinatarios = ParticipanteEvento.objects.filter(
+            evento=evento, 
+            confirmado=True,
+            par_eve_estado='Aprobado'
+        ).select_related('participante__usuario')
+    elif tipo == 'evaluador':
+        destinatarios = EvaluadorEvento.objects.filter(
+            evento=evento, 
+            confirmado=True,
+            eva_eve_estado='Aprobado'
+        ).select_related('evaluador__usuario')
+    
+    if request.method == 'POST':
+        
+        destinatarios_seleccionados = request.POST.getlist('destinatarios')
+        
+        if not destinatarios_seleccionados:
+            messages.error(request, "Debe seleccionar al menos un destinatario.")
+        else:
+            # Procesar envío de certificados
+            enviados = 0
+            errores = []
+            
+            for dest_id in destinatarios_seleccionados:
+                try:
+                    # Buscar destinatario según el tipo
+                    if tipo == 'asistencia':
+                        dest_obj = AsistenteEvento.objects.get(id=dest_id)
+                        usuario = dest_obj.asistente.usuario
+                    elif tipo == 'participacion':
+                        dest_obj = ParticipanteEvento.objects.get(id=dest_id)
+                        usuario = dest_obj.participante.usuario
+                    elif tipo == 'evaluador':
+                        dest_obj = EvaluadorEvento.objects.get(id=dest_id)
+                        usuario = dest_obj.evaluador.usuario
+                    
+                    # Preparar datos del certificado
+                    datos_certificado = {
+                        'NOMBRE': f'{usuario.first_name} {usuario.last_name}',
+                        'DOCUMENTO': usuario.documento,
+                        'EVENTO': evento.eve_nombre,
+                        'FECHA': evento.eve_fecha_inicio.strftime('%d de %B de %Y'),
+                        'CIUDAD': evento.eve_ciudad,
+                        'LUGAR': evento.eve_lugar,
+                    }
+                    
+                    # Renderizar el cuerpo del certificado
+                    cuerpo_con_datos = configuracion.cuerpo
+                    for clave, valor in datos_certificado.items():
+                        cuerpo_con_datos = cuerpo_con_datos.replace(f'**{clave}**', valor)
+                    
+                    # Convertir imágenes a base64 para el PDF
+                    logo_base64, logo_format = imagen_to_base64(configuracion.logo)
+                    firma_base64, firma_format = imagen_to_base64(configuracion.firma)
+                    
+                    # Generar PDF del certificado
+                    html_content = render_to_string('app_administradores/certificado_plantilla.html', {
+                        'configuracion': configuracion,
+                        'cuerpo_renderizado': cuerpo_con_datos,
+                        'datos': datos_certificado,
+                        'es_preview': False,
+                        'logo_base64': logo_base64,
+                        'logo_format': logo_format,
+                        'firma_base64': firma_base64,
+                        'firma_format': firma_format,
+                    })
+                    
+                    pdf_file = HTML(string=html_content, base_url=request.build_absolute_uri()).write_pdf()
+                    
+                    # Enviar por correo electrónico
+                    email = EmailMessage(
+                        subject=f'Certificado de {tipo.title()} - {evento.eve_nombre}',
+                        body=f'Estimado/a {datos_certificado["NOMBRE"]},\n\nAdjuntamos su certificado de {tipo} del evento "{evento.eve_nombre}".\n\nSaludos cordiales.',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[usuario.email],
+                    )
+                    
+                    filename = f'certificado_{tipo}_{usuario.documento}.pdf'
+                    email.attach(filename, pdf_file, 'application/pdf')
+                    email.send()
+                    
+                    enviados += 1
+                    
+                except Exception as e:
+                    errores.append(f'{usuario.email}: {str(e)}')
+            
+            if enviados > 0:
+                messages.success(request, f"Se enviaron {enviados} certificados correctamente.")
+            
+            if errores:
+                messages.warning(request, f"Errores en el envío: {', '.join(errores)}")
+            
+            return redirect('enviar_certificados', eve_id=eve_id, tipo=tipo)
+    
+    # Verificar advertencias para mostrar en el template
+    advertencias = []
+    if not configuracion.logo:
+        advertencias.append("No has configurado un logo para el certificado")
+    if not configuracion.firma:
+        advertencias.append("No has configurado una firma para el certificado")
+    
+    return render(request, 'app_administradores/enviar_certificados.html', {
+        'evento': evento,
+        'tipo': tipo,
+        'configuracion': configuracion,
+        'destinatarios': destinatarios,
+        'advertencias': advertencias
+    })
+
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def enviar_certificados_premiacion(request, eve_id):
+    """Vista para enviar certificados de premiación con ranking"""
+    
+    evento = get_object_or_404(Evento, eve_id=eve_id)
+    
+    # Verificar que el usuario sea el administrador del evento
+    if evento.eve_administrador_fk != request.user.administrador:
+        messages.error(request, "No tienes permisos para gestionar certificados de este evento.")
+        return redirect('gestionar_certificados')
+    
+    try:
+        configuracion = ConfiguracionCertificado.objects.get(evento=evento, tipo='premiacion')
+    except ConfiguracionCertificado.DoesNotExist:
+        messages.error(request, "Debe configurar el certificado de premiación primero.")
+        return redirect('configurar_certificado', eve_id=eve_id, tipo='premiacion')
+    
+    # Obtener participantes con calificación final usando par_eve_valor
+    participantes_con_puntuacion = []
+    
+    # Obtener todos los participantes confirmados del evento que tienen calificación
+    participantes_evento = ParticipanteEvento.objects.filter(
+        evento=evento, 
+        confirmado=True,
+        par_eve_estado='Aprobado',
+        par_eve_valor__isnull=False
+    ).select_related('participante__usuario').order_by('-par_eve_valor')
+    
+    for participante_evento in participantes_evento:
+        participantes_con_puntuacion.append({
+            'id': participante_evento.id,
+            'participante_evento': participante_evento,
+            'participante': participante_evento.participante,
+            'nombre_completo': f'{participante_evento.participante.usuario.first_name} {participante_evento.participante.usuario.last_name}',
+            'documento': participante_evento.participante.usuario.documento,
+            'email': participante_evento.participante.usuario.email,
+            'estado': participante_evento.par_eve_estado,
+            'puntuacion_total': participante_evento.par_eve_valor
+        })
+    
+    # Asignar puestos considerando empates basados en par_eve_valor
+    participantes_ranking = []
+    puesto_actual = 1
+    
+    for i, participante in enumerate(participantes_con_puntuacion):
+        # Si no es el primero y tiene la misma puntuación que el anterior, mantiene el puesto
+        if i > 0 and participante['puntuacion_total'] == participantes_con_puntuacion[i-1]['puntuacion_total']:
+            participante['puesto'] = participantes_ranking[i-1]['puesto']
+        else:
+            participante['puesto'] = puesto_actual
+        
+        participantes_ranking.append(participante)
+        puesto_actual = i + 2  # Siguiente puesto disponible
+    
+    if request.method == 'POST':
+        participantes_seleccionados = request.POST.getlist('participantes')  
+        if not participantes_seleccionados:
+            messages.error(request, "Debe seleccionar al menos un participante.")
+        else:
+            # Procesar envío de certificados
+            enviados = 0
+            errores = []
+            
+            # Crear diccionario para acceso rápido por ID
+            participantes_dict = {str(p['id']): p for p in participantes_ranking}
+            
+            for part_id in participantes_seleccionados:
+                try:
+                    participante_data = participantes_dict[part_id]
+                    participante_evento = participante_data['participante_evento']
+                    usuario = participante_data['participante'].usuario
+                    
+                    # Preparar datos del certificado incluyendo PUESTO
+                    datos_certificado = {
+                        'NOMBRE': f'{usuario.first_name} {usuario.last_name}',
+                        'DOCUMENTO': usuario.documento,
+                        'EVENTO': evento.eve_nombre,
+                        'FECHA': evento.eve_fecha_inicio.strftime('%d de %B de %Y'),
+                        'CIUDAD': evento.eve_ciudad,
+                        'LUGAR': evento.eve_lugar,
+                        'PUESTO': f"{participante_data['puesto']}°",
+                        'PUNTUACION': str(participante_data['puntuacion_total'])
+                    }
+                    
+                    # Renderizar el cuerpo del certificado
+                    cuerpo_con_datos = configuracion.cuerpo
+                    for clave, valor in datos_certificado.items():
+                        cuerpo_con_datos = cuerpo_con_datos.replace(f'**{clave}**', valor)
+                    
+                    # Convertir imágenes a base64 para el PDF
+                    logo_base64, logo_format = imagen_to_base64(configuracion.logo)
+                    firma_base64, firma_format = imagen_to_base64(configuracion.firma)
+                    
+                    # Generar PDF del certificado
+                    html_content = render_to_string('app_administradores/certificado_plantilla.html', {
+                        'configuracion': configuracion,
+                        'cuerpo_renderizado': cuerpo_con_datos,
+                        'datos': datos_certificado,
+                        'es_preview': False,
+                        'logo_base64': logo_base64,
+                        'logo_format': logo_format,
+                        'firma_base64': firma_base64,
+                        'firma_format': firma_format,
+                    })
+                    
+                    pdf_file = HTML(string=html_content, base_url=request.build_absolute_uri()).write_pdf()
+                    
+                    # Enviar por correo electrónico
+                    email = EmailMessage(
+                        subject=f'Certificado de Premiación - {evento.eve_nombre}',
+                        body=f'Estimado/a {datos_certificado["NOMBRE"]},\n\n¡Felicitaciones! Adjuntamos su certificado de premiación del evento "{evento.eve_nombre}" donde obtuvo el {datos_certificado["PUESTO"]} lugar con una puntuación de {datos_certificado["PUNTUACION"]} puntos.\n\nSaludos cordiales.',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[usuario.email],
+                    )
+                    
+                    filename = f'certificado_premiacion_{usuario.documento}.pdf'
+                    email.attach(filename, pdf_file, 'application/pdf')
+                    email.send()
+                    
+                    enviados += 1
+                    
+                except Exception as e:
+                    errores.append(f'{participante_data["email"]}: {str(e)}')
+            
+            if enviados > 0:
+                messages.success(request, f"Se enviaron {enviados} certificados de premiación correctamente.")
+            
+            if errores:
+                messages.warning(request, f"Errores en el envío: {', '.join(errores)}")
+            
+            return redirect('enviar_certificados_premiacion', eve_id=eve_id)
+    
+    # Verificar advertencias para mostrar en el template
+    advertencias = []
+    if not configuracion.logo:
+        advertencias.append("No has configurado un logo para el certificado")
+    if not configuracion.firma:
+        advertencias.append("No has configurado una firma para el certificado")
+    
+    return render(request, 'app_administradores/enviar_certificados_premiacion.html', {
+        'evento': evento,
+        'configuracion': configuracion,
+        'participantes_ranking': participantes_ranking,
+        'advertencias': advertencias
+    })
+
+
 
 

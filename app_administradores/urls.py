@@ -33,6 +33,12 @@ urlpatterns = [
     path('descargar-documento-evaluador/<int:eve_id>/<int:evaluador_id>/', views.descargar_documento_evaluador, name='descargar_documento_evaluador_evento'),
     path('gestionar-notificaciones/', views.gestionar_notificaciones, name='gestionar_notificaciones'),
     
-
-
-] 
+    # URLs para gestión de certificados
+    path('gestionar-certificados/', views.gestionar_certificados, name='gestionar_certificados'),
+    path('certificados/<int:eve_id>/tipo/', views.seleccionar_tipo_certificado, name='seleccionar_tipo_certificado'),
+    path('certificados/<int:eve_id>/<str:tipo>/configurar/', views.configurar_certificado, name='configurar_certificado'),
+    path('certificados/<int:eve_id>/<str:tipo>/previsualizar/', views.previsualizar_certificado, name='previsualizar_certificado'),
+    # URL específica para premiación debe ir antes que la URL general
+    path('certificados/<int:eve_id>/premiacion/enviar/', views.enviar_certificados_premiacion, name='enviar_certificados_premiacion'),
+    path('certificados/<int:eve_id>/<str:tipo>/enviar/', views.enviar_certificados, name='enviar_certificados'),
+]

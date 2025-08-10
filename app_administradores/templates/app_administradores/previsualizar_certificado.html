@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1400px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+    }
+
+    .breadcrumb-custom {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .preview-container {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .certificate-preview {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 3rem;
+        margin: 2rem 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        min-height: 600px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Estilos para plantillas */
+    .certificado-elegante {
+        background: linear-gradient(45deg, #ffd700, #ffed4a);
+        border: 5px solid #d4af37;
+        color: #333;
+    }
+
+    .certificado-moderno {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+    }
+
+    .certificado-clasico {
+        background: #f9f9f9;
+        border: 3px solid #333;
+        color: #333;
+    }
+
+    .certificado-titulo {
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .certificado-cuerpo {
+        font-size: 1.2rem;
+        line-height: 1.8;
+        text-align: justify;
+        margin: 2rem 0;
+        padding: 0 2rem;
+    }
+
+    .certificado-firma {
+        position: absolute;
+        bottom: 2rem;
+        right: 2rem;
+        max-width: 150px;
+        height: auto;
+    }
+
+    .certificado-logo {
+        position: absolute;
+        top: 2rem;
+        left: 2rem;
+        max-width: 120px;
+        height: auto;
+    }
+
+    .datos-ejemplo {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 2rem;
+    }
+
+    .action-buttons {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .btn-action {
+        border-radius: 25px;
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .controls-panel {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            margin: 1rem auto;
+        }
+        
+        .certificate-preview {
+            padding: 1.5rem;
+        }
+        
+        .certificado-titulo {
+            font-size: 1.8rem;
+        }
+        
+        .certificado-cuerpo {
+            font-size: 1rem;
+            padding: 0 1rem;
+        }
+    }
+</style>
+
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-custom">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard_adminevento' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'gestionar_certificados' %}">Certificados</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'seleccionar_tipo_certificado' evento.eve_id %}">{{ evento.eve_nombre }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'configurar_certificado' evento.eve_id tipo %}">Configurar {{ tipo|title }}</a></li>
+            <li class="breadcrumb-item active">Previsualizar</li>
+        </ol>
+    </nav>
+
+    <!-- Header de la página -->
+    <div class="page-header">
+        <h1><i class="bi bi-eye-fill"></i> Vista Previa del Certificado</h1>
+        <p>Revisa cómo se verá el certificado antes de enviarlo</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Panel de controles -->
+    <div class="controls-panel">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h6><i class="bi bi-info-circle"></i> Datos de Ejemplo</h6>
+                <p class="mb-0 text-muted">Esta vista previa usa datos ficticios para mostrar cómo se verá el certificado real.</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{% url 'previsualizar_certificado' evento.eve_id tipo %}?formato=pdf" 
+                   class="btn btn-primary btn-action" target="_blank">
+                    <i class="bi bi-file-pdf"></i> Ver en PDF
+                </a>
+                <a href="{% url 'configurar_certificado' evento.eve_id tipo %}" 
+                   class="btn btn-warning btn-action">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datos de ejemplo -->
+    <div class="datos-ejemplo">
+        <h6><i class="bi bi-person-circle"></i> Datos de Ejemplo Utilizados:</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Nombre:</strong> {{ datos_ejemplo.nombre }}<br>
+                <strong>Documento:</strong> {{ datos_ejemplo.documento }}<br>
+                <strong>Evento:</strong> {{ datos_ejemplo.evento }}
+            </div>
+            <div class="col-md-6">
+                <strong>Fecha:</strong> {{ datos_ejemplo.fecha }}<br>
+                <strong>Ciudad:</strong> {{ datos_ejemplo.ciudad }}<br>
+                <strong>Lugar:</strong> {{ datos_ejemplo.lugar }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Vista previa del certificado -->
+    <div class="preview-container">
+        <h5><i class="bi bi-award"></i> Vista Previa - Certificado de {{ tipo|title }}</h5>
+        <hr>
+        
+        <div class="certificate-preview certificado-{{ configuracion.plantilla }}">
+            <!-- Logo -->
+            {% if configuracion.logo %}
+                <img src="{{ configuracion.logo.url }}" alt="Logo" class="certificado-logo">
+            {% endif %}
+            
+            <!-- Título -->
+            <h1 class="certificado-titulo">{{ configuracion.titulo }}</h1>
+            
+            <!-- Cuerpo del certificado -->
+            <div class="certificado-cuerpo">
+                {{ cuerpo_renderizado|linebreaks }}
+            </div>
+            
+            <!-- Firma -->
+            {% if configuracion.firma %}
+                <img src="{{ configuracion.firma.url }}" alt="Firma" class="certificado-firma">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="action-buttons">
+        <a href="{% url 'previsualizar_certificado' evento.eve_id tipo %}?formato=pdf" 
+           class="btn btn-primary btn-action btn-lg" target="_blank">
+            <i class="bi bi-download"></i> Descargar PDF de Prueba
+        </a>
+        
+        <a href="{% url 'configurar_certificado' evento.eve_id tipo %}" 
+           class="btn btn-warning btn-action btn-lg">
+            <i class="bi bi-arrow-left"></i> Volver a Editar
+        </a>
+        
+        {% if tipo == 'premiacion' %}
+            <a href="{% url 'enviar_certificados_premiacion' evento.eve_id %}" 
+               class="btn btn-danger btn-action btn-lg">
+                <i class="bi bi-trophy"></i> Proceder al Envío de Premiación
+            </a>
+        {% else %}
+            <a href="{% url 'enviar_certificados' evento.eve_id tipo %}" 
+               class="btn btn-success btn-action btn-lg">
+                <i class="bi bi-send"></i> Proceder al Envío
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-lightbulb"></i> Información Importante</h6>
+                    <ul class="mb-0">
+                        <li>Esta vista previa muestra exactamente cómo se verá el certificado real.</li>
+                        <li>Los campos dinámicos (como {nombre}, {evento}, etc.) se reemplazarán con datos reales al generar los certificados.</li>
+                        <li>Puedes descargar un PDF de prueba para revisar la calidad de impresión.</li>
+                        <li>Si necesitas hacer cambios, usa el botón "Volver a Editar".</li>
+                        <li>Una vez satisfecho con el resultado, procede al envío masivo de certificados.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

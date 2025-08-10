@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <!-- Header -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-danger text-white d-flex align-items-center">
+                    <i class="fas fa-trophy me-2"></i>
+                    <h4 class="mb-0">Enviar Certificados de Premiación</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>{{ evento.eve_nombre }}</strong> - Los certificados se enviarán ordenados por ranking de puntuación.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensajes del sistema -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Advertencias de configuración -->
+            {% if advertencias %}
+                <div class="alert alert-warning alert-configuracion" role="alert">
+                    <h5><i class="bi bi-exclamation-triangle-fill"></i> Configuración Incompleta</h5>
+                    <p>Se detectaron los siguientes elementos faltantes en la configuración del certificado de premiación:</p>
+                    <ul class="mb-2">
+                        {% for advertencia in advertencias %}
+                            <li>{{ advertencia }}</li>
+                        {% endfor %}
+                    </ul>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small><strong>Recomendación:</strong> Te recomendamos configurar un logo y firma antes de enviar los certificados para que se vean más profesionales.</small>
+                        <a href="{% url 'configurar_certificado' evento.eve_id 'premiacion' %}" class="btn btn-sm btn-warning">
+                            <i class="bi bi-gear"></i> Configurar Ahora
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Información del evento -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Información del Evento
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Evento:</strong> {{ evento.eve_nombre }}</p>
+                                <p><strong>Fecha:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</p>
+                                <p><strong>Lugar:</strong> {{ evento.eve_lugar }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de participantes con ranking -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-medal me-2"></i>
+                            Ranking de Participantes
+                        </h5>
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAll()">
+                                <i class="fas fa-check-square me-1"></i>
+                                Seleccionar Todos
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" onclick="deselectAll()">
+                                <i class="fas fa-square me-1"></i>
+                                Deseleccionar Todos
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if participantes_ranking %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-danger">
+                                    <tr>
+                                        <th width="5%">
+                                            <input type="checkbox" id="select-all" onchange="toggleAll(this)">
+                                        </th>
+                                        <th width="10%">Puesto</th>
+                                        <th width="40%">Participante</th>
+                                        <th width="15%">Puntuación</th>
+                                        <th width="20%">Email</th>
+                                        <th width="10%">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for participante in participantes_ranking %}
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="participantes" 
+                                                   value="{{ participante.id }}" class="participante-check">
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if participante.puesto == 1 %}bg-warning text-dark
+                                                {% elif participante.puesto == 2 %}bg-secondary
+                                                {% elif participante.puesto == 3 %}bg-warning text-dark
+                                                {% else %}bg-primary
+                                                {% endif %}
+                                                fs-6">
+                                                {% if participante.puesto == 1 %}
+                                                    <i class="fas fa-trophy"></i> 1°
+                                                {% elif participante.puesto == 2 %}
+                                                    <i class="fas fa-medal"></i> 2°
+                                                {% elif participante.puesto == 3 %}
+                                                    <i class="fas fa-medal"></i> 3°
+                                                {% else %}
+                                                    {{ participante.puesto }}°
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ participante.nombre_completo }}</strong><br>
+                                                    <small class="text-muted">{{ participante.documento }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success fs-6">{{ participante.puntuacion_total }} pts</span>
+                                        </td>
+                                        <td>{{ participante.email }}</td>
+                                        <td>
+                                            <span class="badge bg-success">{{ participante.estado }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning m-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No hay participantes con calificaciones para enviar certificados de premiación.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'gestionar_certificados' %}" 
+               class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Volver
+                            </a>
+                            
+                            {% if participantes_ranking %}
+                            <div>
+                                <a href="{% url 'configurar_certificado' eve_id=evento.eve_id tipo='premiacion' %}" 
+                                   class="btn btn-outline-primary me-2">
+                                    <i class="fas fa-cog me-2"></i>
+                                    Configurar Certificado
+                                </a>
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('¿Está seguro de enviar los certificados seleccionados?')">
+                                    <i class="fas fa-paper-plane me-2"></i>
+                                    Enviar Certificados
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.participante-check');
+    const masterCheckbox = document.getElementById('select-all');
+    
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+    if (masterCheckbox) {
+        masterCheckbox.checked = true;
+    }
+}
+
+function deselectAll() {
+    const checkboxes = document.querySelectorAll('.participante-check');
+    const masterCheckbox = document.getElementById('select-all');
+    
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+    if (masterCheckbox) {
+        masterCheckbox.checked = false;
+    }
+}
+
+function toggleAll(masterCheckbox) {
+    const checkboxes = document.querySelectorAll('.participante-check');
+    checkboxes.forEach(checkbox => checkbox.checked = masterCheckbox.checked);
+}
+
+// Individual checkbox change
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.participante-check');
+    const masterCheckbox = document.getElementById('select-all');
+    
+    // Solo agregar event listeners si existen elementos
+    if (checkboxes.length > 0 && masterCheckbox) {
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const totalCheckboxes = checkboxes.length;
+                const checkedCheckboxes = document.querySelectorAll('.participante-check:checked').length;
+                
+                masterCheckbox.checked = checkedCheckboxes === totalCheckboxes;
+                masterCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+            });
+        });
+    }
+});
+</script>
+
+<style>
+.avatar-sm {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+.badge {
+    font-size: 0.9em;
+}
+
+.alert-configuracion {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+.alert-configuracion h5 {
+    color: #856404;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+    }
+
+    .page-header h1 {
+        font-weight: 700;
+        font-size: 2.5rem;
+        margin: 0;
+    }
+
+    .page-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .evento-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+
+    .evento-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+
+    .evento-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .evento-details h5 {
+        color: #28a745;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .evento-details p {
+        color: #6c757d;
+        margin: 0.2rem 0;
+        font-size: 0.9rem;
+    }
+
+    .evento-actions .btn {
+        border-radius: 25px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-certificados {
+        background: linear-gradient(45deg, #ffc107, #fd7e14);
+        color: white;
+        border: none;
+    }
+
+    .btn-certificados:hover {
+        background: linear-gradient(45deg, #fd7e14, #ffc107);
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .no-eventos {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .no-eventos i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .badge-estado {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .badge-aprobado {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .badge-pendiente {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .badge-cerrado {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    @media (max-width: 768px) {
+        .evento-info {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .evento-actions {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .page-header h1 {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<div class="container">
+    <!-- Header de la página -->
+    <div class="page-header">
+        <h1><i class="bi bi-award-fill"></i> Gestión de Certificados</h1>
+        <p>Diseña, previsualiza y envía certificados personalizados para tus eventos</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if eventos %}
+        <div class="row">
+            {% for evento in eventos %}
+            <div class="col-12">
+                <div class="evento-card">
+                    <div class="evento-info">
+                        <div class="evento-details">
+                            <h5><i class="bi bi-calendar-event"></i> {{ evento.eve_nombre }}</h5>
+                            <p><i class="bi bi-geo-alt"></i> <strong>Lugar:</strong> {{ evento.eve_lugar }}, {{ evento.eve_ciudad }}</p>
+                            <p><i class="bi bi-calendar3"></i> <strong>Fecha:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}</p>
+                            <p><i class="bi bi-people"></i> <strong>Capacidad:</strong> {{ evento.eve_capacidad }} personas</p>
+                            <span class="badge 
+                                {% if evento.eve_estado == 'aprobado' %}badge-aprobado
+                                {% elif evento.eve_estado == 'pendiente' %}badge-pendiente
+                                {% else %}badge-cerrado{% endif %}">
+                                {{ evento.eve_estado|title }}
+                            </span>
+                        </div>
+                        
+                        <div class="evento-actions">
+                            {% if evento.eve_estado == 'Aprobado' %}
+                                <a href="{% url 'seleccionar_tipo_certificado' evento.eve_id %}" 
+                                   class="btn btn-certificados">
+                                    <i class="bi bi-award"></i> Gestionar Certificados
+                                </a>
+                            {% else %}
+                                <button class="btn btn-secondary" disabled>
+                                    <i class="bi bi-lock"></i> Evento no disponible
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-eventos">
+            <i class="bi bi-calendar-x"></i>
+            <h4>No tienes eventos creados</h4>
+            <p>Crea tu primer evento para poder gestionar certificados</p>
+            <a href="{% url 'crear_evento' %}" class="btn btn-success btn-lg mt-3">
+                <i class="bi bi-plus-circle"></i> Crear Evento
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-info-circle"></i> Información sobre Certificados</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="bi bi-person-check"></i> Certificados de Asistencia</h6>
+                            <p class="small text-muted">Para personas que asistieron al evento como público general.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="bi bi-trophy"></i> Certificados de Participación</h6>
+                            <p class="small text-muted">Para personas que participaron activamente en el evento (ponentes, expositores, etc.).</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="bi bi-clipboard-check"></i> Certificados de Evaluador</h6>
+                            <p class="small text-muted">Para personas que actuaron como evaluadores o jurados en el evento.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

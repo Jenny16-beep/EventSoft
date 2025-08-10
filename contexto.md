@@ -84,12 +84,13 @@ class EventoCategoria(models.Model):
     class Meta:
         unique_together = (('evento', 'categoria'),)
         
-
+ 
 class ConfiguracionCertificado(models.Model):
     TIPO_CHOICES = [
         ('asistencia', 'Asistencia'),
         ('participacion', 'Participación'),
         ('evaluador', 'Evaluador'),
+        ('premiacion', 'Premiacion'),
     ]
     PLANTILLA_CHOICES = [
         ('elegante', 'Elegante'),
@@ -105,7 +106,7 @@ class ConfiguracionCertificado(models.Model):
     logo = models.ImageField(upload_to='certificados/logos/', null=True, blank=True)
     fecha_emision = models.DateField(null=True, blank=True)
 
-    class Meta:
+    class Meta: 
         unique_together = (('evento', 'tipo'),)
 
     def __str__(self):
@@ -156,9 +157,9 @@ class ParticipanteEvento(models.Model):
     par_eve_documentos = models.FileField(upload_to='participantes/documentos/', null=True, blank=True)
     par_eve_estado = models.CharField(max_length=45)
     par_eve_qr = models.ImageField(upload_to='participantes/qr/', null=True, blank=True)
-    par_eve_valor = models.IntegerField(null=True, blank=True)
+    par_eve_valor = models.FloatField(null=True, blank=True)
     confirmado = models.BooleanField(default=False)
-
+ 
     class Meta:
         unique_together = (('participante', 'evento'),)
 

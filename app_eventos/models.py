@@ -31,6 +31,7 @@ class ConfiguracionCertificado(models.Model):
         ('asistencia', 'Asistencia'),
         ('participacion', 'Participación'),
         ('evaluador', 'Evaluador'),
+        ('premiacion', 'Premiación'),
     ]
     
     PLANTILLA_CHOICES = [

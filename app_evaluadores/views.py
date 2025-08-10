@@ -9,6 +9,62 @@ from app_participantes.models import ParticipanteEvento, Participante
 from app_usuarios.models import Usuario
 
 
+def calcular_y_guardar_nota_general(participante, evento):
+    """
+    Calcula la nota general ponderada de un participante en un evento
+    y la guarda en el campo par_eve_valor de ParticipanteEvento
+    """
+    criterios = Criterio.objects.filter(cri_evento_fk=evento)
+    peso_total = sum(c.cri_peso for c in criterios) or 1
+    
+    # Obtener todas las calificaciones del participante en este evento
+    calificaciones = Calificacion.objects.filter(
+        participante=participante,
+        criterio__cri_evento_fk=evento
+    ).select_related('criterio')
+    
+    # Agrupar por evaluador para calcular el promedio de cada uno
+    evaluadores_ids = set(c.evaluador_id for c in calificaciones)
+    num_evaluadores = len(evaluadores_ids)
+    
+    if num_evaluadores > 0:
+        # Calcular puntaje ponderado promedio
+        puntaje_ponderado = sum(
+            c.cal_valor * c.criterio.cri_peso for c in calificaciones
+        ) / (peso_total * num_evaluadores)
+        
+        # Guardar en ParticipanteEvento
+        participante_evento = ParticipanteEvento.objects.get(
+            participante=participante,
+            evento=evento
+        )
+        participante_evento.par_eve_valor = round(puntaje_ponderado, 2)
+        participante_evento.save()
+        
+        return puntaje_ponderado
+    
+    return 0
+
+
+def obtener_puesto_participante(participante, evento):
+    """
+    Obtiene el puesto de un participante en un evento basado en su nota
+    """
+    # Obtener todas las participaciones del evento ordenadas por nota
+    participaciones = ParticipanteEvento.objects.filter(
+        evento=evento,
+        par_eve_estado='Aprobado',
+        par_eve_valor__isnull=False
+    ).order_by('-par_eve_valor')
+    
+    # Encontrar el puesto del participante
+    for i, pe in enumerate(participaciones, 1):
+        if pe.participante == participante:
+            return i
+    
+    return None  # No encontrado o sin calificación
+
+
 
 
 @login_required
@@ -181,6 +237,10 @@ def calificar_participante(request, eve_id, participante_id):
                 except ValueError:
                     messages.error(request, f"Valor inválido para '{criterio.cri_descripcion}'.")
                     return redirect(request.path)
+        
+        # Calcular y guardar la nota general del participante
+        calcular_y_guardar_nota_general(participante, evento)
+        
         messages.success(request, "Calificaciones guardadas exitosamente.")
         return redirect('lista_participantes_evaluador', eve_id=eve_id)
 
@@ -213,21 +273,33 @@ def ver_tabla_posiciones(request, eve_id):
     posiciones = []
     for pe in participantes_evento:
         participante = pe.participante
-        calificaciones = Calificacion.objects.filter(
-            participante=participante,
-            criterio__cri_evento_fk=evento
-        ).select_related('criterio')
-        evaluadores_ids = set(c.evaluador_id for c in calificaciones)
-        num_evaluadores = len(evaluadores_ids)
-        if num_evaluadores > 0:
-            puntaje_ponderado = sum(
-                c.cal_valor * c.criterio.cri_peso for c in calificaciones
-            ) / (peso_total * num_evaluadores)
+        
+        # Si ya tenemos la nota guardada, la usamos; si no, la calculamos
+        if pe.par_eve_valor is not None:
+            puntaje_ponderado = pe.par_eve_valor
         else:
-            puntaje_ponderado = 0
+            # Calcular dinámicamente (para casos donde no se haya guardado aún)
+            calificaciones = Calificacion.objects.filter(
+                participante=participante,
+                criterio__cri_evento_fk=evento
+            ).select_related('criterio')
+            evaluadores_ids = set(c.evaluador_id for c in calificaciones)
+            num_evaluadores = len(evaluadores_ids)
+            if num_evaluadores > 0:
+                puntaje_ponderado = sum(
+                    c.cal_valor * c.criterio.cri_peso for c in calificaciones
+                ) / (peso_total * num_evaluadores)
+                puntaje_ponderado = round(puntaje_ponderado, 2)
+                
+                # Guardar para futuras consultas
+                pe.par_eve_valor = puntaje_ponderado
+                pe.save()
+            else:
+                puntaje_ponderado = 0
+         
         posiciones.append({
             'participante': participante,
-            'puntaje': round(puntaje_ponderado, 2)
+            'puntaje': puntaje_ponderado
         })
     posiciones.sort(key=lambda x: x['puntaje'], reverse=True)
     return render(request, 'tabla_posiciones_evaluador.html', {

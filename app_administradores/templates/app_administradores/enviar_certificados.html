@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+    }
+
+    .breadcrumb-custom {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .send-container {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .destinatario-card {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .destinatario-card:hover {
+        border-color: #28a745;
+        background-color: #f8f9fa;
+    }
+
+    .destinatario-card.selected {
+        border-color: #28a745;
+        background-color: #d4edda;
+    }
+
+    .destinatario-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .destinatario-details h6 {
+        margin-bottom: 0.25rem;
+        color: #333;
+    }
+
+    .destinatario-details p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .form-check-input {
+        transform: scale(1.2);
+        margin-right: 0.5rem;
+    }
+
+    .stats-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #28a745;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    .action-buttons {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .btn-action {
+        border-radius: 25px;
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .alert-configuracion {
+        border-left: 4px solid #ffc107;
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+    }
+
+    .alert-configuracion h5 {
+        color: #856404;
+    }
+
+    .search-filter {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .filter-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .select-all-controls {
+        background: #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            margin: 1rem auto;
+        }
+        
+        .destinatario-info {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-custom">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard_adminevento' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'gestionar_certificados' %}">Certificados</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'seleccionar_tipo_certificado' evento.eve_id %}">{{ evento.eve_nombre }}</a></li>
+            <li class="breadcrumb-item active">Enviar {{ tipo|title }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header de la página -->
+    <div class="page-header">
+        <h1><i class="bi bi-send-fill"></i> Enviar Certificados de {{ tipo|title }}</h1>
+        <p>Selecciona los destinatarios y envía los certificados por correo electrónico</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Advertencias de configuración -->
+    {% if advertencias %}
+        <div class="alert alert-warning alert-configuracion" role="alert">
+            <h5><i class="bi bi-exclamation-triangle-fill"></i> Configuración Incompleta</h5>
+            <p>Se detectaron los siguientes elementos faltantes en la configuración del certificado:</p>
+            <ul class="mb-2">
+                {% for advertencia in advertencias %}
+                    <li>{{ advertencia }}</li>
+                {% endfor %}
+            </ul>
+            <hr>
+            <div class="d-flex gap-2">
+                <small><strong>Recomendación:</strong> Te recomendamos configurar un logo y firma antes de enviar los certificados para que se vean más profesionales.</small>
+                <a href="{% url 'configurar_certificado' evento.eve_id tipo %}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-gear"></i> Configurar Ahora
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Estadísticas -->
+    <div class="stats-card">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ destinatarios.count }}</div>
+                    <div class="stat-label">Total Destinatarios</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number" id="selectedCount">0</div>
+                    <div class="stat-label">Seleccionados</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ evento.eve_fecha_inicio|date:"d" }}</div>
+                    <div class="stat-label">{{ evento.eve_fecha_inicio|date:"M Y" }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ configuracion.get_plantilla_display }}</div>
+                    <div class="stat-label">Plantilla</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="send-container">
+            <h5><i class="bi bi-people"></i> Seleccionar Destinatarios</h5>
+            <hr>
+            
+            <!-- Controles de selección -->
+            <div class="select-all-controls">
+                <div>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="selectAll">
+                        <i class="bi bi-check-all"></i> Seleccionar Todos
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" id="deselectAll">
+                        <i class="bi bi-x-square"></i> Deseleccionar Todos
+                    </button>
+                </div>
+                <div>
+                    <span class="text-muted">
+                        <span id="selectedCountText">0</span> de {{ destinatarios.count }} seleccionados
+                    </span>
+                </div>
+            </div>
+
+            {% if destinatarios %}
+                <div id="destinatariosList">
+                    {% for destinatario in destinatarios %}
+                    <div class="destinatario-card" data-destinatario-id="{{ destinatario.id }}">
+                        <div class="destinatario-info">
+                            <div class="destinatario-details">
+                                {% if tipo == 'asistencia' %}
+                                    <h6>{{ destinatario.asistente.usuario.first_name }} {{ destinatario.asistente.usuario.last_name }}</h6>
+                                    <p><i class="bi bi-envelope"></i> {{ destinatario.asistente.usuario.email }}</p>
+                                    <p><i class="bi bi-card-text"></i> Doc: {{ destinatario.asistente.usuario.documento }} | 
+                                       Estado: <span class="badge bg-success">{{ destinatario.asi_eve_estado }}</span></p>
+                                {% elif tipo == 'participacion' %}
+                                    <h6>{{ destinatario.participante.usuario.first_name }} {{ destinatario.participante.usuario.last_name }}</h6>
+                                    <p><i class="bi bi-envelope"></i> {{ destinatario.participante.usuario.email }}</p>
+                                    <p><i class="bi bi-card-text"></i> Doc: {{ destinatario.participante.usuario.documento }} | 
+                                       Estado: <span class="badge bg-success">{{ destinatario.par_eve_estado }}</span></p>
+                                {% elif tipo == 'evaluador' %}
+                                    <h6>{{ destinatario.evaluador.usuario.first_name }} {{ destinatario.evaluador.usuario.last_name }}</h6>
+                                    <p><i class="bi bi-envelope"></i> {{ destinatario.evaluador.usuario.email }}</p>
+                                    <p><i class="bi bi-card-text"></i> Doc: {{ destinatario.evaluador.usuario.documento }} | 
+                                       Estado: <span class="badge bg-success">{{ destinatario.eva_eve_estado }}</span></p>
+                                {% endif %}
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input destinatario-checkbox" type="checkbox" 
+                                       name="destinatarios" value="{{ destinatario.id }}" 
+                                       id="dest-{{ destinatario.id }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                    <h5 class="mt-3 text-muted">No hay destinatarios disponibles</h5>
+                    <p class="text-muted">
+                        No se encontraron 
+                        {% if tipo == 'asistencia' %}asistentes aprobados
+                        {% elif tipo == 'participacion' %}participantes aprobados
+                        {% elif tipo == 'evaluador' %}evaluadores aprobados{% endif %} 
+                        para este evento.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if destinatarios %}
+        <!-- Botones de acción -->
+        <div class="action-buttons">
+            <button type="submit" class="btn btn-success btn-action btn-lg" id="sendButton" disabled>
+                <i class="bi bi-send"></i> Enviar Certificados Seleccionados
+            </button>
+            
+            <a href="{% url 'previsualizar_certificado' evento.eve_id tipo %}" 
+               class="btn btn-warning btn-action btn-lg">
+                <i class="bi bi-eye"></i> Ver Vista Previa
+            </a>
+            
+            <a href="{% url 'configurar_certificado' evento.eve_id tipo %}" 
+               class="btn btn-secondary btn-action btn-lg">
+                <i class="bi bi-arrow-left"></i> Volver a Configuración
+            </a>
+        </div>
+        {% endif %}
+    </form>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-info-circle"></i> Proceso de Envío</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-1-circle"></i> Selección</h6>
+                            <p class="small text-muted">Selecciona los destinatarios que recibirán el certificado.</p>
+                            
+                            <h6><i class="bi bi-2-circle"></i> Generación</h6>
+                            <p class="small text-muted">Se genera un PDF personalizado para cada destinatario.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-3-circle"></i> Envío</h6>
+                            <p class="small text-muted">Se envía por correo electrónico con el certificado adjunto.</p>
+                            
+                            <h6><i class="bi bi-4-circle"></i> Confirmación</h6>
+                            <p class="small text-muted">Se muestra el resultado del envío para cada destinatario.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.destinatario-checkbox');
+    const selectAllBtn = document.getElementById('selectAll');
+    const deselectAllBtn = document.getElementById('deselectAll');
+    const sendButton = document.getElementById('sendButton');
+    const selectedCountElement = document.getElementById('selectedCount');
+    const selectedCountTextElement = document.getElementById('selectedCountText');
+    
+    function updateSelectedCount() {
+        const selectedCount = document.querySelectorAll('.destinatario-checkbox:checked').length;
+        selectedCountElement.textContent = selectedCount;
+        selectedCountTextElement.textContent = selectedCount;
+        
+        // Habilitar/deshabilitar botón de envío
+        sendButton.disabled = selectedCount === 0;
+        
+        // Actualizar estilos de las cards
+        checkboxes.forEach(checkbox => {
+            const card = checkbox.closest('.destinatario-card');
+            if (checkbox.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    }
+    
+    // Event listeners para checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+    
+    // Click en la card selecciona/deselecciona
+    document.querySelectorAll('.destinatario-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.type !== 'checkbox') {
+                const checkbox = this.querySelector('.destinatario-checkbox');
+                checkbox.checked = !checkbox.checked;
+                updateSelectedCount();
+            }
+        });
+    });
+    
+    // Seleccionar todos
+    selectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateSelectedCount();
+    });
+    
+    // Deseleccionar todos
+    deselectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateSelectedCount();
+    });
+    
+    // Confirmación antes del envío
+    sendButton.addEventListener('click', function(e) {
+        const selectedCount = document.querySelectorAll('.destinatario-checkbox:checked').length;
+        if (!confirm(`¿Está seguro de enviar certificados a ${selectedCount} destinatario${selectedCount > 1 ? 's' : ''}?`)) {
+            e.preventDefault();
+        }
+    });
+    
+    // Inicializar contador
+    updateSelectedCount();
+});
+</script>
+
+{% endblock %}

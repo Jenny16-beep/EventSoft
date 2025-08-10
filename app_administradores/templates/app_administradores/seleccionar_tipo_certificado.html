@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+    }
+
+    .breadcrumb-custom {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .certificado-type-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        text-align: center;
+    }
+
+    .certificado-type-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        border-color: #28a745;
+    }
+
+    .cert-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .cert-asistencia .cert-icon {
+        color: #007bff;
+    }
+
+    .cert-participacion .cert-icon {
+        color: #28a745;
+    }
+
+    .cert-evaluador .cert-icon {
+        color: #ffc107;
+    }
+
+    .cert-premiacion .cert-icon {
+        color: #dc3545;
+    }
+
+    .cert-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+
+    .cert-description {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .btn-certificado {
+        border-radius: 25px;
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .btn-asistencia {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+
+    .btn-asistencia:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .btn-participacion {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+
+    .btn-participacion:hover {
+        background-color: #1e7e34;
+        border-color: #1e7e34;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .btn-evaluador {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #212529;
+    }
+
+    .btn-evaluador:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+        color: #212529;
+        transform: scale(1.05);
+    }
+
+    .btn-premiacion {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+    }
+
+    .btn-premiacion:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .evento-info {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-left: 4px solid #28a745;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .stats-badges {
+        margin-top: 1rem;
+    }
+
+    .stat-badge {
+        background-color: #e9ecef;
+        color: #495057;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            margin: 1rem auto;
+        }
+        
+        .page-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .certificado-type-card {
+            padding: 1.5rem;
+        }
+        
+        .cert-icon {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-custom">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard_adminevento' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'gestionar_certificados' %}">Certificados</a></li>
+            <li class="breadcrumb-item active">{{ evento.eve_nombre }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header de la página -->
+    <div class="page-header">
+        <h1><i class="bi bi-award-fill"></i> Seleccionar Tipo de Certificado</h1>
+        <p>Elige qué tipo de certificado deseas configurar para el evento</p>
+    </div>
+
+    <!-- Información del evento -->
+    <div class="evento-info">
+        <h5><i class="bi bi-calendar-event"></i> {{ evento.eve_nombre }}</h5>
+        <p class="mb-2"><strong>Lugar:</strong> {{ evento.eve_lugar }}, {{ evento.eve_ciudad }}</p>
+        <p class="mb-2"><strong>Fecha:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}</p>
+        
+        <div class="stats-badges">
+            {% with asistentes_count=evento.asistenteeventos.count participantes_count=evento.participanteeventos.count evaluadores_count=evento.evaluadoreventos.count %}
+            <span class="stat-badge">
+                <i class="bi bi-people"></i> {{ asistentes_count }} Asistente{{ asistentes_count|pluralize }}
+            </span>
+            <span class="stat-badge">
+                <i class="bi bi-person-workspace"></i> {{ participantes_count }} Participante{{ participantes_count|pluralize }}
+            </span>
+            <span class="stat-badge">
+                <i class="bi bi-clipboard-check"></i> {{ evaluadores_count }} Evaluador{{ evaluadores_count|pluralize:"es" }}
+            </span>
+            {% endwith %}
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Opciones de tipos de certificado -->
+    <div class="row">
+        <div class="col-lg-3 col-md-6">
+            <div class="certificado-type-card cert-asistencia">
+                <i class="bi bi-person-check cert-icon"></i>
+                <h4 class="cert-title">Certificado de Asistencia</h4>
+                <p class="cert-description">
+                    Para personas que asistieron al evento como público general. 
+                    Se otorga a quienes participaron como asistentes y cumplieron con los requisitos mínimos.
+                </p>
+                <a href="{% url 'configurar_certificado' evento.eve_id 'asistencia' %}" 
+                   class="btn btn-asistencia btn-certificado">
+                    <i class="bi bi-gear"></i> Configurar Asistencia
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="certificado-type-card cert-participacion">
+                <i class="bi bi-trophy cert-icon"></i>
+                <h4 class="cert-title">Certificado de Participación</h4>
+                <p class="cert-description">
+                    Para personas que participaron activamente en el evento como ponentes, 
+                    expositores, talleristas o en roles protagónicos.
+                </p>
+                <a href="{% url 'configurar_certificado' evento.eve_id 'participacion' %}" 
+                   class="btn btn-participacion btn-certificado">
+                    <i class="bi bi-gear"></i> Configurar Participación
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="certificado-type-card cert-evaluador">
+                <i class="bi bi-clipboard-check cert-icon"></i>
+                <h4 class="cert-title">Certificado de Evaluador</h4>
+                <p class="cert-description">
+                    Para personas que actuaron como evaluadores, jurados o asesores 
+                    en procesos de evaluación durante el evento.
+                </p>
+                <a href="{% url 'configurar_certificado' evento.eve_id 'evaluador' %}" 
+                   class="btn btn-evaluador btn-certificado">
+                    <i class="bi bi-gear"></i> Configurar Evaluador
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="certificado-type-card cert-premiacion">
+                <i class="bi bi-award cert-icon"></i>
+                <h4 class="cert-title">Certificado de Premiación</h4>
+                <p class="cert-description">
+                    Para participantes que obtuvieron reconocimiento por su desempeño y calificación. 
+                    Se otorga según el ranking de puntuaciones obtenidas.
+                </p>
+                <a href="{% url 'configurar_certificado' evento.eve_id 'premiacion' %}" 
+                   class="btn btn-premiacion btn-certificado">
+                    <i class="bi bi-gear"></i> Configurar Premiación
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-lightbulb"></i> Proceso de Configuración</h6>
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <i class="bi bi-1-circle-fill text-primary" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Seleccionar Tipo</h6>
+                            <p class="small text-muted">Elige el tipo de certificado a configurar</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <i class="bi bi-2-circle-fill text-success" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Diseñar</h6>
+                            <p class="small text-muted">Configura plantilla, textos y elementos visuales</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <i class="bi bi-3-circle-fill text-warning" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Previsualizar</h6>
+                            <p class="small text-muted">Revisa cómo se verá el certificado final</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <i class="bi bi-4-circle-fill text-info" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Enviar</h6>
+                            <p class="small text-muted">Distribuye los certificados por correo electrónico</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+    }
+
+    .config-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select, .form-control:focus, .form-select:focus {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 0.8rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .plantilla-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .plantilla-option {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .plantilla-option:hover {
+        border-color: #28a745;
+        background-color: #f8f9fa;
+    }
+
+    .plantilla-option.active {
+        border-color: #28a745;
+        background-color: #d4edda;
+    }
+
+    .plantilla-preview {
+        width: 100%;
+        height: 120px;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+
+    .elegante-preview {
+        background: linear-gradient(45deg, #ffd700, #ffed4a);
+        border: 3px solid #d4af37;
+    }
+
+    .moderno-preview {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .clasico-preview {
+        background: linear-gradient(to bottom, #f7f7f7, #ffffff);
+        border: 2px solid #333;
+    }
+
+    .campos-dinamicos {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .campo-tag {
+        display: inline-block;
+        background: #28a745;
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        margin: 0.2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .campo-tag:hover {
+        background: #1e7e34;
+        transform: scale(1.05);
+    }
+
+    .file-upload-area {
+        border: 2px dashed #28a745;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        color: #28a745;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .file-upload-area:hover {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+
+    .btn-action {
+        border-radius: 25px;
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="container">
+    <!-- Header de la página -->
+    <div class="page-header">
+        <h1><i class="bi bi-gear-fill"></i> Configurar Certificado de {{ tipo|title }}</h1>
+        <p>Personaliza el diseño y contenido del certificado</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Configuración básica -->
+                <div class="config-card">
+                    <h5><i class="bi bi-file-text"></i> Configuración Básica</h5>
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label for="titulo" class="form-label">Título del Certificado</label>
+                        <input type="text" class="form-control" id="titulo" name="titulo" 
+                               value="{{ configuracion.titulo }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="plantilla" class="form-label">Plantilla</label>
+                        <div class="plantilla-grid">
+                            {% for valor, nombre in plantillas %}
+                            <div class="plantilla-option {% if configuracion.plantilla == valor %}active{% endif %}" 
+                                 onclick="seleccionarPlantilla('{{ valor }}')">
+                                <div class="plantilla-preview {{ valor }}-preview"></div>
+                                <h6>{{ nombre }}</h6>
+                                <input type="radio" name="plantilla" value="{{ valor }}" 
+                                       {% if configuracion.plantilla == valor %}checked{% endif %} hidden>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cuerpo" class="form-label">Contenido del Certificado</label>
+                        
+                        <!-- Campos dinámicos -->
+                        <div class="campos-dinamicos">
+                            <h6><i class="bi bi-tags"></i> Campos Disponibles (haz clic para insertar):</h6>
+                            <span class="campo-tag" data-campo="**NOMBRE**">**NOMBRE**</span>
+                            <span class="campo-tag" data-campo="**DOCUMENTO**">**DOCUMENTO**</span>
+                            <span class="campo-tag" data-campo="**EVENTO**">**EVENTO**</span>
+                            <span class="campo-tag" data-campo="**FECHA**">**FECHA**</span>
+                            <span class="campo-tag" data-campo="**CIUDAD**">**CIUDAD**</span>
+                            <span class="campo-tag" data-campo="**LUGAR**">**LUGAR**</span>
+                        </div>
+                        
+                        <textarea class="form-control" id="cuerpo" name="cuerpo" rows="6" required>{{ configuracion.cuerpo }}</textarea>
+                        <div class="form-text">Los campos marcados entre ** ** serán reemplazados automáticamente por los datos correspondientes.</div>
+                    </div>
+                </div>
+
+                <!-- Elementos visuales -->
+                <div class="config-card">
+                    <h5><i class="bi bi-image"></i> Elementos Visuales</h5>
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Logo del Evento</label>
+                            <div class="file-upload-area" onclick="document.getElementById('logo').click()">
+                                <i class="bi bi-cloud-upload fs-2"></i>
+                                <p class="mb-0">Hacer clic para subir logo</p>
+                                {% if configuracion.logo %}
+                                    <small class="text-success">Logo actual: {{ configuracion.logo.name }}</small>
+                                {% endif %}
+                            </div>
+                            <input type="file" id="logo" name="logo" accept="image/*" hidden>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Firma</label>
+                            <div class="file-upload-area" onclick="document.getElementById('firma').click()">
+                                <i class="bi bi-pen fs-2"></i>
+                                <p class="mb-0">Hacer clic para subir firma</p>
+                                {% if configuracion.firma %}
+                                    <small class="text-success">Firma actual: {{ configuracion.firma.name }}</small>
+                                {% endif %}
+                            </div>
+                            <input type="file" id="firma" name="firma" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Información del evento -->
+                <div class="config-card">
+                    <h6><i class="bi bi-info-circle"></i> Información del Evento</h6>
+                    <hr>
+                    <p><strong>Evento:</strong> {{ evento.eve_nombre }}</p>
+                    <p><strong>Fecha:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}</p>
+                    <p><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</p>
+                    <p><strong>Lugar:</strong> {{ evento.eve_lugar }}</p>
+                    <p><strong>Tipo:</strong> Certificado de {{ tipo|title }}</p>
+                </div>
+
+                <!-- Acciones -->
+                <div class="config-card">
+                    <h6><i class="bi bi-gear"></i> Acciones</h6>
+                    <hr>
+                    
+                    <button type="submit" class="btn btn-success btn-action w-100">
+                        <i class="bi bi-save"></i> Guardar Configuración
+                    </button>
+                    
+                    <a href="{% url 'previsualizar_certificado' evento.eve_id tipo %}" 
+                       class="btn btn-info btn-action w-100">
+                        <i class="bi bi-eye"></i> Vista Previa
+                    </a>
+                    
+                    <a href="{% url 'seleccionar_tipo_certificado' evento.eve_id %}" 
+                       class="btn btn-secondary btn-action w-100">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function seleccionarPlantilla(valor) {
+    // Remover active de todas las opciones
+    document.querySelectorAll('.plantilla-option').forEach(opt => opt.classList.remove('active'));
+    // Agregar active a la seleccionada
+    event.currentTarget.classList.add('active');
+    // Seleccionar el radio button
+    document.querySelector(`input[value="${valor}"]`).checked = true;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Insertar campos dinámicos
+    const campoTags = document.querySelectorAll('.campo-tag');
+    const textareaCuerpo = document.getElementById('cuerpo');
+    
+    campoTags.forEach(tag => {
+        tag.addEventListener('click', function() {
+            const campo = this.dataset.campo;
+            const cursorPos = textareaCuerpo.selectionStart;
+            const textoBefore = textareaCuerpo.value.substring(0, cursorPos);
+            const textoAfter = textareaCuerpo.value.substring(cursorPos);
+            
+            textareaCuerpo.value = textoBefore + campo + textoAfter;
+            textareaCuerpo.focus();
+            textareaCuerpo.setSelectionRange(cursorPos + campo.length, cursorPos + campo.length);
+        });
+    });
+
+    // Preview de archivos subidos
+    const logoInput = document.getElementById('logo');
+    const firmaInput = document.getElementById('firma');
+    
+    logoInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const fileName = this.files[0].name;
+            const uploadArea = this.previousElementSibling;
+            uploadArea.querySelector('p').innerHTML = `<strong>Seleccionado:</strong> ${fileName}`;
+        }
+    });
+    
+    firmaInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const fileName = this.files[0].name;
+            const uploadArea = this.previousElementSibling;
+            uploadArea.querySelector('p').innerHTML = `<strong>Seleccionado:</strong> ${fileName}`;
+        }
+    });
+});
+</script>
+
+{% endblock %}

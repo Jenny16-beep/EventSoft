@@ -1,81 +1,387 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-<div class="container py-4">
-    <h2 class="mb-4 text-success">Gestionar Notificaciones</h2>
-    <form method="get" class="row g-3 mb-4">
-        <div class="col-md-3">
-            <label for="evento" class="form-label">Evento</label>
-            <select name="evento" id="evento" class="form-select" onchange="this.form.submit()">
-                <option value="">Selecciona un evento</option>
-                {% for ev in eventos %}
-                    <option value="{{ ev.eve_id }}" {% if evento_id|default:'' == ev.eve_id|stringformat:'s' %}selected{% endif %}>{{ ev.eve_nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label for="tipo" class="form-label">Tipo</label>
-            <select name="tipo" id="tipo" class="form-select" onchange="this.form.submit()">
-                <option value="asistentes" {% if tipo == 'asistentes' %}selected{% endif %}>Asistentes</option>
-                <option value="participantes" {% if tipo == 'participantes' %}selected{% endif %}>Participantes</option>
-                <option value="evaluadores" {% if tipo == 'evaluadores' %}selected{% endif %}>Evaluadores</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label for="nombre" class="form-label">Nombre</label>
-            <input type="text" name="nombre" id="nombre" value="{{ filtro_nombre }}" class="form-control" placeholder="Nombre" autocomplete="off">
-        </div>
-        <div class="col-md-2">
-            <label for="documento" class="form-label">Documento</label>
-            <input type="text" name="documento" id="documento" value="{{ filtro_documento }}" class="form-control" placeholder="Documento" autocomplete="off">
-        </div>
-        <div class="col-md-2">
-            <label for="correo" class="form-label">Correo</label>
-            <input type="text" name="correo" id="correo" value="{{ filtro_correo }}" class="form-control" placeholder="Correo" autocomplete="off">
-        </div>
-        <div class="col-md-2">
-            <label for="estado" class="form-label">Estado</label>
-            <select name="estado" id="estado" class="form-select">
-                <option value="">Todos</option>
-                {% for est in estados %}
-                    <option value="{{ est }}" {% if filtro_estado == est %}selected{% endif %}>{{ est }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label for="confirmado" class="form-label">Confirmado</label>
-            <select name="confirmado" id="confirmado" class="form-select">
-                <option value="">Todos</option>
-                <option value="true" {% if filtro_confirmado == 'true' %}selected{% endif %}>Sí</option>
-                <option value="false" {% if filtro_confirmado == 'false' %}selected{% endif %}>No</option>
-            </select>
-        </div>
-        <div class="col-md-2 align-self-end">
-            <button type="submit" class="btn btn-outline-success w-100"><i class="bi bi-funnel"></i> Filtrar</button>
-        </div>
-    </form>
 
-    <form method="post" class="card p-4 shadow-sm">
-        {% csrf_token %}
-        <input type="hidden" name="tipo" value="{{ tipo }}">
-        <input type="hidden" name="evento" value="{{ evento_id }}">
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <label for="asunto" class="form-label">Asunto</label>
-                <input type="text" name="asunto" id="asunto" class="form-control" required maxlength="120">
-            </div>
-            <div class="col-md-6">
-                <label for="mensaje" class="form-label">Mensaje</label>
-                <textarea name="mensaje" id="mensaje" class="form-control" rows="2" required maxlength="1000"></textarea>
-            </div>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #6f42c1, #007bff);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(111, 66, 193, 0.2);
+    }
+
+    .page-header h2 {
+        font-weight: 700;
+        font-size: 2.5rem;
+        margin: 0;
+    }
+
+    .page-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .step-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .step-header {
+        background: linear-gradient(90deg, #6f42c1, #007bff);
+        color: white;
+        padding: 1rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .step-header:hover {
+        background: linear-gradient(90deg, #5a32a3, #0056b3);
+    }
+
+    .step-content {
+        padding: 2rem;
+    }
+
+    .step-number {
+        background: rgba(255, 255, 255, 0.2);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    .step-title {
+        flex-grow: 1;
+        margin-left: 1rem;
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+
+    .step-icon {
+        font-size: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+
+    .step-content.collapsed {
+        display: none;
+    }
+
+    .form-group-modern {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label-modern {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-control-modern, .form-select-modern {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-modern:focus, .form-select-modern:focus {
+        border-color: #6f42c1;
+        box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-modern {
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-primary-modern {
+        background: linear-gradient(45deg, #6f42c1, #007bff);
+        color: white;
+    }
+
+    .btn-primary-modern:hover {
+        background: linear-gradient(45deg, #5a32a3, #0056b3);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(111, 66, 193, 0.3);
+    }
+
+    .btn-success-modern {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+    }
+
+    .btn-success-modern:hover {
+        background: linear-gradient(45deg, #1e7e34, #17a2b8);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-outline-modern {
+        background: transparent;
+        border: 2px solid #6f42c1;
+        color: #6f42c1;
+    }
+
+    .btn-outline-modern:hover {
+        background: #6f42c1;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .table-modern {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .table-modern thead {
+        background: linear-gradient(90deg, #6f42c1, #007bff);
+        color: white;
+    }
+
+    .table-modern th {
+        border: none;
+        padding: 1rem;
+        font-weight: 600;
+    }
+
+    .table-modern td {
+        padding: 0.75rem 1rem;
+        border: none;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .badge-modern {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .message-composer {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .recipients-counter {
+        background: rgba(111, 66, 193, 0.1);
+        border: 2px solid #6f42c1;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        color: #6f42c1;
+        font-weight: 600;
+    }
+
+    .collapse-toggle {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    @media (max-width: 768px) {
+        .filter-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .step-content {
+            padding: 1rem;
+        }
+        
+        .page-header h2 {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<div class="container">
+    <!-- Header de la página -->
+    <div class="page-header">
+        <h2><i class="bi bi-bell-fill"></i> Gestión de Notificaciones</h2>
+        <p>Envía mensajes personalizados a asistentes, participantes y evaluadores</p>
+    </div>
+
+    <!-- Paso 1: Selección de Evento y Tipo -->
+    <div class="step-container">
+        <div class="step-header" onclick="toggleStep('step1')">
+            <div class="step-number">1</div>
+            <div class="step-title">Seleccionar Evento y Tipo de Destinatario</div>
+            <i class="bi bi-chevron-down step-icon" id="icon-step1"></i>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Selecciona destinatarios (puedes filtrar y seleccionar todos o algunos):</label>
-            <div class="table-responsive" style="max-height: 350px;">
-                <table class="table table-bordered table-hover align-middle">
-                    <thead class="table-light">
+        <div class="step-content" id="content-step1">
+            <form method="get" id="mainForm">
+                <div class="filter-row">
+                    <div class="form-group-modern">
+                        <label for="evento" class="form-label-modern">
+                            <i class="bi bi-calendar-event"></i> Evento
+                        </label>
+                        <select name="evento" id="evento" class="form-select form-select-modern" onchange="this.form.submit()">
+                            <option value="">🎯 Selecciona un evento</option>
+                            {% for ev in eventos %}
+                                <option value="{{ ev.eve_id }}" {% if evento_id|default:'' == ev.eve_id|stringformat:'s' %}selected{% endif %}>
+                                    {{ ev.eve_nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-modern">
+                        <label for="tipo" class="form-label-modern">
+                            <i class="bi bi-people"></i> Tipo de Destinatario
+                        </label>
+                        <select name="tipo" id="tipo" class="form-select form-select-modern" onchange="this.form.submit()">
+                            <option value="asistentes" {% if tipo == 'asistentes' %}selected{% endif %}>
+                                👥 Asistentes
+                            </option>
+                            <option value="participantes" {% if tipo == 'participantes' %}selected{% endif %}>
+                                🏆 Participantes
+                            </option>
+                            <option value="evaluadores" {% if tipo == 'evaluadores' %}selected{% endif %}>
+                                👨‍⚖️ Evaluadores
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                {% if evento_seleccionado %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Evento seleccionado:</strong> {{ evento_seleccionado.eve_nombre }}
+                    <br><small>{{ evento_seleccionado.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento_seleccionado.eve_lugar }}</small>
+                </div>
+                {% endif %}
+
+                <!-- Filtros Avanzados (Colapsables) -->
+                {% if destinatarios %}
+                <div class="mt-4">
+                    <div class="collapse-toggle" onclick="toggleFilters()">
+                        <h6 class="text-primary">
+                            <i class="bi bi-funnel-fill"></i> Filtros Avanzados
+                            <i class="bi bi-chevron-down" id="filters-icon"></i>
+                        </h6>
+                    </div>
+                    
+                    <div id="advanced-filters" style="display: none;">
+                        <div class="filter-row mt-3">
+                            <div class="form-group-modern">
+                                <label for="nombre" class="form-label-modern">Nombre</label>
+                                <input type="text" name="nombre" id="nombre" value="{{ filtro_nombre }}" 
+                                       class="form-control form-control-modern" placeholder="Buscar por nombre..." autocomplete="off">
+                            </div>
+                            
+                            <div class="form-group-modern">
+                                <label for="documento" class="form-label-modern">Documento</label>
+                                <input type="text" name="documento" id="documento" value="{{ filtro_documento }}" 
+                                       class="form-control form-control-modern" placeholder="Buscar por documento..." autocomplete="off">
+                            </div>
+                            
+                            <div class="form-group-modern">
+                                <label for="correo" class="form-label-modern">Correo</label>
+                                <input type="text" name="correo" id="correo" value="{{ filtro_correo }}" 
+                                       class="form-control form-control-modern" placeholder="Buscar por correo..." autocomplete="off">
+                            </div>
+                            
+                            <div class="form-group-modern">
+                                <label for="estado" class="form-label-modern">Estado</label>
+                                <select name="estado" id="estado" class="form-select form-select-modern">
+                                    <option value="">Todos los estados</option>
+                                    {% for est in estados %}
+                                        <option value="{{ est }}" {% if filtro_estado == est %}selected{% endif %}>{{ est }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group-modern">
+                                <label for="confirmado" class="form-label-modern">Confirmado</label>
+                                <select name="confirmado" id="confirmado" class="form-select form-select-modern">
+                                    <option value="">Todos</option>
+                                    <option value="true" {% if filtro_confirmado == 'true' %}selected{% endif %}>Confirmados</option>
+                                    <option value="false" {% if filtro_confirmado == 'false' %}selected{% endif %}>No confirmados</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group-modern d-flex align-items-end">
+                                <button type="submit" class="btn btn-outline-modern w-100">
+                                    <i class="bi bi-search"></i> Aplicar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Paso 2: Selección de Destinatarios -->
+    {% if destinatarios %}
+    <div class="step-container">
+        <div class="step-header" onclick="toggleStep('step2')">
+            <div class="step-number">2</div>
+            <div class="step-title">Seleccionar Destinatarios</div>
+            <i class="bi bi-chevron-down step-icon" id="icon-step2"></i>
+        </div>
+        <div class="step-content" id="content-step2">
+            <div class="recipients-counter">
+                <i class="bi bi-people-fill"></i>
+                <span id="selected-count">0</span> de {{ destinatarios|length }} destinatarios seleccionados
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
                         <tr>
-                            <th><input type="checkbox" id="select_all"></th>
+                            <th width="50">
+                                <div class="form-check">
+                                    <input type="checkbox" id="select_all" class="form-check-input">
+                                    <label for="select_all" class="form-check-label">Todo</label>
+                                </div>
+                            </th>
                             <th>Nombre</th>
                             <th>Documento</th>
                             <th>Correo</th>
@@ -86,15 +392,20 @@
                     <tbody>
                         {% for d in destinatarios %}
                             <tr>
-                                <td><input type="checkbox" name="seleccionados" value="{{ d.pk }}"></td>
                                 <td>
-                                    {% if tipo == 'asistentes' %}
-                                        {{ d.asistente.usuario.first_name }} {{ d.asistente.usuario.last_name }}
-                                    {% elif tipo == 'participantes' %}
-                                        {{ d.participante.usuario.first_name }} {{ d.participante.usuario.last_name }}
-                                    {% elif tipo == 'evaluadores' %}
-                                        {{ d.evaluador.usuario.first_name }} {{ d.evaluador.usuario.last_name }}
-                                    {% endif %}
+                                    <input type="checkbox" name="seleccionados" value="{{ d.pk }}" 
+                                           class="form-check-input destinatario-checkbox">
+                                </td>
+                                <td>
+                                    <strong>
+                                        {% if tipo == 'asistentes' %}
+                                            {{ d.asistente.usuario.first_name }} {{ d.asistente.usuario.last_name }}
+                                        {% elif tipo == 'participantes' %}
+                                            {{ d.participante.usuario.first_name }} {{ d.participante.usuario.last_name }}
+                                        {% elif tipo == 'evaluadores' %}
+                                            {{ d.evaluador.usuario.first_name }} {{ d.evaluador.usuario.last_name }}
+                                        {% endif %}
+                                    </strong>
                                 </td>
                                 <td>
                                     {% if tipo == 'asistentes' %}
@@ -116,35 +427,197 @@
                                 </td>
                                 <td>
                                     {% if tipo == 'asistentes' %}
-                                        {{ d.asi_eve_estado }}
+                                        <span class="badge badge-modern 
+                                            {% if d.asi_eve_estado == 'Aprobado' %}bg-success
+                                            {% elif d.asi_eve_estado == 'Pendiente' %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ d.asi_eve_estado }}
+                                        </span>
                                     {% elif tipo == 'participantes' %}
-                                        {{ d.par_eve_estado }}
+                                        <span class="badge badge-modern 
+                                            {% if d.par_eve_estado == 'Aprobado' %}bg-success
+                                            {% elif d.par_eve_estado == 'Pendiente' %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ d.par_eve_estado }}
+                                        </span>
                                     {% elif tipo == 'evaluadores' %}
-                                        {{ d.eva_eve_estado }}
+                                        <span class="badge badge-modern 
+                                            {% if d.eva_eve_estado == 'Aprobado' %}bg-success
+                                            {% elif d.eva_eve_estado == 'Pendiente' %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ d.eva_eve_estado }}
+                                        </span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if d.confirmado %}<span class="badge bg-success">Sí</span>{% else %}<span class="badge bg-danger">No</span>{% endif %}
+                                    {% if d.confirmado %}
+                                        <span class="badge badge-modern bg-success">
+                                            <i class="bi bi-check-circle"></i> Sí
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-modern bg-danger">
+                                            <i class="bi bi-x-circle"></i> No
+                                        </span>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% empty %}
-                            <tr><td colspan="6" class="text-center text-muted">No hay destinatarios para mostrar.</td></tr>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+                                    <br>No hay destinatarios que coincidan con los filtros
+                                </td>
+                            </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-        <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-success"><i class="bi bi-send"></i> Enviar Notificaciones</button>
+    </div>
+
+    <!-- Paso 3: Composición del Mensaje -->
+    <div class="step-container">
+        <div class="step-header" onclick="toggleStep('step3')">
+            <div class="step-number">3</div>
+            <div class="step-title">Componer Mensaje</div>
+            <i class="bi bi-chevron-down step-icon" id="icon-step3"></i>
         </div>
-    </form>
+        <div class="step-content" id="content-step3">
+            <form method="post" id="messageForm">
+                {% csrf_token %}
+                <input type="hidden" name="tipo" value="{{ tipo }}">
+                <input type="hidden" name="evento" value="{{ evento_id }}">
+                
+                <div class="message-composer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label for="asunto" class="form-label-modern">
+                                    <i class="bi bi-tag"></i> Asunto del mensaje
+                                </label>
+                                <input type="text" name="asunto" id="asunto" class="form-control form-control-modern" 
+                                       required maxlength="120" placeholder="Ej: Información importante sobre el evento">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label for="mensaje" class="form-label-modern">
+                                    <i class="bi bi-chat-text"></i> Mensaje
+                                </label>
+                                <textarea name="mensaje" id="mensaje" class="form-control form-control-modern" 
+                                          rows="4" required maxlength="1000" 
+                                          placeholder="Escribe aquí el mensaje que quieres enviar..."></textarea>
+                                <small class="text-muted">Máximo 1000 caracteres</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success-modern btn-lg" id="sendButton" disabled>
+                        <i class="bi bi-send-fill"></i> Enviar Notificaciones
+                        <span id="send-count"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
 <script>
-    document.getElementById('select_all')?.addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
-        for (const cb of checkboxes) {
-            cb.checked = this.checked;
+// Funciones para manejar los pasos colapsables
+function toggleStep(stepId) {
+    const content = document.getElementById('content-' + stepId);
+    const icon = document.getElementById('icon-' + stepId);
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.className = 'bi bi-chevron-up step-icon';
+    } else {
+        content.style.display = 'none';
+        icon.className = 'bi bi-chevron-down step-icon';
+    }
+}
+
+function toggleFilters() {
+    const filters = document.getElementById('advanced-filters');
+    const icon = document.getElementById('filters-icon');
+    
+    if (filters.style.display === 'none') {
+        filters.style.display = 'block';
+        icon.className = 'bi bi-chevron-up';
+    } else {
+        filters.style.display = 'none';
+        icon.className = 'bi bi-chevron-down';
+    }
+}
+
+// Manejar selección de destinatarios
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('select_all');
+    const checkboxes = document.querySelectorAll('.destinatario-checkbox');
+    const selectedCount = document.getElementById('selected-count');
+    const sendButton = document.getElementById('sendButton');
+    const sendCount = document.getElementById('send-count');
+    
+    function updateCount() {
+        const checked = document.querySelectorAll('.destinatario-checkbox:checked').length;
+        if (selectedCount) {
+            selectedCount.textContent = checked;
         }
+        if (sendButton) {
+            sendButton.disabled = checked === 0;
+            if (sendCount) {
+                sendCount.textContent = checked > 0 ? `(${checked})` : '';
+            }
+        }
+    }
+    
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+            });
+            updateCount();
+        });
+    }
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateCount);
+        // Agregar checkboxes al formulario de envío
+        cb.addEventListener('change', function() {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'seleccionados';
+            hiddenInput.value = this.value;
+            
+            const form = document.getElementById('messageForm');
+            if (this.checked) {
+                hiddenInput.id = 'hidden-' + this.value;
+                form.appendChild(hiddenInput);
+            } else {
+                const existing = document.getElementById('hidden-' + this.value);
+                if (existing) {
+                    existing.remove();
+                }
+            }
+        });
     });
+    
+    // Inicializar contador
+    updateCount();
+    
+    // Abrir primer paso por defecto
+    document.getElementById('content-step1').style.display = 'block';
+    document.getElementById('icon-step1').className = 'bi bi-chevron-up step-icon';
+    
+    // Si hay destinatarios, abrir también el paso 2
+    if (checkboxes.length > 0) {
+        document.getElementById('content-step2').style.display = 'block';
+        document.getElementById('icon-step2').className = 'bi bi-chevron-up step-icon';
+    }
+});
 </script>
+
 {% endblock %}
