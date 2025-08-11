@@ -3,111 +3,233 @@
 
 {% block content %}
 <style>
+    /* --- Base --- */
     body {
         background-color: #f8f9fa;
         font-family: 'Work Sans', Calibri, sans-serif;
     }
 
+    /* --- Grid de eventos: filas de igual altura --- */
+    .events-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        align-items: stretch;      /* importante para que los items se estiren */
+        grid-auto-rows: 1fr;       /* hace que cada fila tenga la misma altura */
+        margin-bottom: 2.5rem;
+    }
+
+    /* --- Card --- */
     .card-custom {
-        border: 1px solid #e0e0e0;
-        background-color: #ffffff;
+        border: none;
         border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background-color: #ffffff;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        transition: transform 0.24s ease, box-shadow 0.24s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%; /* clave: ocupar la altura de la celda del grid */
+        overflow: hidden;
     }
 
     .card-custom:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+    }
+
+    .card-header-custom {
+        border-bottom: 1px solid #f0f0f0;
+        padding: 1rem 1.25rem;
     }
 
     .card-title {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         font-weight: 600;
-    }
-
-    .btn-primary-custom {
-        background-color: #39A900;
-        border: none;
-        color: white;
-    }
-
-    .btn-primary-custom:hover {
-        background-color: #2f8a00;
-    }
-
-    .btn-secondary-custom {
-        background-color: #007832;
-        border: none;
-        color: white;
-    }
-
-    .btn-secondary-custom:hover {
-        background-color: #006422;
+        color: #222;
     }
 
     .badge-rounded {
         border-radius: 1rem;
         font-size: 0.75rem;
-        padding: 0.4em 0.75em;
+        padding: 0.35em 0.7em;
+    }
+
+    /* --- Body --- */
+    .card-body-custom {
+        flex: 1; /* empuja el footer de acciones hacia abajo */
+        display: flex;
+        flex-direction: column;
+        padding: 1rem 1.25rem;
+    }
+
+    .event-desc {
+        color: #6c757d;
+        font-size: 0.92rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .event-meta {
+        color: #6c757d;
+        font-size: 0.86rem;
+        margin-bottom: 0.75rem;
+    }
+    .event-meta i { color: #39A900; margin-right: 6px; }
+
+    hr.small-sep {
+        border: 0;
+        border-top: 1px solid #f1f1f1;
+        margin: 0.75rem 0;
+    }
+
+    /* --- Acciones --- */
+    .action-group {
+        margin-top: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+    }
+
+    .action-group h6 {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin: 0 0 0.5rem 0;
+        letter-spacing: 0.02em;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.92rem;
+        padding: 0.55rem 0.8rem;
+        border-radius: 10px;
+        transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+        width: 100%;              /* que ocupe todo el ancho para consistencia */
+        justify-content: flex-start;
+    }
+
+    .btn-action i { font-size: 1.05rem; }
+
+    .btn-action:active { transform: translateY(1px); }
+
+    /* estética de colores (puedes ajustar a tu paleta) */
+    .btn-manage { background:#39A900; color:#fff; border: none; }
+    .btn-manage:hover { background:#2f8a00; }
+
+    .btn-info-custom { background:#18bcd6; color:#fff; border: none; }
+    .btn-info-custom:hover { background:#11a6bf; }
+
+    .btn-secondary-custom { background:#6c757d; color:#fff; border: none; }
+    .btn-secondary-custom:hover { background:#565b60; }
+
+    .btn-warning-custom { background:#f0ad4e; color:#1f1f1f; border: none; }
+    .btn-warning-custom:hover { background:#e09f36; }
+
+    .btn-success-custom { background:#198754; color:#fff; border: none; }
+    .btn-success-custom:hover { background:#146c3d; }
+
+    .btn-outline-primary-custom {
+        background: transparent;
+        color: #0d6efd;
+        border: 1px solid #0d6efd;
+    }
+    .btn-outline-primary-custom:hover {
+        background:#0d6efd; color:#fff;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 576px) {
+        .events-grid { gap: 1rem; grid-auto-rows: auto; } /* en móviles deja que fluya */
+        .btn-action { font-size: 0.9rem; padding: 0.5rem 0.7rem; }
     }
 </style>
 
 <div class="container mt-5">
     <h1 class="mb-5 text-center fw-bold text-success">👨‍🏫 Panel del Evaluador</h1>
 
-    <div class="row gx-4 gy-4">
-        {% for inscripcion in inscripciones %}
-        {% with evento=inscripcion.evento estado=inscripcion.eva_eve_estado %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card card-custom h-100">
-                <div class="card-body d-flex flex-column">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h5 class="card-title text-dark">{{ evento.eve_nombre }}</h5>
-                        <span class="badge badge-rounded
-                            {% if estado == 'Aprobado' %} bg-success
-                            {% elif estado == 'Pendiente' %} bg-warning text-dark
-                            {% else %} bg-secondary
-                            {% endif %}">
-                            {{ estado }}
-                        </span>
-                    </div>
+    <div class="events-grid">
+        {% for item in inscripciones_con_archivos %}
+        {% with evento=item.evento estado=item.estado %}
+        <article class="card card-custom" role="article" aria-labelledby="titulo-{{ evento.eve_id }}">
+            <!-- Header -->
+            <header class="card-header-custom d-flex justify-content-between align-items-center">
+                <h2 id="titulo-{{ evento.eve_id }}" class="card-title mb-0">{{ evento.eve_nombre }}</h2>
+                <span class="badge-rounded
+                    {% if estado == 'Aprobado' %} bg-success
+                    {% elif estado == 'Pendiente' %} bg-warning text-dark
+                    {% else %} bg-secondary
+                    {% endif %}">
+                    {{ estado }}
+                </span>
+            </header>
 
-                    <p class="card-text text-muted small">{{ evento.eve_descripcion|truncatechars:100 }}</p>
-                    <p class="text-muted small mb-4">
+            <!-- Body -->
+            <div class="card-body-custom">
+                <div>
+                    <p class="event-desc">{{ evento.eve_descripcion|truncatechars:110 }}</p>
+                    <p class="event-meta mb-2">
                         <i class="bi bi-geo-alt"></i> {{ evento.eve_ciudad }}<br>
                         <i class="bi bi-calendar-event"></i> {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}
                     </p>
+                </div>
 
-                    <div class="mt-auto d-grid gap-2">
-                        {% if estado != 'Pendiente' %}
-                            <a href="{% url 'gestionar_items_evaluador' evento.eve_id %}" class="btn btn-primary-custom btn-sm">
+                <!-- Acciones (footer) -->
+                <footer>
+                    {% if estado != 'Pendiente' %}
+                        <div class="action-group">
+                            <h6>Gestión</h6>
+                            <a href="{% url 'gestionar_items_evaluador' evento.eve_id %}" class="btn-action btn-manage" title="Configura y administra los ítems del evento">
                                 <i class="bi bi-tools"></i> Gestionar Ítems
                             </a>
-                            <a href="{% url 'lista_participantes_evaluador' evento.eve_id %}" class="btn btn-secondary-custom btn-sm">
-                                <i class="bi bi-person-check"></i> Calificar Participantes
-                            </a>
-                            <a href="{% url 'tabla_posiciones_evaluador' evento.eve_id %}" class="btn btn-outline-warning btn-sm">
-                                <i class="bi bi-bar-chart-line"></i> Tabla de Posiciones
-                            </a>
-                            <a href="{% url 'informacion_detallada_evaluador' evento.eve_id %}" class="btn btn-outline-info btn-sm">
+                            <a href="{% url 'informacion_detallada_evaluador' evento.eve_id %}" class="btn-action btn-info-custom" title="Consulta la información completa del evento">
                                 <i class="bi bi-info-circle"></i> Información Detallada
                             </a>
-                        {% else %}
-                            <a href="{% url 'modificar_inscripcion_evaluador' evento.eve_id %}" class="btn btn-outline-secondary btn-sm">
+                        </div>
+
+                        <div class="action-group">
+                            <h6>Participantes</h6>
+                            <a href="{% url 'lista_participantes_evaluador' evento.eve_id %}" class="btn-action btn-secondary-custom" title="Califica el desempeño de los participantes">
+                                <i class="bi bi-person-check"></i> Calificar Participantes
+                            </a>
+                            <a href="{% url 'tabla_posiciones_evaluador' evento.eve_id %}" class="btn-action btn-warning-custom" title="Consulta el ranking y posiciones actuales">
+                                <i class="bi bi-bar-chart-line"></i> Tabla de Posiciones
+                            </a>
+                        </div>
+
+                        {% if item.tiene_memorias or item.tiene_info_tecnica %}
+                        <div class="action-group">
+                            <h6>Descargas</h6>
+                            {% if item.tiene_memorias %}
+                                <a href="{% url 'descargar_memorias_evaluador' evento.eve_id %}" class="btn-action btn-success-custom" title="Descarga las memorias del evento">
+                                    <i class="bi bi-journal-arrow-down"></i> Memorias
+                                </a>
+                            {% endif %}
+                            {% if item.tiene_info_tecnica %}
+                                <a href="{% url 'descargar_informacion_tecnica_evaluador' evento.eve_id %}" class="btn-action btn-outline-primary-custom" title="Descarga la información técnica">
+                                    <i class="bi bi-file-earmark-arrow-down"></i> Info Técnica
+                                </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="action-group">
+                            <h6>Preinscripción</h6>
+                            <a href="{% url 'modificar_inscripcion_evaluador' evento.eve_id %}" class="btn-action btn-outline-primary-custom" title="Edita los datos de tu preinscripción">
                                 <i class="bi bi-pencil-square"></i> Modificar Preinscripción
                             </a>
-                            <a href="{% url 'cancelar_inscripcion_evaluador' evento.eve_id %}" class="btn btn-outline-danger btn-sm">
+                            <a href="{% url 'cancelar_inscripcion_evaluador' evento.eve_id %}" class="btn-action btn-outline-primary-custom" title="Cancela tu preinscripción en el evento">
                                 <i class="bi bi-x-circle"></i> Cancelar Inscripción
                             </a>
-                        {% endif %}
-                    </div>
-                </div>
+                        </div>
+                    {% endif %}
+                </footer>
             </div>
-        </div>
+        </article>
         {% endwith %}
         {% empty %}
-        <div class="col-12">
+        <div>
             <div class="alert alert-info text-center" role="alert">
                 <i class="bi bi-info-circle"></i> No estás inscrito en ningún evento aún.
             </div>

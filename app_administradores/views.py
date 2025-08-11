@@ -9,11 +9,12 @@ from django.http import JsonResponse, FileResponse
 from django.core.files.base import ContentFile
 from django.utils.crypto import get_random_string
 from django.conf import settings
+from django.db import transaction
 import base64
 import os
 import mimetypes
 
-from .models import AdministradorEvento, CodigoInvitacionAdminEvento
+from .models import AdministradorEvento, CodigoInvitacionAdminEvento, CodigoInvitacionEvento
 from app_eventos.models import Evento
 from app_eventos.models import EventoCategoria
 from app_areas.models import Area, Categoria
@@ -209,15 +210,156 @@ def modificar_evento(request, eve_id):
             'todas_areas': todas_areas,
             'categorias_info': categorias_info
         })
-    
+
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def eliminar_evento(request, eve_id):
     evento = get_object_or_404(Evento, eve_id=eve_id)
+    administrador = request.user.administrador
+    
+    # Verificar que el evento pertenece al administrador logueado
+    if evento.eve_administrador_fk != administrador:
+        messages.error(request, "No tienes permisos para eliminar este evento.")
+        return redirect('listar_eventos')
+    
+    # Verificar si será el último evento del administrador
+    otros_eventos = Evento.objects.filter(eve_administrador_fk=administrador).exclude(eve_id=evento.eve_id).exists()
+    
+    advertencia_eliminacion_usuario = False
+    if not otros_eventos:
+        # No tiene más eventos, verificar códigos de invitación
+        codigos_admin = CodigoInvitacionAdminEvento.objects.filter(usuario_asignado=request.user)
+        tiene_limite_positivo = codigos_admin.filter(limite_eventos__gt=0).exists()
+        
+        if not tiene_limite_positivo:
+            # Su usuario será eliminado
+            advertencia_eliminacion_usuario = True
+    
+    if request.method == 'POST':
+        confirmacion = request.POST.get('confirmacion_eliminacion')
+        if confirmacion == 'confirmar':
+            try:
+                with transaction.atomic():
+                    # Usar la misma lógica de eliminación que en app_admin
+                    _eliminar_informacion_evento_completo(evento)
+                    
+                    if advertencia_eliminacion_usuario:
+                        messages.warning(request, 'Evento eliminado. Tu cuenta de usuario también ha sido eliminada del sistema.')
+                        # Cerrar sesión ya que el usuario será eliminado
+                        from django.contrib.auth import logout
+                        logout(request)
+                        return redirect('login')
+                    else:
+                        messages.success(request, "Evento eliminado correctamente.")
+                        return redirect('listar_eventos')
+            except Exception as e:
+                messages.error(request, f"Error al eliminar el evento: {str(e)}")
+                return redirect('listar_eventos')
+        else:
+            messages.error(request, "Debes confirmar la eliminación.")
+    
+    return render(request, 'app_administradores/confirmar_eliminacion_evento.html', {
+        'evento': evento,
+        'advertencia_eliminacion_usuario': advertencia_eliminacion_usuario,
+        'otros_eventos': otros_eventos
+    })
+
+
+def _eliminar_informacion_evento_completo(evento):
+    """
+    Función auxiliar para eliminar toda la información relacionada con un evento.
+    Versión para administradores - misma lógica que app_admin
+    """
+    # Importaciones necesarias
+    from app_asistentes.models import Asistente, AsistenteEvento
+    from app_participantes.models import Participante, ParticipanteEvento
+    from app_evaluadores.models import Evaluador, EvaluadorEvento
+    from app_administradores.models import CodigoInvitacionEvento
+    from app_eventos.models import ConfiguracionCertificado, EventoCategoria
+    from app_usuarios.models import RolUsuario
+    
+    # 1. Eliminar AsistenteEvento del evento
+    asistentes_evento = AsistenteEvento.objects.filter(evento=evento)
+    asistentes_ids = list(asistentes_evento.values_list('asistente_id', flat=True))
+    asistentes_evento.delete()
+    
+    # Verificar si los asistentes están en otros eventos
+    for asistente_id in asistentes_ids:
+        try:
+            asistente = Asistente.objects.get(id=asistente_id)
+            if not AsistenteEvento.objects.filter(asistente=asistente).exists():
+                usuario = asistente.usuario
+                RolUsuario.objects.filter(usuario=usuario, rol__nombre='asistente').delete()
+                asistente.delete()
+                if not RolUsuario.objects.filter(usuario=usuario).exists():
+                    usuario.delete()
+        except Asistente.DoesNotExist:
+            continue
+    
+    # 2. Eliminar ParticipanteEvento del evento
+    participantes_evento = ParticipanteEvento.objects.filter(evento=evento)
+    participantes_ids = list(participantes_evento.values_list('participante_id', flat=True))
+    participantes_evento.delete()
+    
+    # Verificar si los participantes están en otros eventos
+    for participante_id in participantes_ids:
+        try:
+            participante = Participante.objects.get(id=participante_id)
+            if not ParticipanteEvento.objects.filter(participante=participante).exists():
+                usuario = participante.usuario
+                RolUsuario.objects.filter(usuario=usuario, rol__nombre='participante').delete()
+                participante.delete()
+                if not RolUsuario.objects.filter(usuario=usuario).exists():
+                    usuario.delete()
+        except Participante.DoesNotExist:
+            continue
+    
+    # 3. Eliminar EvaluadorEvento del evento
+    evaluadores_evento = EvaluadorEvento.objects.filter(evento=evento)
+    evaluadores_ids = list(evaluadores_evento.values_list('evaluador_id', flat=True))
+    evaluadores_evento.delete()
+    
+    # Verificar si los evaluadores están en otros eventos
+    for evaluador_id in evaluadores_ids:
+        try:
+            evaluador = Evaluador.objects.get(id=evaluador_id)
+            if not EvaluadorEvento.objects.filter(evaluador=evaluador).exists():
+                usuario = evaluador.usuario
+                RolUsuario.objects.filter(usuario=usuario, rol__nombre='evaluador').delete()
+                evaluador.delete()
+                if not RolUsuario.objects.filter(usuario=usuario).exists():
+                    usuario.delete()
+        except Evaluador.DoesNotExist:
+            continue
+    
+    # 4. Manejar el administrador del evento
+    administrador = evento.eve_administrador_fk
+    if administrador:
+        usuario_admin = administrador.usuario
+        
+        # Verificar si tiene más eventos (excluyendo el actual)
+        otros_eventos_admin = Evento.objects.filter(eve_administrador_fk=administrador).exclude(eve_id=evento.eve_id).exists()
+        
+        if not otros_eventos_admin:
+            # No tiene más eventos, verificar códigos de invitación
+            codigos_admin = CodigoInvitacionAdminEvento.objects.filter(usuario_asignado=usuario_admin)
+            tiene_limite_positivo = codigos_admin.filter(limite_eventos__gt=0).exists()
+            
+            if not tiene_limite_positivo:
+                # Eliminar códigos, rol y usuario
+                codigos_admin.delete()
+                RolUsuario.objects.filter(usuario=usuario_admin, rol__nombre='administrador_evento').delete()
+                administrador.delete()
+                if not RolUsuario.objects.filter(usuario=usuario_admin).exists():
+                    usuario_admin.delete()
+    
+    # 5. Eliminar relaciones y configuraciones del evento
+    CodigoInvitacionEvento.objects.filter(evento=evento).delete()
+    ConfiguracionCertificado.objects.filter(evento=evento).delete()
     EventoCategoria.objects.filter(evento=evento).delete()
+    
+    # 6. Finalmente, eliminar el evento
     evento.delete()
-    messages.success(request, "Evento eliminado correctamente.")
-    return redirect(reverse('dashboard_adminevento'))
 
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
@@ -999,6 +1141,82 @@ def gestionar_notificaciones(request):
     })
 
 
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def gestionar_archivos_evento(request, eve_id):
+    evento = get_object_or_404(Evento, eve_id=eve_id)
+    
+    # Verificar que el administrador sea el propietario del evento
+    if evento.eve_administrador_fk != request.user.administrador:
+        messages.error(request, "No tienes permisos para gestionar este evento.")
+        return redirect('listar_eventos')
+    
+    if request.method == 'POST':
+        archivo_tipo = request.POST.get('archivo_tipo')
+        archivo = request.FILES.get('archivo')
+        
+        if archivo:
+            # Validar tipos de archivo permitidos
+            nombre_archivo = archivo.name.lower()
+            extensiones_permitidas = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.zip']
+            
+            if not any(nombre_archivo.endswith(ext) for ext in extensiones_permitidas):
+                messages.error(request, "Formato de archivo no permitido. Solo se aceptan: PDF, DOC, DOCX, PPT, PPTX, ZIP")
+                return redirect('gestionar_archivos_evento', eve_id=eve_id)
+            
+            # Validar tamaño del archivo (máximo 50MB)
+            if archivo.size > 50 * 1024 * 1024:  # 50MB en bytes
+                messages.error(request, "El archivo es demasiado grande. El tamaño máximo permitido es 50MB.")
+                return redirect('gestionar_archivos_evento', eve_id=eve_id)
+            
+            if archivo_tipo == 'memorias':
+                evento.eve_memorias = archivo
+                messages.success(request, "Memorias del evento actualizadas correctamente.")
+            elif archivo_tipo == 'informacion_tecnica':
+                evento.eve_informacion_tecnica = archivo
+                messages.success(request, "Información técnica del evento actualizada correctamente.")
+            else:
+                messages.error(request, "Tipo de archivo no válido.")
+                return redirect('gestionar_archivos_evento', eve_id=eve_id)
+            
+            evento.save()
+        else:
+            messages.error(request, "Por favor selecciona un archivo.")
+    
+    return render(request, 'app_administradores/gestionar_archivos_evento.html', {
+        'evento': evento
+    })
+
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def eliminar_archivo_evento(request, eve_id):
+    evento = get_object_or_404(Evento, eve_id=eve_id)
+    
+    # Verificar que el administrador sea el propietario del evento
+    if evento.eve_administrador_fk != request.user.administrador:
+        messages.error(request, "No tienes permisos para gestionar este evento.")
+        return redirect('listar_eventos')
+    
+    if request.method == 'POST':
+        archivo_tipo = request.POST.get('archivo_tipo')
+        
+        if archivo_tipo == 'memorias' and evento.eve_memorias:
+            evento.eve_memorias.delete(save=False)
+            evento.eve_memorias = None
+            evento.save()
+            messages.success(request, "Memorias del evento eliminadas correctamente.")
+        elif archivo_tipo == 'informacion_tecnica' and evento.eve_informacion_tecnica:
+            evento.eve_informacion_tecnica.delete(save=False)
+            evento.eve_informacion_tecnica = None
+            evento.save()
+            messages.success(request, "Información técnica del evento eliminada correctamente.")
+        else:
+            messages.error(request, "No se encontró el archivo a eliminar.")
+    
+    return redirect('gestionar_archivos_evento', eve_id=eve_id)
+
+
 # ===============================
 # FUNCIONES HELPER
 # ===============================
@@ -1238,7 +1456,7 @@ def enviar_certificados(request, eve_id, tipo):
     if request.method == 'POST':
         
         destinatarios_seleccionados = request.POST.getlist('destinatarios')
-        
+
         if not destinatarios_seleccionados:
             messages.error(request, "Debe seleccionar al menos un destinatario.")
         else:
@@ -1479,6 +1697,151 @@ def enviar_certificados_premiacion(request, eve_id):
         'participantes_ranking': participantes_ranking,
         'advertencias': advertencias
     })
+
+
+# ===============================
+# GESTIÓN DE CÓDIGOS DE INVITACIÓN
+# ===============================
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def crear_codigo_invitacion(request):
+    """Vista para seleccionar evento y crear códigos de invitación para evaluadores/participantes"""
+    administrador = request.user.administrador
+    
+    # Obtener solo eventos aprobados del administrador
+    eventos_aprobados = Evento.objects.filter(
+        eve_administrador_fk=administrador,
+        eve_estado__iexact='Aprobado'
+    ).order_by('-eve_fecha_inicio')
+    
+    if request.method == 'POST':
+        evento_id = request.POST.get('evento_id')
+        tipo = request.POST.get('tipo')
+        emails = request.POST.getlist('emails[]')  # Para manejar múltiples emails
+        
+        # Validaciones
+        if not evento_id or not tipo:
+            messages.error(request, "Debe seleccionar un evento y especificar el tipo.")
+            return render(request, 'app_administradores/crear_codigo_invitacion.html', {
+                'eventos': eventos_aprobados
+            })
+        
+        evento = get_object_or_404(Evento, pk=evento_id, eve_administrador_fk=administrador)
+        
+        # Filtrar emails válidos
+        emails_validos = [email.strip() for email in emails if email.strip()]
+        if not emails_validos:
+            messages.error(request, "Debe proporcionar al menos un correo electrónico válido.")
+            return render(request, 'app_administradores/crear_codigo_invitacion.html', {
+                'eventos': eventos_aprobados
+            })
+        
+        # Crear códigos de invitación
+        codigos_creados = []
+        emails_fallidos = []
+        
+        for email in emails_validos:
+            try:
+                # Verificar si ya existe un código activo para este email y evento
+                codigo_existente = CodigoInvitacionEvento.objects.filter(
+                    email_destino=email,
+                    evento=evento,
+                    tipo=tipo,
+                    estado='activo'
+                ).first()
+                
+                if codigo_existente:
+                    emails_fallidos.append(f"{email} (ya tiene código activo)")
+                    continue
+                
+                # Crear nuevo código
+                codigo = CodigoInvitacionEvento.objects.create(
+                    email_destino=email,
+                    evento=evento,
+                    tipo=tipo,
+                    administrador_creador=administrador
+                )
+                
+                # Enviar correo
+                url_registro = request.build_absolute_uri(
+                    reverse('registro_con_codigo', args=[codigo.codigo])
+                )
+                
+                asunto = f'Invitación como {tipo.title()} - {evento.eve_nombre}'
+                mensaje_html = render_to_string('correo_invitacion_evento.html', {
+                    'evento': evento,
+                    'tipo': tipo.title(),
+                    'codigo': codigo.codigo,
+                    'url_registro': url_registro,
+                })
+                
+                email_obj = EmailMessage(
+                    subject=asunto,
+                    body=mensaje_html,
+                    to=[email]
+                )
+                email_obj.content_subtype = 'html'
+                email_obj.send()
+                
+                codigos_creados.append(codigo)
+                
+            except Exception as e:
+                emails_fallidos.append(f"{email} (error: {str(e)})")
+        
+        # Mensajes de resultado
+        if codigos_creados:
+            messages.success(
+                request, 
+                f"Se crearon {len(codigos_creados)} código(s) de invitación exitosamente."
+            )
+        
+        if emails_fallidos:
+            messages.warning(
+                request,
+                f"Algunos correos no pudieron procesarse: {', '.join(emails_fallidos)}"
+            )
+        
+        return redirect('listar_codigos_invitacion')
+    
+    return render(request, 'app_administradores/crear_codigo_invitacion.html', {
+        'eventos': eventos_aprobados
+    })
+
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def listar_codigos_invitacion(request):
+    """Vista para listar códigos de invitación creados por el administrador"""
+    administrador = request.user.administrador
+    
+    codigos = CodigoInvitacionEvento.objects.filter(
+        administrador_creador=administrador
+    ).select_related('evento').order_by('-fecha_creacion')
+    
+    return render(request, 'app_administradores/listar_codigos_invitacion.html', {
+        'codigos': codigos
+    })
+
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def cancelar_codigo_invitacion(request, codigo_id):
+    """Vista para cancelar un código de invitación"""
+    administrador = request.user.administrador
+    
+    codigo = get_object_or_404(
+        CodigoInvitacionEvento,
+        pk=codigo_id,
+        administrador_creador=administrador,
+        estado='activo'
+    )
+    
+    codigo.estado = 'cancelado'
+    codigo.save()
+    
+    messages.success(request, f"Código de invitación para {codigo.email_destino} cancelado exitosamente.")
+    return redirect('listar_codigos_invitacion')
 
 
 

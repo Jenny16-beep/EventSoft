@@ -2,75 +2,422 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row g-4 align-items-start">
-        <!-- Imagen del evento -->
-        <div class="col-md-5">
-            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-                {% if evento.eve_imagen %}
-                    <img src="{{ evento.eve_imagen.url }}" alt="Imagen del evento" class="w-100 h-100 object-fit-cover" style="max-height: 400px; object-fit: cover;">
-                {% else %}
-                    <div class="text-center p-5 text-muted">Sin imagen</div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Información del evento -->
-        <div class="col-md-7">
-            <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-body p-4">
-                    <h2 class="card-title fw-bold mb-3">{{ evento.eve_nombre }}</h2>
-                    <p class="text-muted mb-3">{{ evento.eve_descripcion }}</p>
-
-                    <ul class="list-group list-group-flush mb-4">
-                        <li class="list-group-item"><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</li>
-                        <li class="list-group-item"><strong>Lugar:</strong> {{ evento.eve_lugar }}</li>
-                        <li class="list-group-item"><strong>Fechas:</strong> {{ evento.eve_fecha_inicio }} – {{ evento.eve_fecha_fin }}</li>
-                        <li class="list-group-item"><strong>Estado inscripción:</strong> {{ relacion.asi_eve_estado }}</li>
-                        <li class="list-group-item"><strong>Clave de inscripción:</strong> {{ relacion.asi_eve_clave }}</li>
-                        <li class="list-group-item">
-                            <strong>Categorías:</strong>
-                            <div class="mt-2">
-                                {% for ec in evento.eventocategoria_set.all %}
-                                    <span class="badge bg-primary me-1 mb-1">{{ ec.categoria.cat_nombre }}</span>
-                                {% empty %}
-                                    <span class="text-muted">Sin categorías</span>
-                                {% endfor %}
+<div class="container-fluid py-4">
+    <!-- Header con info del evento -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg overflow-hidden">
+                <div class="card-header py-4" 
+                     style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="me-4">
+                                    <div class="rounded-circle p-3" style="background-color: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3);">
+                                        <i class="bi bi-person-check-fill" style="font-size: 2rem; color: #ffffff !important;"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-1" style="color: #ffffff !important;">¡Hola, {{ request.user.first_name }}!</h3>
+                                    <p class="mb-0" style="color: #ffffff !important; opacity: 0.95;">Gestiona tu asistencia al evento</p>
+                                </div>
                             </div>
-                        </li>
-                    </ul>
-
-                    <!-- Botones -->
-                    <div class="d-flex flex-wrap gap-2 justify-content-start mt-3">
-                        {% if relacion.asi_eve_qr %}
-                            <a href="{{ relacion.asi_eve_qr.url }}" class="btn btn-outline-dark" download>
-                                <i class="bi bi-qr-code-scan me-1"></i> Descargar QR
-                            </a>
-                        {% endif %}
-
-                        {% if evento.eve_programacion %}
-                            <a href="{{ evento.eve_programacion.url }}" class="btn btn-outline-info" target="_blank">
-                                <i class="bi bi-file-earmark-pdf me-1"></i> Ver programación
-                            </a>
-                        {% endif %}
-
-                        <form method="post" onsubmit="return confirm('¿Estás seguro de cancelar tu inscripción?');">
-                            {% csrf_token %}
-                            <button type="submit" name="cancelar_inscripcion" class="btn btn-danger">
-                                <i class="bi bi-x-circle me-1"></i> Cancelar inscripción
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Botón volver -->
-                    <div class="mt-4">
-                        <a href="{% url 'dashboard_asistente' %}" class="btn btn-outline-secondary rounded-pill">
-                            ← Volver al Dashboard
-                        </a>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <div class="rounded-pill px-4 py-2 d-inline-block" style="background-color: rgba(255,255,255,0.25); backdrop-filter: blur(10px);">
+                                <i class="bi bi-calendar-event me-2" style="color: #ffffff !important;"></i>
+                                <span class="fw-medium" style="color: #ffffff !important;">Dashboard Asistente</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Imagen del evento -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-0 py-3">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-image text-success me-2"></i>
+                        Imagen del Evento
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if evento.eve_imagen %}
+                        <img src="{{ evento.eve_imagen.url }}" alt="Imagen del evento" 
+                             class="w-100" style="height: 300px; object-fit: cover;">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 300px;">
+                            <div class="text-center">
+                                <i class="bi bi-image text-muted mb-2" style="font-size: 3rem;"></i>
+                                <p class="text-muted mb-0">Sin imagen disponible</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del evento -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-0 py-3">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-info-circle text-success me-2"></i>
+                        Información del Evento
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <h3 class="fw-bold text-success mb-3">{{ evento.eve_nombre }}</h3>
+                    <p class="text-muted mb-4">{{ evento.eve_descripcion }}</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-geo-alt-fill text-success me-3" style="font-size: 1.2rem;"></i>
+                                <div>
+                                    <small class="text-muted d-block">Ciudad</small>
+                                    <span class="fw-medium">{{ evento.eve_ciudad }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-building text-success me-3" style="font-size: 1.2rem;"></i>
+                                <div>
+                                    <small class="text-muted d-block">Lugar</small>
+                                    <span class="fw-medium">{{ evento.eve_lugar }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-calendar-range text-success me-3" style="font-size: 1.2rem;"></i>
+                                <div>
+                                    <small class="text-muted d-block">Fechas</small>
+                                    <span class="fw-medium">{{ evento.eve_fecha_inicio|date:"d M Y" }} - {{ evento.eve_fecha_fin|date:"d M Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-check-circle-fill text-success me-3" style="font-size: 1.2rem;"></i>
+                                <div>
+                                    <small class="text-muted d-block">Estado</small>
+                                    <span class="badge 
+                                        {% if relacion.asi_eve_estado == 'Pendiente' %}bg-warning text-dark
+                                        {% elif relacion.asi_eve_estado == 'Aprobado' %}bg-success text-white
+                                        {% else %}bg-secondary text-white
+                                        {% endif %} px-3 py-2">
+                                        {{ relacion.asi_eve_estado }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categorías -->
+                    <div class="mt-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-tags text-success me-2"></i>
+                            <span class="fw-medium text-dark">Categorías</span>
+                        </div>
+                        <div>
+                            {% for ec in evento.eventocategoria_set.all %}
+                                <span class="badge bg-success me-2 mb-2 px-3 py-2">{{ ec.categoria.cat_nombre }}</span>
+                            {% empty %}
+                                <span class="text-muted">Sin categorías asignadas</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-gear-fill text-success me-2"></i>
+                        Acciones Disponibles
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    {% if relacion.asi_eve_estado == 'Aprobado' %}
+                        <div class="row g-3">
+                            {% if relacion.asi_eve_qr %}
+                            <div class="col-lg-3 col-md-6">
+                                <a href="{{ relacion.asi_eve_qr.url }}" 
+                                   class="btn btn-success w-100 py-3 fw-medium" download>
+                                    <i class="bi bi-qr-code me-2"></i>
+                                    Descargar QR
+                                </a>
+                            </div>
+                            {% endif %}
+
+                            {% if evento.eve_programacion %}
+                            <div class="col-lg-3 col-md-6">
+                                <a href="{{ evento.eve_programacion.url }}" 
+                                   class="btn btn-info w-100 py-3 fw-medium" target="_blank">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>
+                                    Ver Programación
+                                </a>
+                            </div>
+                            {% endif %}
+
+                            {% if tiene_memorias %}
+                            <div class="col-lg-3 col-md-6">
+                                <a href="{% url 'descargar_memorias_asistente' evento.eve_id %}" 
+                                   class="btn btn-primary w-100 py-3 fw-medium">
+                                    <i class="bi bi-journal-arrow-down me-2"></i>
+                                    Descargar Memorias
+                                </a>
+                            </div>
+                            {% endif %}
+
+                            <div class="col-lg-3 col-md-6">
+                                <button type="button" class="btn btn-outline-success w-100 py-3 fw-medium"
+                                        onclick="compartirEvento('{{ evento.eve_id }}', '{{ evento.eve_nombre|escapejs }}')">
+                                    <i class="bi bi-share me-2"></i>
+                                    Compartir Evento
+                                </button>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6">
+                                <form method="post" onsubmit="return confirm('¿Estás seguro de cancelar tu inscripción?');" class="w-100">
+                                    {% csrf_token %}
+                                    <button type="submit" name="cancelar_inscripcion" 
+                                            class="btn btn-outline-danger w-100 py-3 fw-medium">
+                                        <i class="bi bi-x-circle me-2"></i>
+                                        Cancelar Inscripción
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6">
+                                <a href="{% url 'dashboard_asistente' %}" 
+                                   class="btn btn-outline-secondary w-100 py-3 fw-medium">
+                                    <i class="bi bi-arrow-left me-2"></i>
+                                    Volver al Dashboard
+                                </a>
+                            </div>
+                        </div>
+
+                    {% elif relacion.asi_eve_estado == 'Pendiente' %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="alert alert-warning border-0 mb-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-clock-fill me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Inscripción Pendiente</h6>
+                                            <p class="mb-0">Tu inscripción está siendo revisada. Te notificaremos cuando sea aprobada.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-success py-3 px-4 fw-medium"
+                                            onclick="compartirEvento('{{ evento.eve_id }}', '{{ evento.eve_nombre|escapejs }}')"
+                                            title="Compartir evento">
+                                        <i class="bi bi-share"></i>
+                                    </button>
+                                    <form method="post" onsubmit="return confirm('¿Estás seguro de cancelar tu inscripción?');" class="flex-fill">
+                                        {% csrf_token %}
+                                        <button type="submit" name="cancelar_inscripcion" 
+                                                class="btn btn-outline-danger w-100 py-3 fw-medium">
+                                            <i class="bi bi-x-circle me-2"></i>
+                                            Cancelar Inscripción
+                                        </button>
+                                    </form>
+                                    <a href="{% url 'dashboard_asistente' %}" 
+                                       class="btn btn-outline-secondary py-3 px-4 fw-medium">
+                                        <i class="bi bi-arrow-left"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% else %}
+                        <div class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="bi bi-exclamation-triangle-fill text-muted" style="font-size: 3rem; opacity: 0.6;"></i>
+                            </div>
+                            <h5 class="text-muted mb-2">Estado: {{ relacion.asi_eve_estado }}</h5>
+                            <p class="text-muted mb-3">Contacta al organizador para obtener más información.</p>
+                            <a href="{% url 'dashboard_asistente' %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Volver al Dashboard
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Modal para Compartir Evento -->
+<div class="modal fade" id="modalCompartir" tabindex="-1" aria-labelledby="modalCompartirLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalCompartirLabel">
+                    <i class="bi bi-share me-2"></i>Compartir Evento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-calendar-event text-success mb-2" style="font-size: 3rem;"></i>
+                    <h6 id="nombreEventoCompartir" class="fw-bold"></h6>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="mensajeCompartir" class="form-label fw-medium">Mensaje para compartir:</label>
+                    <textarea class="form-control" id="mensajeCompartir" rows="8" readonly></textarea>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="button" class="btn btn-success" onclick="copiarMensaje()">
+                        <i class="bi bi-clipboard me-2"></i>Copiar mensaje
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="compartirWhatsApp()">
+                        <i class="bi bi-whatsapp me-2"></i>WhatsApp
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="compartirFacebook()">
+                        <i class="bi bi-facebook me-2"></i>Facebook
+                    </button>
+                    <button type="button" class="btn btn-dark" onclick="compartirX()">
+                        <i class="bi bi-twitter-x me-2"></i>X (Twitter)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let datosCompartir = {};
+
+function compartirEvento(eventoId, nombreEvento) {
+    console.log('Compartiendo evento:', eventoId, nombreEvento);
+    
+    // Mostrar loading
+    const modalElement = document.getElementById('modalCompartir');
+    const modal = new bootstrap.Modal(modalElement);
+    
+    document.getElementById('nombreEventoCompartir').textContent = nombreEvento;
+    document.getElementById('mensajeCompartir').value = 'Cargando información del evento...';
+    
+    modal.show();
+    
+    // Hacer petición para obtener información del evento
+    fetch(`/asistente/evento/${eventoId}/compartir/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        datosCompartir = data;
+        document.getElementById('mensajeCompartir').value = data.mensaje;
+    })
+    .catch(error => {
+        console.error('Error completo:', error);
+        document.getElementById('mensajeCompartir').value = 'Error al cargar la información del evento. Por favor intenta de nuevo.';
+        datosCompartir = {
+            mensaje: 'Error al cargar información',
+            url: window.location.href,
+            titulo: nombreEvento
+        };
+    });
+}
+
+function copiarMensaje() {
+    const textarea = document.getElementById('mensajeCompartir');
+    textarea.select();
+    textarea.setSelectionRange(0, 99999); // Para móviles
+    
+    navigator.clipboard.writeText(textarea.value).then(function() {
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check me-2"></i>¡Copiado!';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-outline-success');
+            btn.classList.add('btn-success');
+        }, 2000);
+    });
+}
+
+function compartirWhatsApp() {
+    console.log('Compartir WhatsApp con datos:', datosCompartir);
+    if (datosCompartir.mensaje) {
+        const mensaje = encodeURIComponent(datosCompartir.mensaje);
+        const url = `https://wa.me/?text=${mensaje}`;
+        console.log('URL WhatsApp:', url);
+        window.open(url, '_blank');
+    } else {
+        alert('Error: No hay mensaje para compartir. Por favor intenta de nuevo.');
+    }
+}
+
+function compartirFacebook() {
+    console.log('Compartir Facebook con datos:', datosCompartir);
+    if (datosCompartir.url) {
+        const url = encodeURIComponent(datosCompartir.url);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    } else {
+        alert('Error: No hay URL para compartir. Por favor intenta de nuevo.');
+    }
+}
+
+function compartirX() {
+    console.log('Compartir X con datos:', datosCompartir);
+    if (datosCompartir.titulo && datosCompartir.url) {
+        const texto = encodeURIComponent(`${datosCompartir.titulo} - ${datosCompartir.url}`);
+        window.open(`https://twitter.com/intent/tweet?text=${texto}`, '_blank');
+    } else {
+        alert('Error: No hay información para compartir. Por favor intenta de nuevo.');
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}

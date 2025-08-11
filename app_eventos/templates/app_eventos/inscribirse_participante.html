@@ -4,10 +4,19 @@
 <div class="container mt-5">
     <div class="card shadow-sm border-0 rounded-4">
         <div class="card-body p-5">
+            {% if codigo_invitacion %}
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-envelope-check me-2"></i>Registro por Invitación
+                    </h6>
+                    <p class="mb-0">Has sido invitado(a) a participar en este evento. Tu correo electrónico ya está confirmado.</p>
+                </div>
+            {% endif %}
+            
             <h2 class="text-center text-primary mb-4">Preinscribirse como Participante</h2>
             <p class="text-center text-muted mb-4">Evento: <strong>{{ evento.eve_nombre }}</strong></p>
 
-            <form action="{% url 'inscripcion_participante' evento.eve_id %}" method="post" enctype="multipart/form-data">
+            <form action="{% if codigo_invitacion %}{% url 'registro_con_codigo' codigo_invitacion.codigo %}{% else %}{% url 'inscripcion_participante' evento.eve_id %}{% endif %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row mb-3">
                     <div class="col-md-6">
@@ -31,7 +40,15 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Correo Electrónico</label>
-                    <input type="email" name="par_correo" class="form-control" required>
+                    {% if email_prefijado %}
+                        <input type="email" name="par_correo" class="form-control bg-light" value="{{ email_prefijado }}" readonly>
+                        <small class="text-muted">Correo confirmado por invitación</small>
+                        {% if codigo_invitacion %}
+                            <input type="hidden" name="codigo" value="{{ codigo_invitacion.codigo }}">
+                        {% endif %}
+                    {% else %}
+                        <input type="email" name="par_correo" class="form-control" required>
+                    {% endif %}
                 </div>
                 <div class="mb-4">
                     <label class="form-label">Documentación Requerida (PDF, ZIP, etc.)</label>

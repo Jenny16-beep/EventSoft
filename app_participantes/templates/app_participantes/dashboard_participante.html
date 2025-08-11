@@ -1,93 +1,247 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow rounded-4 p-4">
-        <h2 class="text-center mb-4 text-primary fw-bold">
-            <i class="bi bi-person-circle me-2"></i>Bienvenido, {{ datos.par_nombre }}
-        </h2>
-
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body">
-                        <h5 class="card-title text-secondary fw-bold">
-                            <i class="bi bi-calendar-event me-2"></i>Evento
-                        </h5>
-                        <p class="card-text">{{ datos.eve_nombre }}</p>
-
-                        <h6 class="fw-bold mt-3">
-                            <i class="bi bi-info-circle me-1"></i>Estado de inscripción
-                        </h6>
-                        <span class="badge 
-                            {% if datos.par_eve_estado == 'Pendiente' %}bg-warning text-dark
-                            {% elif datos.par_eve_estado == 'Aprobado' %}bg-success
-                            {% elif datos.par_eve_estado == 'Rechazado' %}bg-danger
-                            {% elif datos.par_eve_estado == 'Cancelado' %}bg-secondary
-                            {% endif %}">
-                            {{ datos.par_eve_estado }}
-                        </span>
+<div class="container-fluid py-4">
+    <!-- Header con info del evento -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg overflow-hidden">
+                <div class="card-header py-4" 
+                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="me-4">
+                                    <div class="rounded-circle p-3" style="background-color: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3);">
+                                        <i class="bi bi-person-circle-fill" style="font-size: 2rem; color: #ffffff !important;"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-1" style="color: #ffffff !important;">¡Hola, {{ datos.par_nombre }}!</h3>
+                                    <p class="mb-0" style="color: #ffffff !important; opacity: 0.95;">Gestiona tu participación en el evento</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <div class="rounded-pill px-4 py-2 d-inline-block" style="background-color: rgba(255,255,255,0.25); backdrop-filter: blur(10px);">
+                                <i class="bi bi-calendar-event me-2" style="color: #ffffff !important;"></i>
+                                <span class="fw-medium" style="color: #ffffff !important;">Dashboard Participante</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body">
-                        <h5 class="card-title text-secondary fw-bold">
-                            <i class="bi bi-envelope-fill me-2"></i>Contacto
-                        </h5>
-                        <p class="mb-1"><strong>Correo:</strong> {{ datos.par_correo }}</p>
-                        <p><strong>Teléfono:</strong> {{ datos.par_telefono }}</p>
+    <div class="row g-4 mb-4">
+        <!-- Información del Evento -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-0 py-3">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-calendar-event text-primary me-2"></i>
+                        Información del Evento
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-12">
+                            <h4 class="fw-bold text-primary mb-3">{{ datos.eve_nombre }}</h4>
+                            
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="fw-medium text-muted">Estado de Participación:</span>
+                                    <span class="badge fs-6 px-3 py-2
+                                        {% if datos.par_eve_estado == 'Pendiente' %}bg-warning text-dark
+                                        {% elif datos.par_eve_estado == 'Aprobado' %}bg-success
+                                        {% elif datos.par_eve_estado == 'Rechazado' %}bg-danger
+                                        {% elif datos.par_eve_estado == 'Cancelado' %}bg-secondary
+                                        {% endif %}">
+                                        <i class="bi bi-circle-fill me-1" style="font-size: 0.6rem;"></i>
+                                        {{ datos.par_eve_estado }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {% if datos.par_eve_estado == 'Aprobado' %}
+                                <div class="alert alert-success border-0 mb-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-check-circle-fill me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">¡Participación Confirmada!</h6>
+                                            <p class="mb-0">Tu inscripción ha sido aprobada. Ya puedes acceder a todos los recursos del evento.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% elif datos.par_eve_estado == 'Pendiente' %}
+                                <div class="alert alert-warning border-0 mb-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-clock-fill me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Inscripción en Revisión</h6>
+                                            <p class="mb-0">Tu solicitud está siendo evaluada. Te notificaremos cuando sea aprobada.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% elif datos.par_eve_estado == 'Rechazado' %}
+                                <div class="alert alert-danger border-0 mb-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-x-octagon-fill me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Inscripción Rechazada</h6>
+                                            <p class="mb-0">Tu preinscripción fue rechazada. Contacta al organizador para más información.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <hr class="my-4">
-
-        {% if datos.par_eve_estado == 'Pendiente' %}
-            <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
-                <a href="{% url 'modificar_preinscripcion_participante' datos.eve_id %}" class="btn btn-warning">
-                    <i class="bi bi-pencil-square me-1"></i>Modificar inscripción
-                </a>
-                <form method="post" action="{% url 'cancelar_preinscripcion_participante'%}"
-                      onsubmit="return confirm('¿Estás seguro de que deseas cancelar tu inscripción?');">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-x-circle me-1"></i>Cancelar inscripción
-                    </button>
-                </form>
+        <!-- Información de Contacto -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-0 py-3">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-person-lines-fill text-primary me-2"></i>
+                        Mis Datos
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-envelope-fill text-muted me-2"></i>
+                            <small class="text-muted fw-medium">Correo Electrónico</small>
+                        </div>
+                        <p class="fw-medium mb-0">{{ datos.par_correo }}</p>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-telephone-fill text-muted me-2"></i>
+                            <small class="text-muted fw-medium">Teléfono</small>
+                        </div>
+                        <p class="fw-medium mb-0">{{ datos.par_telefono|default:"No especificado" }}</p>
+                    </div>
+                </div>
             </div>
+        </div>
+    </div>
 
-        {% elif datos.par_eve_estado == 'Aprobado' %}
-            <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
-                <a href="{% url 'ver_qr_participante' datos.eve_id  %}" class="btn btn-success">
-                    <i class="bi bi-qr-code me-1"></i>Ver QR
-                </a>
-                <a href="{% url 'instrumento_evaluacion_participante'  datos.eve_id %}" class="btn btn-info">
-                    <i class="bi bi-file-earmark-check me-1"></i> Ver Instrumento de Evaluación
-                </a>
-                <a href="{% url 'calificaciones_participante' datos.eve_id  %}" class="btn btn-success">
-                    <i class="bi bi-star me-1"></i> Ver Calificación Obtenida
-                </a>
-                {% if datos.eve_programacion %}
-                    <a href="{% url 'ver_evento_completo_participante' datos.eve_id %}" class="btn btn-info">
-                        <i class="bi bi-file-earmark-text me-1"></i>Ver información del evento
-                    </a>
-                {% endif %}
-            </div>
+    <!-- Actions Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-gear-fill text-primary me-2"></i>
+                        Acciones Disponibles
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    {% if datos.par_eve_estado == 'Pendiente' %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <a href="{% url 'modificar_preinscripcion_participante' datos.eve_id %}" 
+                                   class="btn btn-warning w-100 py-3 fw-medium">
+                                    <i class="bi bi-pencil-square me-2"></i>
+                                    Modificar Inscripción
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <form method="post" action="{% url 'cancelar_preinscripcion_participante'%}"
+                                      onsubmit="return confirm('¿Estás seguro de que deseas cancelar tu inscripción?');" class="w-100">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger w-100 py-3 fw-medium">
+                                        <i class="bi bi-x-circle me-2"></i>
+                                        Cancelar Inscripción
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
 
-        {% elif datos.par_eve_estado == 'Rechazado' %}
-            <div class="alert alert-danger mt-3 text-center">
-                <i class="bi bi-x-octagon me-1"></i>Tu preinscripción fue rechazada. Contacta al organizador.
-            </div>
+                    {% elif datos.par_eve_estado == 'Aprobado' %}
+                        <div class="row g-3">
+                            <div class="col-lg-3 col-md-6">
+                                <a href="{% url 'ver_qr_participante' datos.eve_id  %}" 
+                                   class="btn btn-success w-100 py-3 fw-medium">
+                                    <i class="bi bi-qr-code me-2"></i>
+                                    Mi Código QR
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <a href="{% url 'instrumento_evaluacion_participante'  datos.eve_id %}" 
+                                   class="btn btn-info w-100 py-3 fw-medium">
+                                    <i class="bi bi-file-earmark-check me-2"></i>
+                                    Ver Criterios
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <a href="{% url 'calificaciones_participante' datos.eve_id  %}" 
+                                   class="btn btn-primary w-100 py-3 fw-medium">
+                                    <i class="bi bi-star me-2"></i>
+                                    Mis Calificaciones
+                                </a>
+                            </div>
+                            {% if datos.eve_programacion %}
+                            <div class="col-lg-3 col-md-6">
+                                <a href="{% url 'ver_evento_completo_participante' datos.eve_id %}" 
+                                   class="btn btn-outline-primary w-100 py-3 fw-medium">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Info del Evento
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
 
-        {% elif datos.par_eve_estado == 'Cancelado' %}
-            <div class="alert alert-warning mt-3 text-center">
-                <i class="bi bi-exclamation-triangle me-1"></i>Tu inscripción fue cancelada.
+                        <!-- Segunda fila para archivos adicionales -->
+                        {% if datos.eve_informacion_tecnica or datos.eve_memorias %}
+                        <div class="row g-3 mt-2">
+                            {% if datos.eve_informacion_tecnica %}
+                            <div class="col-lg-6 col-md-6">
+                                <a href="{% url 'descargar_informacion_tecnica_participante' datos.eve_id %}" 
+                                   class="btn btn-outline-success w-100 py-3 fw-medium">
+                                    <i class="bi bi-file-earmark-arrow-down me-2"></i>
+                                    Descargar Info Técnica
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% if datos.eve_memorias %}
+                            <div class="col-lg-6 col-md-6">
+                                <a href="{% url 'descargar_memorias_participante' datos.eve_id %}" 
+                                   class="btn btn-outline-warning w-100 py-3 fw-medium">
+                                    <i class="bi bi-journal-arrow-down me-2"></i>
+                                    Descargar Memorias
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                    {% elif datos.par_eve_estado == 'Rechazado' %}
+                        <div class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem; opacity: 0.6;"></i>
+                            </div>
+                            <h5 class="text-muted mb-2">Inscripción Rechazada</h5>
+                            <p class="text-muted">Contacta al organizador del evento para obtener más información sobre el motivo del rechazo.</p>
+                        </div>
+
+                    {% elif datos.par_eve_estado == 'Cancelado' %}
+                        <div class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="bi bi-x-circle-fill text-secondary" style="font-size: 3rem; opacity: 0.6;"></i>
+                            </div>
+                            <h5 class="text-muted mb-2">Inscripción Cancelada</h5>
+                            <p class="text-muted">Tu participación en este evento ha sido cancelada.</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-        {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

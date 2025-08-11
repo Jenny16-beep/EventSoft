@@ -1,34 +1,146 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow rounded-4 p-4">
-        <h2 class="text-center mb-4 text-primary fw-bold">
-            <i class="bi bi-calendar-range me-2"></i>Mis Eventos
-        </h2>
-        <div class="row row-cols-1 row-cols-md-2 g-4">
-            {% for evento in eventos %}
-            <div class="col">
-                <div class="card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ evento.eve_nombre }}</h5>
-                        <p><strong>Fecha:</strong> {{ evento.eve_fecha_inicio }} a {{ evento.eve_fecha_fin }}</p>
-                        <p><strong>Estado:</strong>
-                            <span class="badge 
-                                {% if evento.par_eve_estado == 'Pendiente' %}bg-warning text-dark
-                                {% elif evento.par_eve_estado == 'Aprobado' %}bg-success
-                                {% elif evento.par_eve_estado == 'Rechazado' %}bg-danger
-                                {% elif evento.par_eve_estado == 'Cancelado' %}bg-secondary
-                                {% endif %}">
-                                {{ evento.par_eve_estado }}
-                            </span>
-                        </p>
-                        <a href="{% url 'dashboard_participante_evento' evento.eve_id %}" class="btn btn-primary mt-3">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Ver detalle
-                        </a>
-                    </div>
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-trophy-fill mb-3 text-white" style="font-size: 2.5rem;"></i>
+                    <h2 class="fw-bold mb-2" style="color: #ffffff !important;">Portal del Participante</h2>
+                    <p class="mb-0" style="color: #ffffff !important; opacity: 0.95;">Gestiona tus participaciones en eventos</p>
                 </div>
             </div>
-            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-calendar-check-fill text-primary mb-2" style="font-size: 1.8rem;"></i>
+                    <h4 class="fw-bold text-primary mb-1">{{ estadisticas.total }}</h4>
+                    <p class="text-muted mb-0 small">Eventos Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-hourglass-split text-warning mb-2" style="font-size: 1.8rem;"></i>
+                    <h4 class="fw-bold text-warning mb-1">{{ estadisticas.pendientes }}</h4>
+                    <p class="text-muted mb-0 small">Pendientes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-check-circle-fill text-success mb-2" style="font-size: 1.8rem;"></i>
+                    <h4 class="fw-bold text-success mb-1">{{ estadisticas.aprobados }}</h4>
+                    <p class="text-muted mb-0 small">Aprobados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-x-circle-fill text-danger mb-2" style="font-size: 1.8rem;"></i>
+                    <h4 class="fw-bold text-danger mb-1">{{ estadisticas.rechazados }}</h4>
+                    <p class="text-muted mb-0 small">Rechazados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="bi bi-calendar-range me-2 text-primary"></i>Mis Eventos
+                            </h5>
+                        </div>
+                        <span class="badge bg-primary px-3 py-2">
+                            {{ eventos|length }} evento{{ eventos|length|pluralize }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    {% if eventos %}
+                        <div class="row g-3">
+                            {% for evento in eventos %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card border shadow-sm h-100">
+                                    <div class="card-body p-3 position-relative">
+                                        <!-- Status badge -->
+                                        <div class="position-absolute top-0 end-0 mt-2 me-2">
+                                            <span class="badge rounded-pill 
+                                                {% if evento.par_eve_estado == 'Pendiente' %}bg-warning text-dark
+                                                {% elif evento.par_eve_estado == 'Aprobado' %}bg-success text-white
+                                                {% elif evento.par_eve_estado == 'Rechazado' %}bg-danger text-white
+                                                {% elif evento.par_eve_estado == 'Cancelado' %}bg-secondary text-white
+                                                {% endif %}">
+                                                {{ evento.par_eve_estado }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Event content -->
+                                        <div class="pe-4">
+                                            <h6 class="fw-bold text-dark mb-2">
+                                                {{ evento.eve_nombre|truncatechars:40 }}
+                                            </h6>
+                                            
+                                            <div class="mb-3">
+                                                <div class="d-flex align-items-center text-muted mb-2">
+                                                    <i class="bi bi-calendar3 me-2 text-primary"></i>
+                                                    <small class="text-dark">
+                                                        {{ evento.eve_fecha_inicio|date:"d M Y" }}
+                                                        {% if evento.eve_fecha_inicio != evento.eve_fecha_fin %}
+                                                            - {{ evento.eve_fecha_fin|date:"d M Y" }}
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                                
+                                                {% if evento.par_eve_estado == 'Aprobado' %}
+                                                    <div class="d-flex align-items-center text-success">
+                                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                                        <small class="fw-medium">¡Participación confirmada!</small>
+                                                    </div>
+                                                {% elif evento.par_eve_estado == 'Pendiente' %}
+                                                    <div class="d-flex align-items-center text-warning">
+                                                        <i class="bi bi-clock-fill me-2"></i>
+                                                        <small class="fw-medium">Esperando aprobación</small>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="d-grid">
+                                                <a href="{% url 'dashboard_participante_evento' evento.eve_id %}" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-arrow-right-circle me-1"></i>
+                                                    Ver detalles
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <h6 class="text-muted mb-2">No tienes eventos registrados</h6>
+                            <p class="text-muted small mb-0">Cuando te registres en eventos, aparecerán aquí.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

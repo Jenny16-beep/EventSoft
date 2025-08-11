@@ -2,182 +2,627 @@
 {% load static %}
 {% block content %}
 
-<!-- ✅ Estilos institucionales -->
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap');
+
+    :root {
+        --primary-color: #39A900;
+        --primary-dark: #2f8a00;
+        --secondary-color: #007832;
+        --secondary-dark: #005f26;
+        --accent-color: #f8f9fa;
+        --text-dark: #2c3e50;
+        --text-muted: #6c757d;
+        --border-radius: 16px;
+        --shadow-subtle: 0 2px 12px rgba(0,0,0,0.08);
+        --shadow-medium: 0 4px 20px rgba(0,0,0,0.12);
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
     body {
-        font-family: 'Work Sans', Calibri, sans-serif;
-        background-color: #fcfcfc;
+        font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: var(--text-dark);
+        line-height: 1.6;
     }
 
-    .btn-primary-custom {
-        background-color: #39A900;
-        border-color: #39A900;
-    }
-
-    .btn-primary-custom:hover {
-        background-color: #2f8a00;
-        border-color: #2f8a00;
-    }
-
-    .btn-secondary-custom {
-        background-color: #007832;
-        border-color: #007832;
-    }
-
-    .btn-secondary-custom:hover {
-        background-color: #005f26;
-        border-color: #005f26;
-    }
-
-    .icon-badge {
-        background-color: #39A900;
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        border-radius: var(--border-radius);
         color: white;
-        padding: 0.4rem;
-        border-radius: 50%;
-        margin-right: 0.5rem;
-        display: inline-flex;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        opacity: 0.9;
+        font-weight: 400;
+        margin-bottom: 0;
+    }
+
+    .main-content {
+        display: grid;
+        grid-template-columns: 400px 1fr 320px;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .image-container {
+        position: sticky;
+        top: 1.5rem;
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        box-shadow: var(--shadow-subtle);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .evento-image {
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .image-info {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .image-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--secondary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .image-subtitle {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        display: flex;
         align-items: center;
         justify-content: center;
+        gap: 0.25rem;
     }
 
-    .evento-img {
-        width: 100%;
-        height: 300px;
-        object-fit: cover;
-        border-radius: 12px;
-    }
-
-    .card-custom {
-        border: none;
-        background-color: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    .info-section {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-subtle);
+        border: 1px solid rgba(0,0,0,0.05);
+        max-width: 100%;
     }
 
     .section-title {
-        font-size: 1.6rem;
+        font-size: 1.3rem;
         font-weight: 600;
-        color: #007832;
+        color: var(--secondary-color);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    .card-text strong {
-        color: #333;
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .info-item {
+        background: var(--accent-color);
+        padding: 0.75rem;
+        border-radius: 8px;
+        border-left: 3px solid var(--primary-color);
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .description-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .description-text {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--text-muted);
+        margin-bottom: 0;
+    }
+
+    .cta-section {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-subtle);
+        border: 1px solid rgba(0,0,0,0.05);
+        position: sticky;
+        top: 1.5rem;
+        height: fit-content;
+    }
+
+    .cta-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--secondary-color);
+        margin-bottom: 0.75rem;
+        text-align: center;
+    }
+
+    .cta-description {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 1.25rem;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    .btn-custom {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: var(--transition);
+        border: 2px solid transparent;
+        margin-bottom: 0.75rem;
+    }
+
+    .btn-outline-success-custom {
+        background-color: transparent;
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-outline-success-custom:hover {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(57, 169, 0, 0.3);
+    }
+
+    .info-box {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+    .info-box h6 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--secondary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .info-box li {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-bottom: 0.25rem;
+    }
+
+    .back-btn {
+        position: absolute;
+        top: 80px;
+        left: 1rem;
+        background: white;
+        border: none;
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        box-shadow: var(--shadow-medium);
+        color: var(--secondary-color);
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        transition: var(--transition);
+        z-index: 1000;
+    }
+
+    @media (max-width: 992px) {
+        .main-content {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .image-container,
+        .cta-section {
+            position: static;
+        }
+        
+        .image-container {
+            order: -1;
+        }
+        
+        .evento-image {
+            height: 240px;
+        }
+        
+        .back-btn {
+            position: static;
+            margin-bottom: 1rem;
+            width: fit-content;
+        }
+        
+        .hero-title {
+            font-size: 1.6rem;
+        }
+        
+        .hero-section {
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
-<div class="container py-5">
-    <div class="row gx-5 gy-4">
-        <!-- 🖼 Imagen -->
-        <div class="col-lg-6">
+<a href="{% url 'ver_eventos' %}" class="back-btn">
+    <i class="bi bi-arrow-left"></i>
+    Volver a eventos
+</a>
+
+<div class="container py-4">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content text-center">
+            <h1 class="hero-title">{{ evento.eve_nombre }}</h1>
+            <p class="hero-subtitle">
+                <i class="bi bi-geo-alt"></i> {{ evento.eve_ciudad }} • {{ evento.eve_lugar }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Layout principal en 3 columnas -->
+    <div class="main-content">
+        <!-- Columna 1: Imagen -->
+        <div class="image-container">
             {% if evento.eve_imagen %}
-                <img src="{{ evento.eve_imagen.url }}" class="evento-img shadow-sm mb-4" alt="Imagen del evento">
+                <img src="{{ evento.eve_imagen.url }}" class="evento-image" alt="{{ evento.eve_nombre }}">
             {% else %}
-                <img src="{% static 'img/default-evento.jpg' %}" class="evento-img shadow-sm mb-4" alt="Imagen no disponible">
+                <div class="evento-image d-flex align-items-center justify-content-center bg-light">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-image" style="font-size: 2rem;"></i>
+                        <p class="mt-2 mb-0">Sin imagen</p>
+                    </div>
+                </div>
             {% endif %}
             
-            <!-- 📄 Info del evento -->
-            <div class="card card-custom">
-                <div class="card-body">
-                    <h2 class="section-title mb-4">{{ evento.eve_nombre }}</h2>
-
-                    <div class="row gy-2">
-                        <div class="col-md-6">
-                            <p class="card-text"><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</p>
-                            <p class="card-text"><strong>Lugar:</strong> {{ evento.eve_lugar }}</p>
-                            <p class="card-text"><strong>Fecha de Inicio:</strong> {{ evento.eve_fecha_inicio }}</p>
-                            <p class="card-text"><strong>Fecha de Fin:</strong> {{ evento.eve_fecha_fin }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p class="card-text"><strong>Capacidad:</strong> {{ evento.eve_capacidad }}</p>
-                            <p class="card-text"><strong>Tiene Costo:</strong> 
-                            {% if evento.eve_tienecosto == True or evento.eve_tienecosto == 1 or evento.eve_tienecosto == "SI" %}
-                                SI
-                            {% else %}
-                                NO
-                            {% endif %}
-                            </p>
-                            {% if categorias %}
-                                <p class="card-text"><strong>Área:</strong> {{ categorias.0.categoria.cat_area_fk.are_nombre }}</p>
-                                <p class="card-text"><strong>Categorías:</strong>
-                                    {% for c in categorias %}
-                                        {{ c.categoria.cat_nombre }}{% if not forloop.last %}, {% endif %}
-                                    {% endfor %}
-                                </p>
-                            {% endif %}
-                        </div>
-                        <div class="col-12 mt-3">
-                            <p class="card-text"><strong>Descripción:</strong> {{ evento.eve_descripcion }}</p>
-                        </div>
-                    </div>
+            <!-- Información contextual de la imagen -->
+            <div class="image-info">
+                <div class="image-title">{{ evento.eve_nombre }}</div>
+                <div class="image-subtitle">
+                    <i class="bi bi-calendar3"></i>
+                    {{ evento.eve_fecha_inicio|date:"d/m/Y" }}
+                    {% if evento.eve_fecha_inicio != evento.eve_fecha_fin %}
+                        - {{ evento.eve_fecha_fin|date:"d/m/Y" }}
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- 🎟️ Acciones e inscripción -->
-        <div class="col-lg-6 d-flex flex-column justify-content-between">
-            <div class="card card-custom h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div class="mb-4">
-                        <div class="alert alert-light border-start border-4" style="border-color: #007832;">
-                            <h5 class="fw-semibold">¿No sabes si ser Asistente o Participante?</h5>
-                            <p class="mb-1"><span class="icon-badge"><i class="bi bi-person"></i></span><strong>Asistente:</strong> Puedes asistir como espectador. Accedes con QR, sin aprobación.</p>
-                            <p class="mb-0"><span class="icon-badge"><i class="bi bi-mortarboard"></i></span><strong>Participante:</strong> Requiere documentos y ser aprobado. Participas activamente.</p>
+        <!-- Columna 2: Información -->
+        <div class="info-section">
+            <h2 class="section-title">
+                <i class="bi bi-info-circle"></i>
+                Información del evento
+            </h2>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Fecha inicio</div>
+                    <div class="info-value">
+                        <i class="bi bi-calendar-event me-1"></i>
+                        {{ evento.eve_fecha_inicio|date:"d/m/Y" }}
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Fecha fin</div>
+                    <div class="info-value">
+                        <i class="bi bi-calendar-check me-1"></i>
+                        {{ evento.eve_fecha_fin|date:"d/m/Y" }}
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Capacidad</div>
+                    <div class="info-value">
+                        <i class="bi bi-people me-1"></i>
+                        {{ evento.eve_capacidad }}
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">Costo</div>
+                    <div class="info-value">
+                        {% if evento.eve_tienecosto == True or evento.eve_tienecosto == 1 or evento.eve_tienecosto == "SI" %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-credit-card"></i> Con costo
+                            </span>
+                        {% else %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-gift"></i> Gratuito
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if categorias %}
+                    <div class="info-item">
+                        <div class="info-label">Área</div>
+                        <div class="info-value">
+                            <i class="bi bi-bookmark me-1"></i>
+                            {{ categorias.0.categoria.cat_area_fk.are_nombre }}
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'ver_eventos' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver
-                        </a>
-
-                        {% if evento.eve_estado == "Inscripciones Cerradas" %}
-                            <button class="btn btn-secondary-custom text-white" disabled>
-                                <i class="bi bi-lock"></i> Inscripciones Asistente cerradas
-                            </button>
-                        {% else %}
-                            <a href="{% url 'inscripcion_asistente' evento.eve_id %}" 
-                               class="btn btn-primary-custom text-white"
-                               data-bs-toggle="tooltip" data-bs-placement="top"
-                               title="Asiste como espectador. Recibirás un QR de ingreso.">
-                                <i class="bi bi-person"></i> Inscribirme como Asistente
-                            </a>
-                        {% endif %}
-
-                        <a href="{% url 'inscripcion_participante' evento.eve_id %}" 
-                           class="btn btn-secondary-custom text-white"
-                           data-bs-toggle="tooltip" data-bs-placement="top"
-                           title="Participa activamente en el evento. Requiere aprobación.">
-                            <i class="bi bi-mortarboard"></i> Inscribirme como Participante
-                        </a>
-
-                        <a href="{% url 'inscripcion_evaluador' evento.eve_id %}" 
-                           class="btn btn-outline-success"
-                           data-bs-toggle="tooltip" data-bs-placement="top"
-                           title="Si eres evaluador, puedes generar una rúbrica y evaluar el evento.">
-                            <i class="bi bi-journal-text"></i> Inscribirme como Evaluador
-                        </a>
-
-                        {% if evento.eve_programacion %}
-                            <a href="{% url 'descargar_programacion_asistente' evento.eve_id%}" 
-                               class="btn btn-outline-primary" 
-                               target="_blank">
-                                <i class="bi bi-file-earmark-pdf"></i> Ver programación del evento (PDF)
-                            </a>
-                        {% endif %}
+                    <div class="info-item">
+                        <div class="info-label">Categorías</div>
+                        <div class="info-value">
+                            <i class="bi bi-tags me-1"></i>
+                            {% for c in categorias %}
+                                {{ c.categoria.cat_nombre }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
                     </div>
+                {% endif %}
+            </div>
+
+            <!-- Descripción integrada -->
+            {% if evento.eve_descripcion %}
+                <div class="description-section">
+                    <h6 class="fw-semibold text-secondary mb-2">
+                        <i class="bi bi-file-text me-1"></i> Descripción
+                    </h6>
+                    <div class="description-text">
+                        {{ evento.eve_descripcion|linebreaks }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna 3: Call to Action -->
+        <div class="cta-section">
+            <h3 class="cta-title">¡Únete!</h3>
+            <p class="cta-description">
+                Regístrate como asistente. 
+                {% if evento.eve_tienecosto == True or evento.eve_tienecosto == 1 or evento.eve_tienecosto == "SI" %}
+                    Recibirás instrucciones de pago.
+                {% else %}
+                    Es gratuito.
+                {% endif %}
+            </p>
+
+            {% if evento.eve_estado == "Inscripciones Cerradas" %}
+                <button class="btn-custom btn-disabled" disabled>
+                    <i class="bi bi-lock"></i>
+                    Cerrado
+                </button>
+            {% else %}
+                <a href="{% url 'inscripcion_asistente' evento.eve_id %}" class="btn-custom btn-primary-custom">
+                    <i class="bi bi-person-plus"></i>
+                    Inscribirme
+                </a>
+            {% endif %}
+
+            {% if evento.eve_programacion %}
+                <a href="{% url 'descargar_programacion_asistente' evento.eve_id %}" 
+                   class="btn-custom btn-secondary-custom" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    Programación
+                </a>
+            {% endif %}
+
+            <!-- Botón de compartir -->
+            <button type="button" class="btn-custom btn-outline-success-custom"
+                    onclick="compartirEventoVisitante('{{ evento.eve_id }}', '{{ evento.eve_nombre|escapejs }}')">
+                <i class="bi bi-share"></i>
+                Compartir evento
+            </button>
+
+            <div class="info-box">
+                <h6>
+                    <i class="bi bi-info-circle"></i> Como asistente:
+                </h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check2 text-success me-1"></i>Acceso con QR</li>
+                    <li><i class="bi bi-check2 text-success me-1"></i>Email de confirmación</li>
+                    {% if evento.eve_tienecosto != True and evento.eve_tienecosto != 1 and evento.eve_tienecosto != "SI" %}
+                        <li><i class="bi bi-check2 text-success me-1"></i>Aprobación automática</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Compartir Evento -->
+<div class="modal fade" id="modalCompartirVisitante" tabindex="-1" aria-labelledby="modalCompartirVisitanteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalCompartirVisitanteLabel">
+                    <i class="bi bi-share me-2"></i>Compartir Evento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-calendar-event text-success mb-2" style="font-size: 3rem;"></i>
+                    <h6 id="nombreEventoCompartirVisitante" class="fw-bold"></h6>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="mensajeCompartirVisitante" class="form-label fw-medium">Mensaje para compartir:</label>
+                    <textarea class="form-control" id="mensajeCompartirVisitante" rows="8" readonly></textarea>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="button" class="btn btn-success" onclick="copiarMensajeVisitante()">
+                        <i class="bi bi-clipboard me-2"></i>Copiar mensaje
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="compartirWhatsAppVisitante()">
+                        <i class="bi bi-whatsapp me-2"></i>WhatsApp
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="compartirFacebookVisitante()">
+                        <i class="bi bi-facebook me-2"></i>Facebook
+                    </button>
+                    <button type="button" class="btn btn-dark" onclick="compartirXVisitante()">
+                        <i class="bi bi-twitter-x me-2"></i>X (Twitter)
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Bootstrap Icons (si no están en base.html) -->
+<script>
+let datosCompartirVisitante = {};
+
+function compartirEventoVisitante(eventoId, nombreEvento) {
+    console.log('Compartiendo evento como visitante:', eventoId, nombreEvento);
+    
+    // Mostrar loading
+    const modalElement = document.getElementById('modalCompartirVisitante');
+    const modal = new bootstrap.Modal(modalElement);
+    
+    document.getElementById('nombreEventoCompartirVisitante').textContent = nombreEvento;
+    document.getElementById('mensajeCompartirVisitante').value = 'Cargando información del evento...';
+    
+    modal.show();
+    
+    // Hacer petición para obtener información del evento
+    fetch(`/evento/${eventoId}/compartir/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        if (data.success) {
+            datosCompartirVisitante = data;
+            document.getElementById('mensajeCompartirVisitante').value = data.mensaje;
+        } else {
+            throw new Error(data.error || 'Error desconocido');
+        }
+    })
+    .catch(error => {
+        console.error('Error completo:', error);
+        document.getElementById('mensajeCompartirVisitante').value = 'Error al cargar la información del evento. Por favor intenta de nuevo.';
+        datosCompartirVisitante = {
+            mensaje: 'Error al cargar información',
+            url: window.location.href,
+            titulo: nombreEvento
+        };
+    });
+}
+
+function copiarMensajeVisitante() {
+    const textarea = document.getElementById('mensajeCompartirVisitante');
+    textarea.select();
+    textarea.setSelectionRange(0, 99999); // Para móviles
+    
+    navigator.clipboard.writeText(textarea.value).then(function() {
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check me-2"></i>¡Copiado!';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-outline-success');
+            btn.classList.add('btn-success');
+        }, 2000);
+    });
+}
+
+function compartirWhatsAppVisitante() {
+    console.log('Compartir WhatsApp con datos:', datosCompartirVisitante);
+    if (datosCompartirVisitante.mensaje) {
+        const mensaje = encodeURIComponent(datosCompartirVisitante.mensaje);
+        const url = `https://wa.me/?text=${mensaje}`;
+        console.log('URL WhatsApp:', url);
+        window.open(url, '_blank');
+    } else {
+        alert('Error: No hay mensaje para compartir. Por favor intenta de nuevo.');
+    }
+}
+
+function compartirFacebookVisitante() {
+    console.log('Compartir Facebook con datos:', datosCompartirVisitante);
+    if (datosCompartirVisitante.url) {
+        const url = encodeURIComponent(datosCompartirVisitante.url);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    } else {
+        alert('Error: No hay URL para compartir. Por favor intenta de nuevo.');
+    }
+}
+
+function compartirXVisitante() {
+    console.log('Compartir X con datos:', datosCompartirVisitante);
+    if (datosCompartirVisitante.titulo && datosCompartirVisitante.url) {
+        const texto = encodeURIComponent(`${datosCompartirVisitante.titulo} - ${datosCompartirVisitante.url}`);
+        window.open(`https://twitter.com/intent/tweet?text=${texto}`, '_blank');
+    } else {
+        alert('Error: No hay información para compartir. Por favor intenta de nuevo.');
+    }
+}
+</script>
+
+<!-- Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-<script>
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
-</script>
 {% endblock %}

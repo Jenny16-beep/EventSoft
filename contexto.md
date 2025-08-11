@@ -55,6 +55,43 @@ class CodigoInvitacionAdminEvento(models.Model):
     def __str__(self):
         return f"Código {self.codigo} para {self.email_destino} ({self.estado})"
 
+class CodigoInvitacionEvento(models.Model):
+    """Modelo para códigos de invitación de evaluadores y participantes a eventos específicos"""
+    ESTADOS = [
+        ('activo', 'Activo'),
+        ('usado', 'Usado'),
+        ('expirado', 'Expirado'),
+        ('cancelado', 'Cancelado'),
+    ]
+    
+    TIPOS = [
+        ('evaluador', 'Evaluador'),
+        ('participante', 'Participante'),
+    ]
+    
+    codigo = models.CharField(max_length=32, unique=True, editable=False)
+    email_destino = models.EmailField()
+    evento = models.ForeignKey('app_eventos.Evento', on_delete=models.CASCADE, related_name='codigos_invitacion')
+    tipo = models.CharField(max_length=12, choices=TIPOS)
+    estado = models.CharField(max_length=12, choices=ESTADOS, default='activo')
+    fecha_creacion = models.DateTimeField(default=timezone.now)
+    fecha_uso = models.DateTimeField(null=True, blank=True)
+    administrador_creador = models.ForeignKey(AdministradorEvento, on_delete=models.CASCADE, related_name='codigos_creados')
+    
+    def save(self, *args, **kwargs):
+        if not self.codigo:
+            self.codigo = str(uuid.uuid4()).replace('-', '')[:16]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Código {self.codigo} - {self.evento.eve_nombre} ({self.get_tipo_display()}) - {self.email_destino}"
+
+    class Meta:
+        verbose_name = "Código de Invitación a Evento"
+        verbose_name_plural = "Códigos de Invitación a Eventos"
+
+    
+
 📦 App: eventos/models.py
 
 from django.db import models
@@ -76,6 +113,7 @@ class Evento(models.Model):
     eve_administrador_fk = models.ForeignKey(AdministradorEvento, on_delete=models.CASCADE, related_name='eventos')
     eve_programacion = models.FileField(upload_to='eventos/programaciones/', null=True, blank=True)
     eve_memorias = models.FileField(upload_to='eventos/memorias/', null=True, blank=True)
+    eve_informacion_tecnica = models.FileField(upload_to='eventos/informacion_tecnica/', null=True, blank=True)
 
 class EventoCategoria(models.Model):
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)

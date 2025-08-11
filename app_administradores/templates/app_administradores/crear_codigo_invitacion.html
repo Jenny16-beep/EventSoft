@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', Calibri, sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .page-title {
+        color: #007832;
+        font-weight: 700;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e9ecef;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #39A900;
+        box-shadow: 0 0 0 3px rgba(57, 169, 0, 0.1);
+    }
+
+    .btn-primary {
+        background-color: #007832;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #005a28;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 120, 50, 0.3);
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-add-email {
+        background-color: #39A900;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+
+    .btn-remove-email {
+        background-color: #dc3545;
+        border: none;
+        border-radius: 6px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .email-input-group {
+        margin-bottom: 0.75rem;
+        position: relative;
+    }
+
+    .email-input-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .alert {
+        border-radius: 12px;
+        border: none;
+    }
+</style>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="page-title text-center mb-4">
+                <i class="bi bi-envelope-plus me-2"></i>
+                Crear Códigos de Invitación
+            </h1>
+
+            <div class="form-container">
+                <form method="POST" id="invitationForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            Seleccionar Evento
+                        </label>
+                        <select name="evento_id" class="form-select" required>
+                            <option value="">Selecciona un evento aprobado...</option>
+                            {% for evento in eventos %}
+                                <option value="{{ evento.eve_id }}">
+                                    {{ evento.eve_nombre }} - {{ evento.eve_ciudad }} ({{ evento.eve_fecha_inicio|date:"d/m/Y" }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if not eventos %}
+                            <div class="alert alert-warning mt-2">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                No tienes eventos aprobados disponibles para crear códigos de invitación.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="bi bi-person-badge me-1"></i>
+                            Tipo de Invitación
+                        </label>
+                        <select name="tipo" class="form-select" required>
+                            <option value="">Selecciona el tipo...</option>
+                            <option value="participante">Participante</option>
+                            <option value="evaluador">Evaluador</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="bi bi-envelope me-1"></i>
+                            Correos Electrónicos
+                        </label>
+                        <div id="emailContainer">
+                            <div class="email-input-group">
+                                <div class="input-group">
+                                    <input type="email" name="emails[]" class="form-control" placeholder="correo@ejemplo.com" required>
+                                    <button type="button" class="btn btn-remove-email d-none" onclick="removeEmail(this)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-add-email mt-2" onclick="addEmail()">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Agregar otro correo
+                        </button>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'dashboard_adminevento' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary" {% if not eventos %}disabled{% endif %}>
+                            <i class="bi bi-send me-2"></i>Crear y Enviar Invitaciones
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addEmail() {
+    const container = document.getElementById('emailContainer');
+    const emailGroup = document.createElement('div');
+    emailGroup.className = 'email-input-group';
+    emailGroup.innerHTML = `
+        <div class="input-group">
+            <input type="email" name="emails[]" class="form-control" placeholder="correo@ejemplo.com" required>
+            <button type="button" class="btn btn-remove-email" onclick="removeEmail(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(emailGroup);
+    updateRemoveButtons();
+}
+
+function removeEmail(button) {
+    button.closest('.email-input-group').remove();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const emailInputs = document.querySelectorAll('.email-input-group');
+    emailInputs.forEach((group, index) => {
+        const removeBtn = group.querySelector('.btn-remove-email');
+        if (emailInputs.length > 1) {
+            removeBtn.classList.remove('d-none');
+        } else {
+            removeBtn.classList.add('d-none');
+        }
+    });
+}
+
+// Validación del formulario
+document.getElementById('invitationForm').addEventListener('submit', function(e) {
+    const emails = document.querySelectorAll('input[name="emails[]"]');
+    let hasValidEmail = false;
+    
+    emails.forEach(input => {
+        if (input.value.trim() && input.checkValidity()) {
+            hasValidEmail = true;
+        }
+    });
+    
+    if (!hasValidEmail) {
+        e.preventDefault();
+        alert('Por favor proporciona al menos un correo electrónico válido.');
+    }
+});
+</script>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+{% endblock %}

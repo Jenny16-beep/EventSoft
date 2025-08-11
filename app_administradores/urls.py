@@ -28,10 +28,20 @@ urlpatterns = [
     path('eliminar-item-administrador/<int:criterio_id>/', views.eliminar_item_administrador, name='eliminar_item_administrador_evento'),
     path('tabla-posiciones-administrador/<int:eve_id>/', views.ver_tabla_posiciones, name='tabla_posiciones_administrador'),
     path('informacion-detallada-administrador/<int:eve_id>/', views.info_detallada_admin, name='informacion_detallada_administrador_evento'),
+    
+    # Códigos de invitación para eventos
+    path('crear-codigo-invitacion/', views.crear_codigo_invitacion, name='crear_codigo_invitacion'),
+    path('listar-codigos-invitacion/', views.listar_codigos_invitacion, name='listar_codigos_invitacion'),
+    path('cancelar-codigo-invitacion/<int:codigo_id>/', views.cancelar_codigo_invitacion, name='cancelar_codigo_invitacion'),
+    
     path('gestionar-evaluadores/<int:eve_id>/', views.gestion_evaluadores, name='gestion_evaluadores'),
     path('detalle-evaluador/<int:eve_id>/<int:evaluador_id>/', views.detalle_evaluador, name='detalle_evaluador_evento'),
     path('descargar-documento-evaluador/<int:eve_id>/<int:evaluador_id>/', views.descargar_documento_evaluador, name='descargar_documento_evaluador_evento'),
     path('gestionar-notificaciones/', views.gestionar_notificaciones, name='gestionar_notificaciones'),
+    
+    # URLs para gestión de archivos del evento
+    path('gestionar-archivos/<int:eve_id>/', views.gestionar_archivos_evento, name='gestionar_archivos_evento'),
+    path('eliminar-archivo/<int:eve_id>/', views.eliminar_archivo_evento, name='eliminar_archivo_evento'),
     
     # URLs para gestión de certificados
     path('gestionar-certificados/', views.gestionar_certificados, name='gestionar_certificados'),

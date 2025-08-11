@@ -52,10 +52,19 @@
         <h2>¡Registro confirmado!</h2>
         <p>Hola <strong>{{ nombre }}</strong>,</p>
         <p>Tu inscripción al evento <strong>{{ evento }}</strong> ha sido confirmada.</p>
+        
+        {% if clave %}
         <div class="clave-box">
             Tu clave de acceso: <span>{{ clave }}</span>
         </div>
         <p class="info">Guárdala en un lugar seguro. Puedes iniciar sesión en el sistema con tu correo y esta clave.</p>
+        {% else %}
+        <div class="clave-box" style="background: #e3f2fd; border-color: #1976d2; color: #0d47a1;">
+            Puedes ingresar con tu clave actual
+        </div>
+        <p class="info">No necesitas una nueva clave, puedes seguir utilizando la que ya tienes para acceder al sistema.</p>
+        {% endif %}
+        
         {% if qr_url %}
         <div class="qr-section">
             <p class="mb-2">Presenta este código QR para tu ingreso:</p>
@@ -63,5 +72,5 @@
         </div>
         {% endif %}
     </div>
-</body>
+</body> 
 </html>

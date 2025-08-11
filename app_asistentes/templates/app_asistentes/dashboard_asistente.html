@@ -2,145 +2,334 @@
 {% load static %}
 
 {% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-person-check-fill mb-3 text-white" style="font-size: 2.5rem;"></i>
+                    <h2 class="fw-bold mb-2" style="color: #ffffff !important;">Portal del Asistente</h2>
+                    <p class="mb-0" style="color: #ffffff !important; opacity: 0.95;">Gestiona tus eventos como asistente</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap');
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-calendar-check-fill text-success mb-2" style="font-size: 1.8rem;"></i>
+                    <h4 class="fw-bold text-success mb-1">{{ estadisticas.total }}</h4>
+                    <p class="text-muted mb-0 small">Eventos Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-hourglass-split text-warning mb-2" style="font-size: 1.8rem;"></i>
+                    <h4 class="fw-bold text-warning mb-1">{{ estadisticas.pendientes }}</h4>
+                    <p class="text-muted mb-0 small">Pendientes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-check-circle-fill text-success mb-2" style="font-size: 1.8rem;"></i>
+                    <h4 class="fw-bold text-success mb-1">{{ estadisticas.aprobados }}</h4>
+                    <p class="text-muted mb-0 small">Aprobados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="bi bi-qr-code text-info mb-2" style="font-size: 1.8rem;"></i>
+                    <h4 class="fw-bold text-info mb-1">{{ estadisticas.con_qr }}</h4>
+                    <p class="text-muted mb-0 small">Con QR</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    body {
-        font-family: 'Work Sans', Calibri, sans-serif;
-        background-color: #f5f7f9;
-    }
-
-    .section-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #007832;
-        margin-bottom: 2rem;
-    }
-
-    .evento-card {
-        border: none;
-        border-radius: 16px;
-        background-color: #fff;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .evento-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
-    }
-
-    .evento-img {
-        border-top-left-radius: 16px;
-        border-top-right-radius: 16px;
-        height: 220px;
-        object-fit: cover;
-        width: 100%;
-    }
-
-    .evento-title {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #007832;
-    }
-
-    .evento-desc {
-        font-size: 0.95rem;
-        color: #444;
-        line-height: 1.5;
-    }
-
-    .evento-info {
-        font-size: 0.9rem;
-        color: #555;
-        margin-top: 0.5rem;
-    }
-
-    .badge-status {
-        background-color: #39A900;
-        color: white;
-        font-size: 0.75rem;
-        padding: 0.4em 0.6em;
-        border-radius: 12px;
-    }
-
-    .qr-status {
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        margin-top: 0.4rem;
-    }
-
-    .qr-status i {
-        font-size: 1.2rem;
-    }
-
-    .btn-ver {
-        background-color: #39A900;
-        border-color: #39A900;
-        color: white;
-        font-weight: 500;
-        transition: all 0.2s;
-    }
-
-    .btn-ver:hover {
-        background-color: #2e8600;
-        border-color: #2e8600;
-    }
-
-    @media (max-width: 576px) {
-        .section-title {
-            font-size: 1.5rem;
-        }
-    }
-</style>
-
-<div class="container" style="margin-top: 100px;">
-    <h2 class="section-title text-center">Mis Eventos Inscritos</h2>
-
-    {% if relaciones %}
-        <div class="row g-4">
-            {% for relacion in relaciones %}
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card evento-card h-100">
-                        {% if relacion.evento.eve_imagen %}
-                            <img src="{{ relacion.evento.eve_imagen.url }}" alt="Imagen del evento" class="evento-img">
-                        {% endif %}
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="evento-title">{{ relacion.evento.eve_nombre }}</h5>
-                            <p class="evento-desc">{{ relacion.evento.eve_descripcion|truncatewords:25 }}</p>
-
-                            <div class="evento-info mt-auto">
-                                <span class="badge-status">
-                                    <i class="bi bi-info-circle"></i> {{ relacion.asi_eve_estado }}
-                                </span>
-
-                                <div class="qr-status mt-2">
-                                    <i class="bi bi-qr-code"></i>
-                                    {% if relacion.asi_eve_qr %}
-                                        <span class="text-success">QR Disponible</span>
-                                    {% else %}
-                                        <span class="text-danger">QR No generado</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <a href="{% url 'detalle_evento_asistente' relacion.evento.eve_id %}" class="btn btn-ver w-100 mt-3">
-                                <i class="bi bi-eye"></i> Ver Detalles
-                            </a>
+    <!-- Events Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="bi bi-calendar-range me-2 text-success"></i>Mis Eventos
+                            </h5>
                         </div>
+                        <span class="badge bg-success px-3 py-2">
+                            {{ relaciones|length }} evento{{ relaciones|length|pluralize }}
+                        </span>
                     </div>
                 </div>
-            {% endfor %}
+                <div class="card-body p-3">
+                    {% if relaciones %}
+                        <div class="row g-3">
+                            {% for item in relaciones_con_memorias %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card border shadow-sm h-100">
+                                    {% if item.evento.eve_imagen %}
+                                        <img src="{{ item.evento.eve_imagen.url }}" alt="Imagen del evento" 
+                                             class="card-img-top" style="height: 200px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="card-body p-3 position-relative">
+                                        <!-- Status badge -->
+                                        <div class="position-absolute top-0 end-0 mt-2 me-2">
+                                            <span class="badge rounded-pill 
+                                                {% if item.estado == 'Pendiente' %}bg-warning text-dark
+                                                {% elif item.estado == 'Aprobado' %}bg-success text-white
+                                                {% elif item.estado == 'Rechazado' %}bg-danger text-white
+                                                {% else %}bg-secondary text-white
+                                                {% endif %}">
+                                                {{ item.estado }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Event content -->
+                                        <div class="pe-4">
+                                            <h6 class="fw-bold text-dark mb-2">
+                                                {{ item.evento.eve_nombre|truncatechars:40 }}
+                                            </h6>
+                                            
+                                            <p class="text-muted small mb-2">
+                                                {{ item.evento.eve_descripcion|truncatewords:15 }}
+                                            </p>
+                                            
+                                            <div class="mb-3">
+                                                <div class="d-flex align-items-center text-muted mb-2">
+                                                    <i class="bi bi-calendar3 me-2 text-success"></i>
+                                                    <small class="text-dark">
+                                                        {{ item.evento.eve_fecha_inicio|date:"d M Y" }}
+                                                        {% if item.evento.eve_fecha_inicio != item.evento.eve_fecha_fin %}
+                                                            - {{ item.evento.eve_fecha_fin|date:"d M Y" }}
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                                
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="bi bi-geo-alt me-2 text-success"></i>
+                                                    <small class="text-dark">{{ item.evento.eve_ciudad }}</small>
+                                                </div>
+
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-qr-code me-2"></i>
+                                                    {% if item.relacion.asi_eve_qr %}
+                                                        <small class="text-success fw-medium">QR Disponible</small>
+                                                    {% else %}
+                                                        <small class="text-muted">QR No generado</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="d-grid gap-2">
+                                                <a href="{% url 'detalle_evento_asistente' item.evento.eve_id %}" 
+                                                   class="btn btn-success btn-sm">
+                                                    <i class="bi bi-arrow-right-circle me-1"></i>
+                                                    Ver detalles
+                                                </a>
+                                                
+                                                <button type="button" class="btn btn-outline-success btn-sm"
+                                                        onclick="compartirEvento('{{ item.evento.eve_id }}', '{{ item.evento.eve_nombre|escapejs }}')">
+                                                    <i class="bi bi-share me-1"></i>
+                                                    Compartir evento
+                                                </button>
+
+                                                <!-- Botón de descarga de memorias -->
+                                                {% if item.estado == 'Aprobado' and item.tiene_memorias %}
+                                                <a href="{% url 'descargar_memorias_asistente' item.evento.eve_id %}" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-journal-arrow-down me-1"></i>
+                                                    Descargar Memorias
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <h6 class="text-muted mb-2">No estás inscrito en ningún evento</h6>
+                            <p class="text-muted small mb-0">Cuando te inscribas como asistente en eventos, aparecerán aquí.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-    {% else %}
-        <p class="text-muted text-center mt-4">No estás inscrito en ningún evento.</p>
-    {% endif %}
+    </div>
 </div>
 
-<!-- Bootstrap Icons (por si no están en base.html) -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<!-- Modal para Compartir Evento -->
+<div class="modal fade" id="modalCompartir" tabindex="-1" aria-labelledby="modalCompartirLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalCompartirLabel">
+                    <i class="bi bi-share me-2"></i>Compartir Evento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-calendar-event text-success mb-2" style="font-size: 3rem;"></i>
+                    <h6 id="nombreEventoCompartir" class="fw-bold"></h6>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="mensajeCompartir" class="form-label fw-medium">Mensaje para compartir:</label>
+                    <textarea class="form-control" id="mensajeCompartir" rows="8" readonly></textarea>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="button" class="btn btn-success" onclick="copiarMensaje()">
+                        <i class="bi bi-clipboard me-2"></i>Copiar mensaje
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="compartirWhatsApp()">
+                        <i class="bi bi-whatsapp me-2"></i>WhatsApp
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="compartirFacebook()">
+                        <i class="bi bi-facebook me-2"></i>Facebook
+                    </button>
+                    <button type="button" class="btn btn-dark" onclick="compartirX()">
+                        <i class="bi bi-twitter-x me-2"></i>X (Twitter)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<script>
+let datosCompartir = {};
+
+function compartirEvento(eventoId, nombreEvento) {
+    console.log('Compartiendo evento:', eventoId, nombreEvento);
+    
+    // Mostrar loading
+    const modalElement = document.getElementById('modalCompartir');
+    const modal = new bootstrap.Modal(modalElement);
+    
+    document.getElementById('nombreEventoCompartir').textContent = nombreEvento;
+    document.getElementById('mensajeCompartir').value = 'Cargando información del evento...';
+    
+    modal.show();
+    
+    // Hacer petición para obtener información del evento
+    fetch(`/asistente/evento/${eventoId}/compartir/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        datosCompartir = data;
+        document.getElementById('mensajeCompartir').value = data.mensaje;
+    })
+    .catch(error => {
+        console.error('Error completo:', error);
+        document.getElementById('mensajeCompartir').value = 'Error al cargar la información del evento. Por favor intenta de nuevo.';
+        datosCompartir = {
+            mensaje: 'Error al cargar información',
+            url: window.location.href,
+            titulo: nombreEvento
+        };
+    });
+}
+
+function copiarMensaje() {
+    const textarea = document.getElementById('mensajeCompartir');
+    textarea.select();
+    textarea.setSelectionRange(0, 99999); // Para móviles
+    
+    navigator.clipboard.writeText(textarea.value).then(function() {
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check me-2"></i>¡Copiado!';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-outline-success');
+            btn.classList.add('btn-success');
+        }, 2000);
+    });
+}
+
+function compartirWhatsApp() {
+    console.log('Compartir WhatsApp con datos:', datosCompartir);
+    if (datosCompartir.mensaje) {
+        const mensaje = encodeURIComponent(datosCompartir.mensaje);
+        const url = `https://wa.me/?text=${mensaje}`;
+        console.log('URL WhatsApp:', url);
+        window.open(url, '_blank');
+    } else {
+        alert('Error: No hay mensaje para compartir. Por favor intenta de nuevo.');
+    }
+}
+
+function compartirFacebook() {
+    console.log('Compartir Facebook con datos:', datosCompartir);
+    if (datosCompartir.url) {
+        const url = encodeURIComponent(datosCompartir.url);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    } else {
+        alert('Error: No hay URL para compartir. Por favor intenta de nuevo.');
+    }
+}
+
+function compartirX() {
+    console.log('Compartir X con datos:', datosCompartir);
+    if (datosCompartir.titulo && datosCompartir.url) {
+        const texto = encodeURIComponent(`${datosCompartir.titulo} - ${datosCompartir.url}`);
+        window.open(`https://twitter.com/intent/tweet?text=${texto}`, '_blank');
+    } else {
+        alert('Error: No hay información para compartir. Por favor intenta de nuevo.');
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}

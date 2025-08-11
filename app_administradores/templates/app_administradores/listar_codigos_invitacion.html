@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap');
+
+    body {
+        font-family: 'Work Sans', Calibri, sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .page-title {
+        color: #007832;
+        font-weight: 700;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e9ecef;
+        padding: 1.5rem;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        border: none;
+        padding: 1rem 0.75rem;
+    }
+
+    .table td {
+        padding: 1rem 0.75rem;
+        vertical-align: middle;
+        border-color: #e9ecef;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .badge-activo {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .badge-usado {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .badge-cancelado {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .btn-sm {
+        padding: 0.375rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border: none;
+    }
+
+    .btn-primary {
+        background-color: #007832;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #005a28;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-title">
+            <i class="bi bi-envelope-check me-2"></i>
+            Códigos de Invitación
+        </h1>
+        <a href="{% url 'crear_codigo_invitacion' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Código
+        </a>
+    </div>
+
+    <div class="table-container">
+        {% if codigos %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Evento</th>
+                            <th>Tipo</th>
+                            <th>Email Destino</th>
+                            <th>Código</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                            <th>Fecha Uso</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for codigo in codigos %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>{{ codigo.evento.eve_nombre }}</strong><br>
+                                        <small class="text-muted">{{ codigo.evento.eve_ciudad }} - {{ codigo.evento.eve_fecha_inicio|date:"d/m/Y" }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge {% if codigo.tipo == 'evaluador' %}bg-info{% else %}bg-primary{% endif %}">
+                                        <i class="bi bi-{% if codigo.tipo == 'evaluador' %}star{% else %}person{% endif %} me-1"></i>
+                                        {{ codigo.get_tipo_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="fw-medium">{{ codigo.email_destino }}</span>
+                                </td>
+                                <td>
+                                    <code class="bg-light p-2 rounded">{{ codigo.codigo }}</code>
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ codigo.estado }}">
+                                        {% if codigo.estado == 'activo' %}
+                                            <i class="bi bi-check-circle me-1"></i>Activo
+                                        {% elif codigo.estado == 'usado' %}
+                                            <i class="bi bi-check2-all me-1"></i>Usado
+                                        {% else %}
+                                            <i class="bi bi-x-circle me-1"></i>{{ codigo.get_estado_display }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ codigo.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                </td>
+                                <td>
+                                    {% if codigo.fecha_uso %}
+                                        <span class="text-success">{{ codigo.fecha_uso|date:"d/m/Y H:i" }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if codigo.estado == 'activo' %}
+                                        <a href="{% url 'cancelar_codigo_invitacion' codigo.id %}" 
+                                           class="btn btn-danger btn-sm"
+                                           onclick="return confirm('¿Estás seguro de que quieres cancelar este código?')">
+                                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-envelope-slash"></i>
+                <h4>No hay códigos de invitación</h4>
+                <p>Aún no has creado ningún código de invitación para tus eventos.</p>
+                <a href="{% url 'crear_codigo_invitacion' %}" class="btn btn-primary mt-2">
+                    <i class="bi bi-plus-circle me-2"></i>Crear Primer Código
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'dashboard_adminevento' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+{% endblock %}

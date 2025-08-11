@@ -13,18 +13,142 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from app_usuarios.models import Usuario
 from app_usuarios.permisos import es_superadmin
 from django.template.loader import render_to_string
+from django.db import transaction
+from app_asistentes.models import Asistente, AsistenteEvento
+from app_participantes.models import Participante, ParticipanteEvento
+from app_evaluadores.models import Evaluador, EvaluadorEvento
+from app_administradores.models import CodigoInvitacionEvento
+from app_eventos.models import ConfiguracionCertificado
+from app_eventos.models import EventoCategoria
 
+
+
+
+def _eliminar_informacion_evento_cerrado(evento):
+    """
+    Función auxiliar para eliminar toda la información relacionada con un evento cerrado.
+    Elimina participantes, asistentes, evaluadores y administradores del evento,
+    y también usuarios si no tienen más roles.
+    """
+    with transaction.atomic():
+        # 1. Eliminar AsistenteEvento del evento
+        asistentes_evento = AsistenteEvento.objects.filter(evento=evento)
+        asistentes_ids = list(asistentes_evento.values_list('asistente_id', flat=True))
+        asistentes_evento.delete()
+        
+        # Verificar si los asistentes están en otros eventos
+        for asistente_id in asistentes_ids:
+            try:
+                asistente = Asistente.objects.get(id=asistente_id)
+                # Si no tiene más eventos asociados, eliminar asistente y su rol
+                if not AsistenteEvento.objects.filter(asistente=asistente).exists():
+                    usuario = asistente.usuario
+                    # Eliminar rol de asistente
+                    RolUsuario.objects.filter(usuario=usuario, rol__nombre='asistente').delete()
+                    asistente.delete()
+                    # Si el usuario no tiene más roles, eliminarlo
+                    if not RolUsuario.objects.filter(usuario=usuario).exists():
+                        usuario.delete()
+            except Asistente.DoesNotExist:
+                continue
+        
+        # 2. Eliminar ParticipanteEvento del evento
+        participantes_evento = ParticipanteEvento.objects.filter(evento=evento)
+        participantes_ids = list(participantes_evento.values_list('participante_id', flat=True))
+        participantes_evento.delete()
+        
+        # Verificar si los participantes están en otros eventos
+        for participante_id in participantes_ids:
+            try:
+                participante = Participante.objects.get(id=participante_id)
+                # Si no tiene más eventos asociados, eliminar participante y su rol
+                if not ParticipanteEvento.objects.filter(participante=participante).exists():
+                    usuario = participante.usuario
+                    # Eliminar rol de participante
+                    RolUsuario.objects.filter(usuario=usuario, rol__nombre='participante').delete()
+                    participante.delete()
+                    # Si el usuario no tiene más roles, eliminarlo
+                    if not RolUsuario.objects.filter(usuario=usuario).exists():
+                        usuario.delete()
+            except Participante.DoesNotExist:
+                continue
+        
+        # 3. Eliminar EvaluadorEvento del evento
+        evaluadores_evento = EvaluadorEvento.objects.filter(evento=evento)
+        evaluadores_ids = list(evaluadores_evento.values_list('evaluador_id', flat=True))
+        evaluadores_evento.delete()
+        
+        # Verificar si los evaluadores están en otros eventos
+        for evaluador_id in evaluadores_ids:
+            try:
+                evaluador = Evaluador.objects.get(id=evaluador_id)
+                # Si no tiene más eventos asociados, eliminar evaluador y su rol
+                if not EvaluadorEvento.objects.filter(evaluador=evaluador).exists():
+                    usuario = evaluador.usuario
+                    # Eliminar rol de evaluador
+                    RolUsuario.objects.filter(usuario=usuario, rol__nombre='evaluador').delete()
+                    evaluador.delete()
+                    # Si el usuario no tiene más roles, eliminarlo
+                    if not RolUsuario.objects.filter(usuario=usuario).exists():
+                        usuario.delete()
+            except Evaluador.DoesNotExist:
+                continue
+        
+        # 4. Manejar el administrador del evento
+        administrador = evento.eve_administrador_fk
+        if administrador:
+            usuario_admin = administrador.usuario
+            
+            # Verificar si el usuario administrador tiene MÁS EVENTOS (excluyendo el actual)
+            otros_eventos_admin = Evento.objects.filter(eve_administrador_fk=administrador).exclude(eve_id=evento.eve_id).exists()
+            
+            # NO ELIMINAR el registro AdministradorEvento - solo verificar si debe eliminar el usuario
+            if not otros_eventos_admin:
+                # No tiene más eventos, ahora verificar códigos de invitación
+                codigos_admin = CodigoInvitacionAdminEvento.objects.filter(usuario_asignado=usuario_admin)
+                tiene_limite_positivo = codigos_admin.filter(limite_eventos__gt=0).exists()
+                
+                if not tiene_limite_positivo:
+                    # No tiene códigos con límite > 0, eliminar todos sus códigos
+                    codigos_admin.delete()
+                    
+                    # Eliminar rol de administrador
+                    RolUsuario.objects.filter(usuario=usuario_admin, rol__nombre='administrador_evento').delete()
+                    
+                    # Eliminar el registro AdministradorEvento
+                    administrador.delete()
+                    
+                    # Si no tiene más roles, eliminar usuario
+                    if not RolUsuario.objects.filter(usuario=usuario_admin).exists():
+                        usuario_admin.delete()
+            # Si tiene más eventos, NO hacer nada (preservar todo)
+        
+        # 5. Eliminar códigos de invitación específicos del evento
+        
+        CodigoInvitacionEvento.objects.filter(evento=evento).delete()
+        
+        # 6. Eliminar configuraciones de certificados del evento
+        
+        ConfiguracionCertificado.objects.filter(evento=evento).delete()
+        
+        # 7. Eliminar relaciones EventoCategoria
+        
+        EventoCategoria.objects.filter(evento=evento).delete()
+        
+        # 8. Finalmente, eliminar el evento (esto también eliminará criterios por CASCADE)
+        evento.delete()
 
 
 @login_required
 @user_passes_test(es_superadmin, login_url='ver_eventos')
 def dashboard(request):
-    estados_objetivo = ['pendiente', 'inscripciones cerradas', 'finalizado']
+    estados_objetivo = ['pendiente', 'inscripciones cerradas', 'finalizado', 'cerrado']
     eventos = Evento.objects.filter(eve_estado__in=estados_objetivo)    
     mapa_estados = {
         'pendiente': 'Pendiente',
         'inscripciones cerradas': 'Inscripciones Cerradas',
         'finalizado': 'Finalizado',
+        'cerrado': 'Cerrado',
     }
     nuevos_por_estado = {v: [] for v in mapa_estados.values()}
     for evento in eventos:
@@ -53,6 +177,7 @@ def dashboard(request):
         ('Rechazado', 'danger', '❌'),
         ('Inscripciones Cerradas', 'info', '📋'),
         ('Finalizado', 'secondary', '🏁'),
+        ('Cerrado', 'dark', '🔒'),
     ]    
     return render(request, 'dashboard.html', {
         'notificaciones': notificaciones,
@@ -152,30 +277,46 @@ def detalle_evento_admin(request, eve_id):
 
     if request.method == 'POST':
         nuevo_estado = request.POST.get('nuevo_estado')
-        evento.eve_estado = nuevo_estado
-        evento.save()
+        
+        # Si el evento está finalizado y se cambia a cerrado, eliminar toda la información
+        if evento.eve_estado.lower() == 'finalizado' and nuevo_estado.lower() == 'cerrado':
+            try:
+                _eliminar_informacion_evento_cerrado(evento)
+                messages.success(request, 'Evento cerrado y toda la información ha sido eliminada correctamente.')
+                return redirect('dashboard_superadmin')
+            except Exception as e:
+                messages.error(request, f'Error al cerrar el evento: {str(e)}')
+                return redirect('detalle_evento_admin', eve_id=eve_id)
+        else:
+            evento.eve_estado = nuevo_estado
+            evento.save()
 
-        admin_evento = evento.eve_administrador_fk
-        admin_usuario = admin_evento.usuario if admin_evento else None
-        if admin_usuario and admin_usuario.email:
-            cuerpo_html = render_to_string('correo_estado_evento_admin.html', {
-                'evento': evento,
-                'nuevo_estado': nuevo_estado,
-                'admin': admin_usuario,
-            })
-            email = EmailMessage(
-                subject=f'Actualización de estado de tu evento: {evento.eve_nombre}',
-                body=cuerpo_html,
-                to=[admin_usuario.email],
-            )
-            email.content_subtype = 'html'
-            email.send(fail_silently=True)
+            admin_evento = evento.eve_administrador_fk
+            admin_usuario = admin_evento.usuario if admin_evento else None
+            if admin_usuario and admin_usuario.email:
+                cuerpo_html = render_to_string('correo_estado_evento_admin.html', {
+                    'evento': evento,
+                    'nuevo_estado': nuevo_estado,
+                    'admin': admin_usuario,
+                })
+                email = EmailMessage(
+                    subject=f'Actualización de estado de tu evento: {evento.eve_nombre}',
+                    body=cuerpo_html,
+                    to=[admin_usuario.email],
+                )
+                email.content_subtype = 'html'
+                email.send(fail_silently=True)
 
-        messages.success(request, 'Estado actualizado exitosamente')
-        return redirect('dashboard_superadmin')
+            messages.success(request, 'Estado actualizado exitosamente')
+            return redirect('dashboard_superadmin')
     
     administrador = get_object_or_404(AdministradorEvento, pk=evento.eve_administrador_fk_id)
-    estados = ['Pendiente', 'Aprobado', 'Rechazado', 'Inscripciónes Cerradas']
+    
+    # Determinar estados disponibles según el estado actual
+    if evento.eve_estado.lower() == 'finalizado':
+        estados = ['Cerrado']  # Solo puede cambiar a cerrado
+    else:
+        estados = ['Pendiente', 'Aprobado', 'Rechazado', 'Inscripciónes Cerradas']
     categorias = Categoria.objects.filter(eventocategoria__evento=evento).select_related('cat_area_fk')
     areas_con_categorias = {}
     for categoria in categorias:
@@ -184,11 +325,86 @@ def detalle_evento_admin(request, eve_id):
             areas_con_categorias[area.are_nombre] = []
         areas_con_categorias[area.are_nombre].append(categoria)
 
-    return render(request, 'detalle_evento_admin.html', {
+    # Calcular estadísticas si el evento está aprobado
+    estadisticas = None
+    if evento.eve_estado.lower() == 'aprobado':
+        from app_asistentes.models import AsistenteEvento
+        from app_participantes.models import ParticipanteEvento
+        from app_evaluadores.models import EvaluadorEvento, Criterio, Calificacion
+        
+        # Estadísticas de asistentes
+        asistentes_total = AsistenteEvento.objects.filter(evento=evento).count()
+        asistentes_aprobados = AsistenteEvento.objects.filter(evento=evento, asi_eve_estado='Aprobado').count()
+        asistentes_pendientes = AsistenteEvento.objects.filter(evento=evento, asi_eve_estado='Pendiente').count()
+        asistentes_confirmados = AsistenteEvento.objects.filter(evento=evento, confirmado=True).count()
+        
+        # Estadísticas de participantes
+        participantes_total = ParticipanteEvento.objects.filter(evento=evento).count()
+        participantes_aprobados = ParticipanteEvento.objects.filter(evento=evento, par_eve_estado='Aprobado').count()
+        participantes_pendientes = ParticipanteEvento.objects.filter(evento=evento, par_eve_estado='Pendiente').count()
+        participantes_confirmados = ParticipanteEvento.objects.filter(evento=evento, confirmado=True).count()
+        participantes_calificados = ParticipanteEvento.objects.filter(evento=evento, par_eve_valor__isnull=False).count()
+        
+        # Estadísticas de evaluadores
+        evaluadores_total = EvaluadorEvento.objects.filter(evento=evento).count()
+        evaluadores_aprobados = EvaluadorEvento.objects.filter(evento=evento, eva_eve_estado='Aprobado').count()
+        evaluadores_pendientes = EvaluadorEvento.objects.filter(evento=evento, eva_eve_estado='Pendiente').count()
+        evaluadores_confirmados = EvaluadorEvento.objects.filter(evento=evento, confirmado=True).count()
+        
+        # Estadísticas de evaluación
+        criterios_total = Criterio.objects.filter(cri_evento_fk=evento).count()
+        calificaciones_total = Calificacion.objects.filter(criterio__cri_evento_fk=evento).count()
+        
+        # Calcular capacidad utilizada (solo asistentes ocupan cupos)
+        inscritos_totales = asistentes_total  # Solo asistentes ocupan capacidad
+        porcentaje_ocupacion = round((inscritos_totales / evento.eve_capacidad) * 100, 1) if evento.eve_capacidad > 0 else 0
+        
+        # Estadísticas de archivos
+        archivos_disponibles = {
+            'programacion': bool(evento.eve_programacion),
+            'memorias': bool(evento.eve_memorias),
+            'informacion_tecnica': bool(evento.eve_informacion_tecnica),
+        }
+        
+        estadisticas = {
+            'asistentes': {
+                'total': asistentes_total,
+                'aprobados': asistentes_aprobados,
+                'pendientes': asistentes_pendientes,
+                'confirmados': asistentes_confirmados,
+            },
+            'participantes': {
+                'total': participantes_total,
+                'aprobados': participantes_aprobados,
+                'pendientes': participantes_pendientes,
+                'confirmados': participantes_confirmados,
+                'calificados': participantes_calificados,
+            },
+            'evaluadores': {
+                'total': evaluadores_total,
+                'aprobados': evaluadores_aprobados,
+                'pendientes': evaluadores_pendientes,
+                'confirmados': evaluadores_confirmados,
+            },
+            'evaluacion': {
+                'criterios': criterios_total,
+                'calificaciones': calificaciones_total,
+            },
+            'capacidad': {
+                'total': evento.eve_capacidad,
+                'inscritos': inscritos_totales,
+                'disponibles': evento.eve_capacidad - inscritos_totales,
+                'porcentaje_ocupacion': porcentaje_ocupacion,
+            },
+            'archivos': archivos_disponibles,
+        }
+
+    return render(request, 'app_admin/detalle_evento_admin.html', {
         'evento': evento,
         'administrador': administrador,
         'estados': estados,
         'areas_con_categorias': areas_con_categorias,
+        'estadisticas': estadisticas,
     })
 
 

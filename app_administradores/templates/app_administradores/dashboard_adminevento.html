@@ -63,6 +63,16 @@
         color: #ff8c00;
     }
 
+    .info {
+        background-color: #17a2b81a;
+        color: #17a2b8;
+    }
+
+    .success {
+        background-color: #28a7451a;
+        color: #28a745;
+    }
+
     .btn-custom {
         font-weight: 600;
         border-radius: 12px;
@@ -106,8 +116,8 @@
                 <div class="icon-circle secondary">
                     <i class="bi bi-pencil-square"></i>
                 </div>
-                <h5 class="mb-3 fw-semibold text-success">Modificar Evento</h5>
-                <p class="text-muted mb-4">Edita la información de tus eventos existentes.</p>
+                <h5 class="mb-3 fw-semibold text-success">Gestionar Evento</h5>
+                <p class="text-muted mb-4">Edita y gestiona tus eventos existentes.</p>
                 <a href="{% url 'listar_eventos' %}" class="btn btn-outline-success btn-custom w-100">
                     <i class="bi bi-pencil"></i> Editar Eventos
                 </a>
@@ -152,6 +162,34 @@
                 <p class="text-muted mb-4">Diseña, previsualiza y envía certificados de asistencia, participación y evaluación.</p>
                 <a href="{% url 'gestionar_certificados' %}" class="btn btn-warning btn-custom w-100">
                     <i class="bi bi-award-fill"></i> Gestionar Certificados
+                </a>
+            </div>
+        </div>
+
+        <!-- Crear Códigos de Invitación -->
+        <div class="col-md-4">
+            <div class="card-action h-100 text-center">
+                <div class="icon-circle info">
+                    <i class="bi bi-envelope-plus"></i>
+                </div>
+                <h5 class="mb-3 fw-semibold text-success">Códigos de Invitación</h5>
+                <p class="text-muted mb-4">Crea códigos de invitación personalizados para evaluadores y participantes.</p>
+                <a href="{% url 'crear_codigo_invitacion' %}" class="btn btn-info btn-custom w-100">
+                    <i class="bi bi-plus-circle"></i> Crear Códigos
+                </a>
+            </div>
+        </div>
+
+        <!-- Gestionar Códigos de Invitación -->
+        <div class="col-md-4">
+            <div class="card-action h-100 text-center">
+                <div class="icon-circle success">
+                    <i class="bi bi-envelope-check"></i>
+                </div>
+                <h5 class="mb-3 fw-semibold text-success">Gestionar Invitaciones</h5>
+                <p class="text-muted mb-4">Visualiza y administra todos los códigos de invitación enviados.</p>
+                <a href="{% url 'listar_codigos_invitacion' %}" class="btn btn-outline-success btn-custom w-100">
+                    <i class="bi bi-list-check"></i> Ver Códigos
                 </a>
             </div>
         </div>

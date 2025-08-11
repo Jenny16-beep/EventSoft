@@ -17,6 +17,7 @@ class Evento(models.Model):
     eve_administrador_fk = models.ForeignKey(AdministradorEvento, on_delete=models.CASCADE, related_name='eventos')
     eve_programacion = models.FileField(upload_to='eventos/programaciones/', null=True, blank=True)
     eve_memorias = models.FileField(upload_to='eventos/memorias/', null=True, blank=True)
+    eve_informacion_tecnica = models.FileField(upload_to='eventos/informacion_tecnica/', null=True, blank=True)
 
 class EventoCategoria(models.Model):
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)

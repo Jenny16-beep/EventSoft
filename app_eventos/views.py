@@ -1,8 +1,8 @@
-from app_administradores.models import CodigoInvitacionAdminEvento, AdministradorEvento
+from app_administradores.models import CodigoInvitacionAdminEvento, AdministradorEvento, CodigoInvitacionEvento
 from django.db import transaction
 
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -62,14 +62,332 @@ def detalle_evento(request, eve_id):
         'categorias': categorias,
     })
 
+@csrf_exempt
+def compartir_evento_visitante(request, eve_id):
+    """Vista para generar contenido compartible del evento para visitantes web"""
+    evento = get_object_or_404(Evento, pk=eve_id)
+    
+    # Verificar que el evento esté disponible públicamente
+    if evento.eve_estado.lower() not in ['aprobado', 'inscripciones cerradas']:
+        return JsonResponse({
+            'success': False,
+            'error': 'Este evento no está disponible públicamente.'
+        }, status=403)
+    
+    if request.method == 'POST' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Generar URL absoluta del evento
+        url_evento = request.build_absolute_uri(reverse('detalle_evento_visitante', args=[eve_id]))
+        
+        # Obtener categorías
+        categorias = [ec.categoria.cat_nombre for ec in evento.eventocategoria_set.all()]
+        
+        # Crear mensaje genérico para visitantes
+        mensaje_compartir = f"🎉 ¡Descubre este increíble evento!\n\n"
+        mensaje_compartir += f"📅 {evento.eve_nombre}\n\n"
+        mensaje_compartir += f"📅 Fechas: {evento.eve_fecha_inicio.strftime('%d/%m/%Y')}"
+        
+        if evento.eve_fecha_inicio != evento.eve_fecha_fin:
+            mensaje_compartir += f" - {evento.eve_fecha_fin.strftime('%d/%m/%Y')}"
+        
+        mensaje_compartir += f"\n📍 Lugar: {evento.eve_lugar}, {evento.eve_ciudad}\n"
+        mensaje_compartir += f"📝 {evento.eve_descripcion}\n\n"
+        
+        if categorias:
+            mensaje_compartir += f"🏷️ Categorías: {', '.join(categorias)}\n\n"
+        
+        # Información sobre registro
+        if evento.eve_tienecosto == "SI":
+            mensaje_compartir += "💳 Evento con costo - Consulta detalles de inscripción\n\n"
+        else:
+            mensaje_compartir += "🆓 ¡Evento gratuito!\n\n"
+        
+        mensaje_compartir += f"ℹ️ Más información y registro: {url_evento}"
+        
+        response_data = {
+            'success': True,
+            'mensaje': mensaje_compartir,
+            'titulo': f"Evento: {evento.eve_nombre}",
+            'url': url_evento,
+            'evento_nombre': evento.eve_nombre
+        }
+        
+        return JsonResponse(response_data)
+    
+    # Para peticiones GET (por si acaso)
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido.'
+    }, status=405)
+
 def inscripcion_asistente(request, eve_id):
     return registro_evento(request, eve_id, 'asistente')
 
 def inscribirse_participante(request, eve_id):
-    return registro_evento(request, eve_id, 'participante')
+    messages.error(request, "El registro de participantes solo está disponible mediante código de invitación.")
+    return redirect('ver_eventos')
 
 def inscribirse_evaluador(request, eve_id):
-    return registro_evento(request, eve_id, 'evaluador')
+    messages.error(request, "El registro de evaluadores solo está disponible mediante código de invitación.")
+    return redirect('ver_eventos')
+
+
+def registro_con_codigo(request, codigo):
+    """Vista para manejar registro con código de invitación"""
+    # Buscar el código de invitación
+    codigo_invitacion = get_object_or_404(
+        CodigoInvitacionEvento,
+        codigo=codigo,
+        estado='activo'
+    )
+    
+    evento = codigo_invitacion.evento
+    tipo = codigo_invitacion.tipo
+    
+    # Verificar que el evento esté activo
+    if evento.eve_estado.lower() not in ['aprobado', 'inscripciones cerradas']:
+        messages.error(request, "Este evento no está disponible para inscripciones.")
+        return redirect('ver_eventos')
+    
+    if request.method == "POST":
+        # Marcar el código como usado
+        codigo_invitacion.estado = 'usado'
+        codigo_invitacion.fecha_uso = timezone.now()
+        codigo_invitacion.save()
+        
+        # Procesar el registro normalmente pero con email prefijado
+        return procesar_registro_con_codigo(request, evento.eve_id, tipo, codigo_invitacion.email_destino)
+    
+    return render(request, f'inscribirse_{tipo}.html', {
+        'evento': evento,
+        'codigo_invitacion': codigo_invitacion,
+        'email_prefijado': codigo_invitacion.email_destino
+    })
+
+
+def procesar_registro_con_codigo(request, eve_id, tipo, email_prefijado):
+    """Función que procesa el registro con código, solo para evaluadores y participantes"""
+    evento = Evento.objects.filter(eve_id=eve_id).first()
+    if not evento:
+        messages.error(request, "Evento no encontrado")
+        return redirect('ver_eventos')
+    
+    # Campos por tipo (solo participante y evaluador)
+    if tipo == 'participante':
+        documento = request.POST.get('par_id')
+        nombres = request.POST.get('par_nombres')
+        apellidos = request.POST.get('par_apellidos')
+        correo = email_prefijado  # Email prefijado del código
+        telefono = request.POST.get('par_telefono')
+        archivo = request.FILES.get('documentos')
+    elif tipo == 'evaluador':
+        documento = request.POST.get('eva_id')
+        nombres = request.POST.get('eva_nombres')
+        apellidos = request.POST.get('eva_apellidos')
+        correo = email_prefijado  # Email prefijado del código
+        telefono = request.POST.get('eva_telefono')
+        archivo = request.FILES.get('documentacion')
+    else:
+        messages.error(request, "Tipo de registro inválido para códigos de invitación.")
+        return redirect('ver_eventos')
+    
+    # Validación básica
+    if not (documento and nombres and apellidos):
+        messages.error(request, "Por favor completa todos los campos obligatorios.")
+        return redirect('registro_con_codigo', codigo=request.POST.get('codigo', ''))
+    
+    # Continuar con el proceso normal de registro usando el sistema existente
+    # Pero con el correo prefijado del código de invitación
+    
+    # Validar consistencia de datos si el usuario ya existe
+    usuario = Usuario.objects.filter(Q(email=correo) | Q(documento=documento)).first()
+    if usuario:
+        if (usuario.email != correo or usuario.documento != documento or 
+            usuario.first_name != nombres or usuario.last_name != apellidos):
+            messages.error(request, 
+                "Los datos no coinciden con un usuario existente. "
+                "Si ya tienes cuenta, verifica que los datos sean exactamente iguales."
+            )
+            return redirect('registro_con_codigo', codigo=request.POST.get('codigo', ''))
+    
+    # Validar que no esté inscrito en el mismo evento (en cualquier rol)
+    ya_inscrito = False
+    pendiente_confirmacion = False
+    rol_inscrito = ""
+    if usuario:
+        # Verificar si está como participante
+        participante = getattr(usuario, 'participante', None)
+        if participante:
+            participacion = ParticipanteEvento.objects.filter(participante=participante, evento=evento).first()
+            if participacion:
+                ya_inscrito = True
+                pendiente_confirmacion = not participacion.confirmado
+                rol_inscrito = "participante"
+        
+        # Verificar si está como evaluador
+        if not ya_inscrito:
+            evaluador = getattr(usuario, 'evaluador', None)
+            if evaluador:
+                evaluacion = EvaluadorEvento.objects.filter(evaluador=evaluador, evento=evento).first()
+                if evaluacion:
+                    ya_inscrito = True
+                    pendiente_confirmacion = not evaluacion.confirmado
+                    rol_inscrito = "evaluador"
+        
+        # Verificar si está como asistente
+        if not ya_inscrito:
+            asistente = getattr(usuario, 'asistente', None)
+            if asistente:
+                asistencia = AsistenteEvento.objects.filter(asistente=asistente, evento=evento).first()
+                if asistencia:
+                    ya_inscrito = True
+                    pendiente_confirmacion = not asistencia.confirmado
+                    rol_inscrito = "asistente"
+    
+    if ya_inscrito:
+        if pendiente_confirmacion:
+            messages.warning(request, f"Ya tienes una inscripción como {rol_inscrito} en este evento pendiente de confirmación.")
+        else:
+            messages.info(request, f"Ya estás inscrito como {rol_inscrito} en este evento.")
+        return redirect('ver_eventos')
+    
+    # Si usuario existe y está activo, asignar rol si no lo tiene y crear relación evento-rol
+    if usuario and usuario.is_active:
+        # Asignar rol si no lo tiene
+        rol = Rol.objects.filter(nombre__iexact=tipo).first()
+        if rol and not RolUsuario.objects.filter(usuario=usuario, rol=rol).exists():
+            RolUsuario.objects.create(usuario=usuario, rol=rol)
+        
+        # Crear relación evento-rol si no existe (solo participante y evaluador)
+        if tipo == 'participante':
+            participante, _ = Participante.objects.get_or_create(usuario=usuario)
+            ParticipanteEvento.objects.get_or_create(
+                participante=participante,
+                evento=evento,
+                defaults={
+                    'par_eve_fecha_hora': timezone.now(),
+                    'par_eve_estado': 'Pendiente',
+                    'par_eve_documentos': archivo,
+                    'confirmado': True
+                }
+            )
+        elif tipo == 'evaluador':
+            evaluador, _ = Evaluador.objects.get_or_create(usuario=usuario)
+            EvaluadorEvento.objects.get_or_create(
+                evaluador=evaluador,
+                evento=evento,
+                defaults={
+                    'eva_eve_fecha_hora': timezone.now(),
+                    'eva_eve_estado': 'Pendiente',
+                    'eva_eve_documentos': archivo,
+                    'confirmado': True
+                }
+            )
+        
+        messages.success(request, f"Te has registrado exitosamente como {tipo} en el evento {evento.eve_nombre}.")
+        return redirect('ver_eventos')
+    
+    # Si usuario existe y está inactivo, activarlo y crear relaciones
+    if usuario and not usuario.is_active:
+        usuario.is_active = True
+        usuario.save()
+        
+        # Asignar rol si no lo tiene
+        rol = Rol.objects.filter(nombre__iexact=tipo).first()
+        if rol and not RolUsuario.objects.filter(usuario=usuario, rol=rol).exists():
+            RolUsuario.objects.create(usuario=usuario, rol=rol)
+        
+        # Crear relación evento-rol si no existe
+        if tipo == 'participante':
+            participante, _ = Participante.objects.get_or_create(usuario=usuario)
+            ParticipanteEvento.objects.get_or_create(
+                participante=participante,
+                evento=evento,
+                defaults={
+                    'par_eve_fecha_hora': timezone.now(),
+                    'par_eve_estado': 'Pendiente',
+                    'par_eve_documentos': archivo,
+                    'confirmado': True
+                }
+            )
+        elif tipo == 'evaluador':
+            evaluador, _ = Evaluador.objects.get_or_create(usuario=usuario)
+            EvaluadorEvento.objects.get_or_create(
+                evaluador=evaluador,
+                evento=evento,
+                defaults={
+                    'eva_eve_fecha_hora': timezone.now(),
+                    'eva_eve_estado': 'Pendiente',
+                    'eva_eve_documentos': archivo,
+                    'confirmado': True
+                }
+            )
+        
+        messages.success(request, f"Tu cuenta ha sido activada y te has registrado como {tipo} en el evento {evento.eve_nombre}.")
+        return redirect('ver_eventos')
+    
+    # Crear usuario si no existe
+    if not usuario:
+        usuario = Usuario.objects.create_user(
+            username=correo.split('@')[0] if correo else f"user{documento}",
+            email=correo,
+            telefono=telefono,
+            documento=documento,
+            first_name=nombres,
+            last_name=apellidos,
+            password='temporal',
+            is_active=True  # Activar directamente ya que viene por invitación
+        )
+        
+        # Asignar rol y crear objeto evento-rol
+        rol_obj = Rol.objects.filter(nombre__iexact=tipo).first()
+        if rol_obj:
+            RolUsuario.objects.create(usuario=usuario, rol=rol_obj)
+        
+        # Crear objetos evento-rol para nuevo usuario (solo participante y evaluador)
+        if tipo == 'participante':
+            participante = Participante.objects.create(usuario=usuario)
+            ParticipanteEvento.objects.create(
+                participante=participante,
+                evento=evento,
+                par_eve_fecha_hora=timezone.now(),
+                par_eve_estado='Pendiente',
+                par_eve_documentos=archivo,
+                confirmado=True
+            )
+        elif tipo == 'evaluador':
+            evaluador = Evaluador.objects.create(usuario=usuario)
+            EvaluadorEvento.objects.create(
+                evaluador=evaluador,
+                evento=evento,
+                eva_eve_fecha_hora=timezone.now(),
+                eva_eve_estado='Pendiente',
+                eva_eve_documentos=archivo,
+                confirmado=True
+            )
+        
+        # Enviar correo con credenciales
+        clave = generar_clave()
+        usuario.set_password(clave)
+        usuario.save()
+        
+        cuerpo_html = render_to_string('correo_registro_completado.html', {
+            'nombre': usuario.first_name,
+            'evento': evento.eve_nombre,
+            'tipo': tipo.title(),
+            'clave': clave,
+            'email': usuario.email,
+        })
+        
+        email = EmailMessage(
+            subject=f'Registro completado - {evento.eve_nombre}',
+            body=cuerpo_html,
+            to=[usuario.email],
+        )
+        email.content_subtype = 'html'
+        email.send()
+        
+        messages.success(request, f"¡Registro completado! Se ha enviado un correo con tus credenciales de acceso.")
+        return redirect('ver_eventos')
 
 
 def registro_evento(request, eve_id, tipo):
@@ -78,7 +396,7 @@ def registro_evento(request, eve_id, tipo):
         messages.error(request, "Evento no encontrado")
         return redirect('ver_eventos')
     if request.method == "POST":
-        # Campos por tipo
+        # Solo asistentes permitidos en este flujo
         if tipo == 'asistente':
             documento = request.POST.get('asi_id')
             nombres = request.POST.get('asi_nombres')
@@ -86,22 +404,8 @@ def registro_evento(request, eve_id, tipo):
             correo = request.POST.get('asi_correo')
             telefono = request.POST.get('asi_telefono')
             archivo = request.FILES.get('soporte_pago')
-        elif tipo == 'participante':
-            documento = request.POST.get('par_id')
-            nombres = request.POST.get('par_nombres')
-            apellidos = request.POST.get('par_apellidos')
-            correo = request.POST.get('par_correo')
-            telefono = request.POST.get('par_telefono')
-            archivo = request.FILES.get('documentos')
-        elif tipo == 'evaluador':
-            documento = request.POST.get('eva_id')
-            nombres = request.POST.get('eva_nombres')
-            apellidos = request.POST.get('eva_apellidos')
-            correo = request.POST.get('eva_correo')
-            telefono = request.POST.get('eva_telefono')
-            archivo = request.FILES.get('documentacion')
         else:
-            return HttpResponse('Tipo de registro inválido.')
+            return HttpResponse('Tipo de registro inválido para este flujo.')
         # Validación básica
         if not (documento and nombres and apellidos and correo):
             messages.error(request, "Por favor completa todos los campos obligatorios.")
@@ -115,147 +419,122 @@ def registro_evento(request, eve_id, tipo):
         # Validar que no esté inscrito en el mismo evento (en cualquier rol)
         ya_inscrito = False
         pendiente_confirmacion = False
+        rol_inscrito = ""
         if usuario:
-            if tipo == 'asistente':
-                asistente = getattr(usuario, 'asistente', None)
-                if asistente:
-                    rel = AsistenteEvento.objects.filter(asistente=asistente, evento=evento).first()
-                    if rel:
-                        ya_inscrito = True
-                        if not rel.confirmado:
-                            pendiente_confirmacion = True
-            elif tipo == 'participante':
+            # Verificar si está como asistente
+            asistente = getattr(usuario, 'asistente', None)
+            if asistente:
+                rel = AsistenteEvento.objects.filter(asistente=asistente, evento=evento).first()
+                if rel:
+                    ya_inscrito = True
+                    pendiente_confirmacion = not rel.confirmado
+                    rol_inscrito = "asistente"
+            
+            # Verificar si está como participante
+            if not ya_inscrito:
                 participante = getattr(usuario, 'participante', None)
                 if participante:
-                    rel = ParticipanteEvento.objects.filter(participante=participante, evento=evento).first()
-                    if rel:
+                    participacion = ParticipanteEvento.objects.filter(participante=participante, evento=evento).first()
+                    if participacion:
                         ya_inscrito = True
-                        if not rel.confirmado:
-                            pendiente_confirmacion = True
-            elif tipo == 'evaluador':
+                        pendiente_confirmacion = not participacion.confirmado
+                        rol_inscrito = "participante"
+            
+            # Verificar si está como evaluador
+            if not ya_inscrito:
                 evaluador = getattr(usuario, 'evaluador', None)
                 if evaluador:
-                    rel = EvaluadorEvento.objects.filter(evaluador=evaluador, evento=evento).first()
-                    if rel:
+                    evaluacion = EvaluadorEvento.objects.filter(evaluador=evaluador, evento=evento).first()
+                    if evaluacion:
                         ya_inscrito = True
-                        if not rel.confirmado:
-                            pendiente_confirmacion = True
+                        pendiente_confirmacion = not evaluacion.confirmado
+                        rol_inscrito = "evaluador"
+        
         if ya_inscrito:
             if pendiente_confirmacion:
-                messages.error(request, "Ya tienes una inscripción pendiente de confirmación para este evento. Revisa tu correo (y la carpeta de spam) para confirmar tu registro.")
+                messages.error(request, f"Ya tienes una inscripción como {rol_inscrito} pendiente de confirmación para este evento. Revisa tu correo (y la carpeta de spam) para confirmar tu registro.")
             else:
-                messages.error(request, "Ya tienes una inscripción para este evento. No puedes inscribirte nuevamente.")
+                messages.error(request, f"Ya tienes una inscripción como {rol_inscrito} para este evento. No puedes inscribirte nuevamente.")
             return redirect('ver_eventos')
-        # Si usuario existe y está activo, asignar rol si no lo tiene y crear relación evento-rol
+        # Si usuario existe y está activo, asignar rol asistente y crear relación evento-asistente
         if usuario and usuario.is_active:
-            # Asignar rol si no lo tiene
+            # Asignar rol asistente si no lo tiene
             rol = Rol.objects.filter(nombre__iexact=tipo).first()
             if rol and not RolUsuario.objects.filter(usuario=usuario, rol=rol).exists():
                 RolUsuario.objects.create(usuario=usuario, rol=rol)
-            # Crear relación evento-rol si no existe
-            if tipo == 'asistente':
-                asistente, _ = Asistente.objects.get_or_create(usuario=usuario)
-                if not AsistenteEvento.objects.filter(asistente=asistente, evento=evento).exists():
-                    estado = "Pendiente" if evento.eve_tienecosto == 'SI' else "Aprobado"
-                    # Solo guardar soporte si el evento tiene costo
-                    asistencia = AsistenteEvento(
-                        asistente=asistente,
-                        evento=evento,
-                        asi_eve_fecha_hora=timezone.now(),
-                        asi_eve_estado=estado,
-                        confirmado= True
+            # Crear relación evento-asistente si no existe
+            asistente, _ = Asistente.objects.get_or_create(usuario=usuario)
+            if not AsistenteEvento.objects.filter(asistente=asistente, evento=evento).exists():
+                estado = "Pendiente" if evento.eve_tienecosto == 'SI' else "Aprobado"
+                # Solo guardar soporte si el evento tiene costo
+                asistencia = AsistenteEvento(
+                    asistente=asistente,
+                    evento=evento,
+                    asi_eve_fecha_hora=timezone.now(),
+                    asi_eve_estado=estado,
+                    confirmado= True
+                )
+                if evento.eve_tienecosto == 'SI' and archivo:
+                    asistencia.asi_eve_soporte = archivo
+                
+                qr_img_bytes = None
+                if estado == "Aprobado":
+                    qr_data = f"asistente:{usuario.documento}|evento:{evento.eve_id}|clave:{usuario.password}"
+                    buffer = BytesIO()
+                    qr_img = qrcode.make(qr_data)
+                    qr_img.save(buffer, format='PNG')
+                    filename = f"qr_asistente_{usuario.documento}_{evento.eve_id}.png"
+                    asistencia.asi_eve_qr.save(filename, ContentFile(buffer.getvalue()), save=False)
+                    qr_img_bytes = buffer.getvalue()
+                    
+                    # Descontar capacidad del evento cuando es gratuito y aprobado
+                    evento.eve_capacidad -= 1
+                    evento.save()
+                
+                asistencia.save()
+                
+                # Enviar correo con QR si es gratuito y aprobado
+                if estado == "Aprobado":
+                    cuerpo_html = render_to_string('correo_clave.html', {
+                        'nombre': usuario.first_name,
+                        'evento': evento.eve_nombre,
+                        'clave': None,  # No mostrar clave porque ya está activo
+                        'qr_url': asistencia.asi_eve_qr.url if asistencia.asi_eve_qr else None,
+                    })
+                    email = EmailMessage(
+                        subject=f'Registro aprobado - {evento.eve_nombre}',
+                        body=cuerpo_html,
+                        to=[usuario.email],
                     )
-                    if evento.eve_tienecosto == 'SI' and archivo:
-                        asistencia.asi_eve_soporte = archivo
-                    if estado == "Aprobado":
-                        qr_data = f"asistente:{usuario.documento}|evento:{evento.eve_id}|clave:{usuario.password}"
-                        buffer = BytesIO()
-                        qr_img = qrcode.make(qr_data)
-                        qr_img.save(buffer, format='PNG')
-                        filename = f"qr_asistente_{usuario.documento}_{evento.eve_id}.png"
-                        asistencia.asi_eve_qr.save(filename, ContentFile(buffer.getvalue()), save=False)
-                    asistencia.save()
-            elif tipo == 'participante':
-                participante, _ = Participante.objects.get_or_create(usuario=usuario)
-                if not ParticipanteEvento.objects.filter(participante=participante, evento=evento).exists():
-                    if not archivo:
-                        messages.error(request, "Debes adjuntar la documentación requerida para participar.")
-                        return redirect(f'inscripcion_{tipo}', eve_id=eve_id)
-                    ParticipanteEvento.objects.create(
-                        participante=participante,
-                        evento=evento,
-                        par_eve_fecha_hora=timezone.now(),
-                        par_eve_estado='Pendiente',
-                        par_eve_documentos=archivo,
-                        confirmado=True
-                    )
-            elif tipo == 'evaluador':
-                evaluador, _ = Evaluador.objects.get_or_create(usuario=usuario)
-                if not EvaluadorEvento.objects.filter(evaluador=evaluador, evento=evento).exists():
-                    if not archivo:
-                        messages.error(request, "Debes adjuntar la documentación requerida para ser evaluador.")
-                        return redirect(f'inscripcion_{tipo}', eve_id=eve_id)
-                    EvaluadorEvento.objects.create(
-                        evaluador=evaluador,
-                        evento=evento,
-                        eva_eve_estado='Pendiente',
-                        eva_eve_fecha_hora=timezone.now(),
-                        eva_eve_documentos=archivo,
-                        confirmado=True
-                    )
+                    email.content_subtype = 'html'
+                    if qr_img_bytes:
+                        email.attach('qr_acceso.png', qr_img_bytes, 'image/png')
+                    email.send()
+                    
             return render(request, "ya_registrado.html", {
                 'nombre': usuario.first_name,
                 'correo': usuario.email,
                 'evento': evento.eve_nombre,
                 'preinscripcion': True,
             })
-        # Si usuario existe y está inactivo, crear objeto evento-rol con archivo y estado 'Pendiente', mostrar proceso pendiente
+        # Si usuario existe y está inactivo, crear objeto asistente-evento con archivo y estado 'Pendiente', mostrar proceso pendiente
         if usuario and not usuario.is_active:
             # Crear RolUsuario si no existe
             rol_obj = Rol.objects.filter(nombre__iexact=tipo).first()
             if rol_obj and not RolUsuario.objects.filter(usuario=usuario, rol=rol_obj).exists():
                 RolUsuario.objects.create(usuario=usuario, rol=rol_obj)
-            if tipo == 'asistente':
-                asistente, _ = Asistente.objects.get_or_create(usuario=usuario)
-                if not AsistenteEvento.objects.filter(asistente=asistente, evento=evento).exists():
-                    asistencia = AsistenteEvento(
-                        asistente=asistente,
-                        evento=evento,
-                        asi_eve_fecha_hora=timezone.now(),
-                        asi_eve_estado='Pendiente',
-                        confirmado=False
-                    )
-                    if evento.eve_tienecosto == 'SI' and archivo:
-                        asistencia.asi_eve_soporte = archivo
-                    asistencia.save()
-            elif tipo == 'participante':
-                participante, _ = Participante.objects.get_or_create(usuario=usuario)
-                if not ParticipanteEvento.objects.filter(participante=participante, evento=evento).exists():
-                    if not archivo:
-                        messages.error(request, "Debes adjuntar la documentación requerida para participar.")
-                        return redirect(f'inscripcion_{tipo}', eve_id=eve_id)
-                    ParticipanteEvento.objects.create(
-                        participante=participante,
-                        evento=evento,
-                        par_eve_fecha_hora=timezone.now(),
-                        par_eve_estado='Pendiente',
-                        par_eve_documentos=archivo,
-                        confirmado=False
-                    )
-            elif tipo == 'evaluador':
-                evaluador, _ = Evaluador.objects.get_or_create(usuario=usuario)
-                if not EvaluadorEvento.objects.filter(evaluador=evaluador, evento=evento).exists():
-                    if not archivo:
-                        messages.error(request, "Debes adjuntar la documentación requerida para ser evaluador.")
-                        return redirect(f'inscripcion_{tipo}', eve_id=eve_id)
-                    EvaluadorEvento.objects.create(
-                        evaluador=evaluador,
-                        evento=evento,
-                        eva_eve_estado='Pendiente',
-                        eva_eve_fecha_hora=timezone.now(),
-                        eva_eve_documentos=archivo,
-                        confirmado=False
-                    )
+            asistente, _ = Asistente.objects.get_or_create(usuario=usuario)
+            if not AsistenteEvento.objects.filter(asistente=asistente, evento=evento).exists():
+                asistencia = AsistenteEvento(
+                    asistente=asistente,
+                    evento=evento,
+                    asi_eve_fecha_hora=timezone.now(),
+                    asi_eve_estado='Pendiente',
+                    confirmado=False
+                )
+                if evento.eve_tienecosto == 'SI' and archivo:
+                    asistencia.asi_eve_soporte = archivo
+                asistencia.save()
             # Generar token y URL de reenvío para el proceso actual
             serializer = URLSafeTimedSerializer(settings.SECRET_KEY)
             token = serializer.dumps({'email': usuario.email, 'evento': evento.eve_id, 'rol': tipo})
@@ -289,51 +568,22 @@ def registro_evento(request, eve_id, tipo):
                 password='temporal',
                 is_active=False
             )
-        # Asignar rol y crear objeto evento-rol aquí, luego enviar correo de confirmación
+        # Asignar rol asistente y crear objeto asistente-evento, luego enviar correo de confirmación
         rol_obj = Rol.objects.filter(nombre__iexact=tipo).first()
         if rol_obj and not RolUsuario.objects.filter(usuario=usuario, rol=rol_obj).exists():
             RolUsuario.objects.create(usuario=usuario, rol=rol_obj)
-        if tipo == 'asistente':
-            asistente, _ = Asistente.objects.get_or_create(usuario=usuario)
-            if not AsistenteEvento.objects.filter(asistente=asistente, evento=evento).exists():
-                asistencia = AsistenteEvento(
-                    asistente=asistente,
-                    evento=evento,
-                    asi_eve_fecha_hora=timezone.now(),
-                    asi_eve_estado='Pendiente',
-                    confirmado=False
-                )
-                if evento.eve_tienecosto == 'SI' and archivo:
-                    asistencia.asi_eve_soporte = archivo
-                asistencia.save()
-        elif tipo == 'participante':
-            participante, _ = Participante.objects.get_or_create(usuario=usuario)
-            if not ParticipanteEvento.objects.filter(participante=participante, evento=evento).exists():
-                if not archivo:
-                    messages.error(request, "Debes adjuntar la documentación requerida para participar.")
-                    return redirect(f'inscripcion_{tipo}', eve_id=eve_id)
-                ParticipanteEvento.objects.create(
-                    participante=participante,
-                    evento=evento,
-                    par_eve_fecha_hora=timezone.now(),
-                    par_eve_estado='Pendiente',
-                    par_eve_documentos=archivo,
-                    confirmado=False
-                )
-        elif tipo == 'evaluador':
-            evaluador, _ = Evaluador.objects.get_or_create(usuario=usuario)
-            if not EvaluadorEvento.objects.filter(evaluador=evaluador, evento=evento).exists():
-                if not archivo:
-                    messages.error(request, "Debes adjuntar la documentación requerida para ser evaluador.")
-                    return redirect(f'inscripcion_{tipo}', eve_id=eve_id)
-                EvaluadorEvento.objects.create(
-                    evaluador=evaluador,
-                    evento=evento,
-                    eva_eve_estado='Pendiente',
-                    eva_eve_fecha_hora=timezone.now(),
-                    eva_eve_documentos=archivo,
-                    confirmado=False
-                )
+        asistente, _ = Asistente.objects.get_or_create(usuario=usuario)
+        if not AsistenteEvento.objects.filter(asistente=asistente, evento=evento).exists():
+            asistencia = AsistenteEvento(
+                asistente=asistente,
+                evento=evento,
+                asi_eve_fecha_hora=timezone.now(),
+                asi_eve_estado='Pendiente',
+                confirmado=False
+            )
+            if evento.eve_tienecosto == 'SI' and archivo:
+                asistencia.asi_eve_soporte = archivo
+            asistencia.save()
         serializer = URLSafeTimedSerializer(settings.SECRET_KEY)
         token = serializer.dumps({'email': usuario.email, 'evento': evento.eve_id, 'rol': tipo})
         confirm_url = request.build_absolute_uri(reverse('confirmar_registro', args=[token]))
@@ -469,22 +719,77 @@ def confirmar_registro(request, token):
     if not usuario or not evento:
         return HttpResponse('Usuario o evento no encontrado.')
     if usuario.is_active:
-        # Si ya está activo, no mostrar clave ni reenviar correo
+        # Si ya está activo, procesar la confirmación sin generar nueva clave
+        # Asignar el rol confirmado solo si no lo tiene ya (solo asistente permitido)
+        rol_obj = Rol.objects.filter(nombre__iexact=rol).first()
+        if rol_obj and not RolUsuario.objects.filter(usuario=usuario, rol=rol_obj).exists():
+            RolUsuario.objects.create(usuario=usuario, rol=rol_obj)
+        
+        qr_url = None
+        qr_img_bytes = None
+        
+        # Solo procesar asistentes en este flujo
+        if rol == 'asistente':
+            asistente, _ = Asistente.objects.get_or_create(usuario=usuario)
+            asistencia = AsistenteEvento.objects.filter(asistente=asistente, evento=evento).first()
+            if asistencia:
+                asistencia.confirmado = True
+                # Si es gratuito: aprobado, QR y descontar capacidad
+                if evento.eve_tienecosto == 'NO':
+                    asistencia.asi_eve_estado = 'Aprobado'
+                    qr_data = f"asistente:{usuario.documento}|evento:{evento.eve_id}|clave:{usuario.password}"
+                    buffer = BytesIO()
+                    qr_img = qrcode.make(qr_data)
+                    qr_img.save(buffer, format='PNG')
+                    filename = f"qr_asistente_{usuario.documento}_{evento.eve_id}.png"
+                    asistencia.asi_eve_qr.save(filename, ContentFile(buffer.getvalue()), save=False)
+                    qr_url = asistencia.asi_eve_qr.url
+                    qr_img_bytes = buffer.getvalue()
+                    evento.eve_capacidad -= 1
+                    evento.save()
+                else:
+                    # Si tiene costo: mantener en Pendiente
+                    asistencia.asi_eve_estado = 'Pendiente'
+                asistencia.save()
+                
+                # Enviar correo con QR si corresponde
+                if evento.eve_tienecosto == 'NO':
+                    cuerpo_html = render_to_string('correo_clave.html', {
+                        'nombre': usuario.first_name,
+                        'evento': evento.eve_nombre,
+                        'clave': None,  # No mostrar clave porque ya está activo
+                        'qr_url': qr_url,
+                    })
+                    email = EmailMessage(
+                        subject=f'Confirmación de registro - {evento.eve_nombre}',
+                        body=cuerpo_html,
+                        to=[usuario.email],
+                    )
+                    email.content_subtype = 'html'
+                    if qr_img_bytes:
+                        email.attach('qr_acceso.png', qr_img_bytes, 'image/png')
+                    email.send()
+        else:
+            return HttpResponse('Tipo de registro inválido para este flujo.')
+        
         return render(request, "ya_registrado.html", {
             'nombre': usuario.first_name,
             'correo': usuario.email,
             'evento': evento.eve_nombre,
-        }) 
+        })
+    
     clave = generar_clave()
     usuario.set_password(clave)
     usuario.is_active = True
     usuario.save()
-    # Asignar el rol confirmado solo si no lo tiene ya
+    # Asignar el rol confirmado solo si no lo tiene ya (solo asistente permitido)
     rol_obj = Rol.objects.filter(nombre__iexact=rol).first()
     if rol_obj and not RolUsuario.objects.filter(usuario=usuario, rol=rol_obj).exists():
         RolUsuario.objects.create(usuario=usuario, rol=rol_obj)
     qr_url = None
     qr_img_bytes = None
+    
+    # Solo procesar asistentes en este flujo
     if rol == 'asistente':
         asistente, _ = Asistente.objects.get_or_create(usuario=usuario)
         asistencia = AsistenteEvento.objects.filter(asistente=asistente, evento=evento).first()
@@ -504,20 +809,8 @@ def confirmar_registro(request, token):
                 evento.eve_capacidad -= 1
                 evento.save()
             asistencia.save()
-    elif rol == 'participante':
-        participante, _ = Participante.objects.get_or_create(usuario=usuario)
-        insc = ParticipanteEvento.objects.filter(participante=participante, evento=evento).first()
-        if insc:
-            insc.confirmado = True
-            insc.par_eve_estado = 'Pendiente'  # O el estado que corresponda
-            insc.save()
-    elif rol == 'evaluador':
-        evaluador, _ = Evaluador.objects.get_or_create(usuario=usuario)
-        insc = EvaluadorEvento.objects.filter(evaluador=evaluador, evento=evento).first()
-        if insc:
-            insc.confirmado = True
-            insc.eva_eve_estado = 'Pendiente'  # O el estado que corresponda
-            insc.save()
+    else:
+        return HttpResponse('Tipo de registro inválido para este flujo.')
     cuerpo_html = render_to_string('correo_clave.html', {
         'nombre': usuario.first_name,
         'evento': evento.eve_nombre,

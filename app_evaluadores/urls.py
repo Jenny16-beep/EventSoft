@@ -13,5 +13,7 @@ urlpatterns = [
     path('informacion-detallada/<int:eve_id>/', views.informacion_detallada, name='informacion_detallada_evaluador'),
     path('evento-cancelar-evaluador/<int:evento_id>/', views.cancelar_inscripcion_evaluador, name='cancelar_inscripcion_evaluador'),
     path('modificar-perfil-evaluador/<int:evento_id>', views.modificar_inscripcion_evaluador, name='modificar_inscripcion_evaluador'),
+    path('descargar-memorias-evaluador/<int:evento_id>/', views.descargar_memorias_evaluador, name='descargar_memorias_evaluador'),
+    path('descargar-informacion-tecnica-evaluador/<int:evento_id>/', views.descargar_informacion_tecnica_evaluador, name='descargar_informacion_tecnica_evaluador'),
 
 ]

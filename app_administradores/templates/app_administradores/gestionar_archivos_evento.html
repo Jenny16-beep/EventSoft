@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Gestionar Archivos - {{ evento.eve_nombre }}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>📁 Gestionar Archivos del Evento</h2>
+                <a href="{% url 'listar_eventos' %}" class="btn btn-secondary">
+                    ⬅️ Volver a Mis Eventos
+                </a>
+            </div>
+
+            <!-- Información del evento -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📋 {{ evento.eve_nombre }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</p>
+                            <p><strong>Lugar:</strong> {{ evento.eve_lugar }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fecha Inicio:</strong> {{ evento.eve_fecha_inicio }}</p>
+                            <p><strong>Fecha Fin:</strong> {{ evento.eve_fecha_fin }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge bg-info">{{ evento.eve_estado }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Memorias del Evento -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">📚 Memorias del Evento</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if evento.eve_memorias %}
+                                <div class="alert alert-success">
+                                    <h6>✅ Archivo actual:</h6>
+                                    <p class="mb-2"><strong>{{ evento.eve_memorias.name|cut:"eventos/memorias/" }}</strong></p>
+                                    <a href="{{ evento.eve_memorias.url }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                        👁️ Ver archivo
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#eliminarMemoriasModal">
+                                        🗑️ Eliminar
+                                    </button>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <h6>⚠️ Sin memorias cargadas</h6>
+                                    <p class="mb-0">No hay memorias disponibles para este evento.</p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Formulario para cargar memorias -->
+                            <form method="post" enctype="multipart/form-data" class="mt-3">
+                                {% csrf_token %}
+                                <input type="hidden" name="archivo_tipo" value="memorias">
+                                <div class="mb-3">
+                                    <label for="memorias" class="form-label">Cargar/Actualizar Memorias:</label>
+                                    <input type="file" class="form-control" id="memorias" name="archivo" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip">
+                                    <div class="form-text">Formatos aceptados: PDF, DOC, DOCX, PPT, PPTX, ZIP</div>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    💾 {{ evento.eve_memorias|yesno:"Actualizar,Cargar" }} Memorias
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Técnica -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">⚙️ Información Técnica</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if evento.eve_informacion_tecnica %}
+                                <div class="alert alert-success">
+                                    <h6>✅ Archivo actual:</h6>
+                                    <p class="mb-2"><strong>{{ evento.eve_informacion_tecnica.name|cut:"eventos/informacion_tecnica/" }}</strong></p>
+                                    <a href="{{ evento.eve_informacion_tecnica.url }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                        👁️ Ver archivo
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#eliminarInfoTecnicaModal">
+                                        🗑️ Eliminar
+                                    </button>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <h6>⚠️ Sin información técnica cargada</h6>
+                                    <p class="mb-0">No hay información técnica disponible para este evento.</p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Formulario para cargar información técnica -->
+                            <form method="post" enctype="multipart/form-data" class="mt-3">
+                                {% csrf_token %}
+                                <input type="hidden" name="archivo_tipo" value="informacion_tecnica">
+                                <div class="mb-3">
+                                    <label for="info_tecnica" class="form-label">Cargar/Actualizar Información Técnica:</label>
+                                    <input type="file" class="form-control" id="info_tecnica" name="archivo" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip">
+                                    <div class="form-text">Formatos aceptados: PDF, DOC, DOCX, PPT, PPTX, ZIP</div>
+                                </div>
+                                <button type="submit" class="btn btn-info">
+                                    💾 {{ evento.eve_informacion_tecnica|yesno:"Actualizar,Cargar" }} Información Técnica
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6 class="card-title">ℹ️ Información importante:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Memorias:</strong> Documentos finales del evento que pueden descargar asistentes, participantes y evaluadores.</li>
+                        <li><strong>Información Técnica:</strong> Documentos con detalles técnicos que ayuden a los participantes a tener un mejor desempeño.</li>
+                        <li><strong>Formatos aceptados:</strong> PDF, DOC, DOCX, PPT, PPTX, ZIP</li>
+                        <li><strong>Archivos ZIP:</strong> Útiles para subir múltiples documentos o carpetas completas.</li>
+                        <li>Los archivos se pueden actualizar en cualquier momento mientras el evento esté activo.</li>
+                        <li>Tamaño máximo por archivo: 50MB.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para eliminar memorias -->
+<div class="modal fade" id="eliminarMemoriasModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">🗑️ Eliminar Memorias</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar las memorias del evento?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'eliminar_archivo_evento' evento.eve_id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="archivo_tipo" value="memorias">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para eliminar información técnica -->
+<div class="modal fade" id="eliminarInfoTecnicaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">🗑️ Eliminar Información Técnica</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar la información técnica del evento?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'eliminar_archivo_evento' evento.eve_id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="archivo_tipo" value="informacion_tecnica">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

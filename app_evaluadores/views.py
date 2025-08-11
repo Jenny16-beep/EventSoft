@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from app_usuarios.permisos import es_evaluador
 from django.contrib import messages
+from django.http import HttpResponse, FileResponse
 from .models import Evaluador
 from app_eventos.models import Evento
 from app_evaluadores.models import Criterio, Calificacion, EvaluadorEvento
 from app_participantes.models import ParticipanteEvento, Participante
 from app_usuarios.models import Usuario
+import os
 
 
 def calcular_y_guardar_nota_general(participante, evento):
@@ -73,9 +75,22 @@ def dashboard_evaluador(request):
     evaluador = request.user.evaluador
     inscripciones = EvaluadorEvento.objects.select_related('evento').filter(evaluador=evaluador)
 
-    return render(request, 'dashboard_evaluador.html', {
+    # Agregar información sobre archivos disponibles a cada inscripción
+    inscripciones_con_archivos = []
+    for inscripcion in inscripciones:
+        inscripcion_data = {
+            'inscripcion': inscripcion,
+            'evento': inscripcion.evento,
+            'estado': inscripcion.eva_eve_estado,
+            'tiene_memorias': bool(inscripcion.evento.eve_memorias),
+            'tiene_info_tecnica': bool(inscripcion.evento.eve_informacion_tecnica),
+        }
+        inscripciones_con_archivos.append(inscripcion_data)
+
+    return render(request, 'app_evaluadores/dashboard_evaluador.html', {
         'evaluador': evaluador,
-        'inscripciones': inscripciones
+        'inscripciones': inscripciones,
+        'inscripciones_con_archivos': inscripciones_con_archivos
     })
 
 
@@ -418,3 +433,77 @@ def modificar_inscripcion_evaluador(request, evento_id):
         'usuario': usuario,
         'inscripcion': inscripcion
     })
+
+
+@login_required
+@user_passes_test(es_evaluador, login_url='login')
+def descargar_memorias_evaluador(request, evento_id):
+    """Vista para descargar las memorias de un evento como evaluador"""
+    evento = get_object_or_404(Evento, eve_id=evento_id)
+    evaluador = request.user.evaluador
+    
+    # Verificar que el evaluador esté inscrito en el evento
+    inscripcion = get_object_or_404(EvaluadorEvento, evaluador=evaluador, evento=evento)
+    
+    # Solo permitir si el estado no es "Pendiente"
+    if inscripcion.eva_eve_estado == 'Pendiente':
+        messages.error(request, "No puedes descargar memorias mientras tu inscripción esté pendiente.")
+        return redirect('dashboard_evaluador')
+    
+    # Verificar que el archivo de memorias exista
+    if not evento.eve_memorias:
+        messages.error(request, "Este evento no tiene memorias disponibles para descargar.")
+        return redirect('dashboard_evaluador')
+    
+    # Verificar que el archivo físico exista
+    if not os.path.exists(evento.eve_memorias.path):
+        messages.error(request, "El archivo de memorias no se encuentra disponible.")
+        return redirect('dashboard_evaluador')
+    
+    try:
+        response = FileResponse(
+            open(evento.eve_memorias.path, 'rb'),
+            as_attachment=True,
+            filename=f"Memorias_{evento.eve_nombre}_{evento.eve_memorias.name.split('/')[-1]}"
+        )
+        return response
+    except Exception as e:
+        messages.error(request, "Error al descargar el archivo de memorias.")
+        return redirect('dashboard_evaluador')
+
+
+@login_required
+@user_passes_test(es_evaluador, login_url='login')
+def descargar_informacion_tecnica_evaluador(request, evento_id):
+    """Vista para descargar la información técnica de un evento como evaluador"""
+    evento = get_object_or_404(Evento, eve_id=evento_id)
+    evaluador = request.user.evaluador
+    
+    # Verificar que el evaluador esté inscrito en el evento
+    inscripcion = get_object_or_404(EvaluadorEvento, evaluador=evaluador, evento=evento)
+    
+    # Solo permitir si el estado no es "Pendiente"
+    if inscripcion.eva_eve_estado == 'Pendiente':
+        messages.error(request, "No puedes descargar información técnica mientras tu inscripción esté pendiente.")
+        return redirect('dashboard_evaluador')
+    
+    # Verificar que el archivo de información técnica exista
+    if not evento.eve_informacion_tecnica:
+        messages.error(request, "Este evento no tiene información técnica disponible para descargar.")
+        return redirect('dashboard_evaluador')
+    
+    # Verificar que el archivo físico exista
+    if not os.path.exists(evento.eve_informacion_tecnica.path):
+        messages.error(request, "El archivo de información técnica no se encuentra disponible.")
+        return redirect('dashboard_evaluador')
+    
+    try:
+        response = FileResponse(
+            open(evento.eve_informacion_tecnica.path, 'rb'),
+            as_attachment=True,
+            filename=f"InfoTecnica_{evento.eve_nombre}_{evento.eve_informacion_tecnica.name.split('/')[-1]}"
+        )
+        return response
+    except Exception as e:
+        messages.error(request, "Error al descargar el archivo de información técnica.")
+        return redirect('dashboard_evaluador')

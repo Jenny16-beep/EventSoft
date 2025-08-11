@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Completado - {{ evento }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #39A900;
+        }
+        .logo {
+            color: #007832;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .credenciales {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border: 2px solid #39A900;
+        }
+        .credencial-item {
+            background: white;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007832;
+        }
+        .credencial-label {
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .credencial-valor {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            color: #007832;
+            font-weight: bold;
+        }
+        .instrucciones {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎓 Eventsoft</div>
+            <div class="success-icon">✅</div>
+            <h2>¡Registro Completado Exitosamente!</h2>
+        </div>
+
+        <p>Estimado(a) <strong>{{ nombre }}</strong>,</p>
+
+        <p>¡Felicitaciones! Tu registro como <strong>{{ tipo }}</strong> en el evento <strong>"{{ evento }}"</strong> ha sido completado exitosamente.</p>
+
+        <div class="credenciales">
+            <h4>🔑 Tus credenciales de acceso:</h4>
+            
+            <div class="credencial-item">
+                <div class="credencial-label">📧 Correo electrónico:</div>
+                <div class="credencial-valor">{{ email }}</div>
+            </div>
+            
+            <div class="credencial-item">
+                <div class="credencial-label">🔒 Contraseña temporal:</div>
+                <div class="credencial-valor">{{ clave }}</div>
+            </div>
+        </div>
+
+        <div class="instrucciones">
+            <h4>📋 Próximos pasos:</h4>
+            <ol>
+                <li><strong>Guarda estas credenciales</strong> en un lugar seguro</li>
+                <li>Usa estas credenciales para acceder al sistema cuando sea necesario</li>
+                <li>Te recomendamos <span class="highlight">cambiar tu contraseña</span> después del primer acceso</li>
+                <li>Mantente atento a futuros correos con información sobre el evento</li>
+            </ol>
+        </div>
+
+        <div class="instrucciones">
+            <h4>ℹ️ Información importante:</h4>
+            <ul>
+                <li>Tu inscripción está <span class="highlight">pendiente de aprobación</span> por el administrador</li>
+                <li>Recibirás un correo de confirmación cuando sea aprobada</li>
+                <li>Mantén tus datos actualizados en el sistema</li>
+                <li>Si tienes dudas, contacta al administrador del evento</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px dashed #39A900;">
+                <h4 style="color: #007832; margin-bottom: 10px;">🎯 ¿Qué sigue?</h4>
+                <p style="margin: 0; color: #666;">
+                    El administrador del evento revisará tu inscripción y te notificará sobre el estado de tu participación.
+                </p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>¡Gracias por tu interés en participar!</strong></p>
+            <p>Este correo fue enviado automáticamente por el sistema Eventsoft.</p>
+            <p>Te esperamos en el evento 🎓</p>
+        </div>
+    </div>
+</body>
+</html>

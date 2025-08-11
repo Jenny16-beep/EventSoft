@@ -38,6 +38,204 @@
         </div>
     </div>
 
+    <!-- Sección de Estadísticas (solo para eventos aprobados) -->
+    {% if estadisticas %}
+    <div class="mt-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header py-3" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                <h4 class="text-white mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Estadísticas del Evento
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- Fila de Métricas Principales -->
+                <div class="row g-4 mb-4">
+                    <!-- Capacidad del Evento -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-people-fill text-primary" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h3 class="fw-bold text-primary mb-1">{{ estadisticas.capacidad.porcentaje_ocupacion }}%</h3>
+                                <p class="text-muted mb-1">Capacidad Utilizada</p>
+                                <small class="text-muted">{{ estadisticas.capacidad.inscritos }}/{{ estadisticas.capacidad.total }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Asistentes que Ocupan Cupos -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-person-check-fill text-success" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h3 class="fw-bold text-success mb-1">{{ estadisticas.capacidad.inscritos }}</h3>
+                                <p class="text-muted mb-1">Asistentes Registrados</p>
+                                <small class="text-muted">{{ estadisticas.capacidad.disponibles }} cupos disponibles</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Criterios de Evaluación -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-list-check text-warning" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h3 class="fw-bold text-warning mb-1">{{ estadisticas.evaluacion.criterios }}</h3>
+                                <p class="text-muted mb-1">Criterios Activos</p>
+                                <small class="text-muted">{{ estadisticas.evaluacion.calificaciones }} calificaciones</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Archivos Disponibles -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-file-earmark-text text-info" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h3 class="fw-bold text-info mb-1">
+                                    {% with archivos_count=estadisticas.archivos.programacion|add:estadisticas.archivos.memorias|add:estadisticas.archivos.informacion_tecnica %}
+                                        {{ archivos_count }}/3
+                                    {% endwith %}
+                                </h3>
+                                <p class="text-muted mb-1">Archivos Subidos</p>
+                                <small class="text-muted">
+                                    {% if estadisticas.archivos.programacion %}📄{% endif %}
+                                    {% if estadisticas.archivos.memorias %}📚{% endif %}
+                                    {% if estadisticas.archivos.informacion_tecnica %}⚙️{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles por Tipo de Usuario -->
+                <div class="row g-4">
+                    <!-- Asistentes -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light py-3">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="bi bi-person-workspace text-success me-2"></i>
+                                    Asistentes
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Total:</span>
+                                    <span class="badge bg-primary">{{ estadisticas.asistentes.total }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Aprobados:</span>
+                                    <span class="badge bg-success">{{ estadisticas.asistentes.aprobados }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Pendientes:</span>
+                                    <span class="badge bg-warning">{{ estadisticas.asistentes.pendientes }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Confirmados:</span>
+                                    <span class="badge bg-info">{{ estadisticas.asistentes.confirmados }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Participantes -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light py-3">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="bi bi-trophy text-warning me-2"></i>
+                                    Participantes
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Total:</span>
+                                    <span class="badge bg-primary">{{ estadisticas.participantes.total }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Aprobados:</span>
+                                    <span class="badge bg-success">{{ estadisticas.participantes.aprobados }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Pendientes:</span>
+                                    <span class="badge bg-warning">{{ estadisticas.participantes.pendientes }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Confirmados:</span>
+                                    <span class="badge bg-info">{{ estadisticas.participantes.confirmados }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Calificados:</span>
+                                    <span class="badge bg-dark">{{ estadisticas.participantes.calificados }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Evaluadores -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light py-3">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="bi bi-person-check text-primary me-2"></i>
+                                    Evaluadores
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Total:</span>
+                                    <span class="badge bg-primary">{{ estadisticas.evaluadores.total }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Aprobados:</span>
+                                    <span class="badge bg-success">{{ estadisticas.evaluadores.aprobados }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Pendientes:</span>
+                                    <span class="badge bg-warning">{{ estadisticas.evaluadores.pendientes }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Confirmados:</span>
+                                    <span class="badge bg-info">{{ estadisticas.evaluadores.confirmados }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Barra de Progreso de Capacidad -->
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Ocupación de Cupos (solo asistentes)</small>
+                        <small class="text-muted">{{ estadisticas.capacidad.inscritos }}/{{ estadisticas.capacidad.total }} asistentes</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        {% comment %} use a local variable for brevity and valid CSS {% endcomment %}
+                        {% with porcentaje=estadisticas.capacidad.porcentaje_ocupacion %}
+                        <div class="progress-bar {% if porcentaje >= 90 %}bg-danger{% elif porcentaje >= 75 %}bg-warning{% else %}bg-success{% endif %}"
+                             role="progressbar"
+                             data-width="{{ porcentaje }}"
+                             style="width: 0%;">
+                        </div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Sección de Áreas y Categorías -->
     <div class="mt-4">
         <h4>Áreas y Categorías Asociadas</h4>
@@ -62,7 +260,20 @@
     <!-- Formulario para cambiar estado -->
     <div class="mt-4">
         <h4>Cambiar Estado del Evento</h4>
-        <form method="POST" class="row g-3">
+        {% if evento.eve_estado|lower == 'finalizado' %}
+            <div class="alert alert-warning">
+                <strong>⚠️ ADVERTENCIA:</strong> Al cambiar el estado a "Cerrado", se eliminará permanentemente:
+                <ul>
+                    <li>Todos los participantes del evento</li>
+                    <li>Todos los asistentes del evento</li>
+                    <li>Todos los evaluadores del evento</li>
+                    <li>El administrador del evento</li>
+                    <li>Los usuarios que no tengan más roles en otros eventos</li>
+                </ul>
+                <strong>Esta acción NO se puede deshacer.</strong>
+            </div>
+        {% endif %}
+        <form method="POST" class="row g-3" id="estadoForm">
             {% csrf_token %}
             <div class="col-md-6">
                 <label for="nuevo_estado" class="form-label">Nuevo estado:</label>
@@ -76,10 +287,38 @@
                 </select>
             </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-success">Actualizar Estado</button>
+                <button type="submit" class="btn btn-success" id="submitBtn">Actualizar Estado</button>
                 <a href="{% url 'dashboard_superadmin' %}" class="btn btn-secondary">Cancelar</a>
             </div>
         </form>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('estadoForm');
+    const select = document.getElementById('nuevo_estado');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // Set progress bar width from data attribute
+    const progressBar = document.querySelector('.progress-bar[data-width]');
+    if (progressBar) {
+        const width = progressBar.getAttribute('data-width');
+        progressBar.style.width = width + '%';
+    }
+    
+    form.addEventListener('submit', function(e) {
+        if (select.value === 'Cerrado') {
+            e.preventDefault();
+            
+            if (confirm('⚠️ CONFIRMACIÓN REQUERIDA\n\n¿Estás seguro de que quieres CERRAR este evento?\n\nEsta acción eliminará PERMANENTEMENTE:\n- Todos los participantes\n- Todos los asistentes\n- Todos los evaluadores\n- El administrador del evento\n- Los usuarios sin otros roles\n\n¡Esta acción NO se puede deshacer!\n\n¿Deseas continuar?')) {
+                if (confirm('ÚLTIMA CONFIRMACIÓN\n\n¿Realmente deseas proceder con el CIERRE DEFINITIVO del evento?\n\nToda la información será eliminada de forma PERMANENTE.')) {
+                    form.submit();
+                }
+            }
+        }
+    });
+});
+</script>
+</script>
+
 {% endblock %}

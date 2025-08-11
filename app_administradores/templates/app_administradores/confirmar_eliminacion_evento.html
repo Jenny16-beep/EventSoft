@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Eliminación - {{ evento.eve_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-danger text-white text-center rounded-top-4">
+                    <h3 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>¡ADVERTENCIA!</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-warning border-0 mb-4">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-trash3-fill me-2"></i>¿Estás seguro de eliminar este evento?
+                        </h5>
+                        <p class="mb-0"><strong>Evento:</strong> {{ evento.eve_nombre }}</p>
+                        <p class="mb-0"><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</p>
+                        <p class="mb-0"><strong>Fecha:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}</p>
+                    </div>
+
+                    <div class="alert alert-danger border-0 mb-4">
+                        <h6 class="alert-heading"><i class="bi bi-exclamation-circle-fill me-2"></i>Al eliminar este evento se perderá PERMANENTEMENTE:</h6>
+                        <ul class="mb-2">
+                            <li>Todos los participantes del evento</li>
+                            <li>Todos los asistentes del evento</li>
+                            <li>Todos los evaluadores del evento</li>
+                            <li>Todas las calificaciones y criterios</li>
+                            <li>Todas las configuraciones de certificados</li>
+                            <li>Todos los códigos de invitación del evento</li>
+                            <li>Los usuarios que no tengan más roles en otros eventos</li>
+                        </ul>
+                    </div>
+
+                    {% if advertencia_eliminacion_usuario %}
+                    <div class="alert alert-dark border-0 mb-4">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-person-x-fill me-2"></i>¡ATENCIÓN ESPECIAL!
+                        </h6>
+                        <p class="mb-2"><strong>Este es tu último evento.</strong></p>
+                        <p class="mb-2">Al eliminarlo:</p>
+                        <ul class="mb-2">
+                            <li>No tienes códigos de invitación activos con eventos disponibles</li>
+                            <li><strong>Tu cuenta de usuario será eliminada del sistema</strong></li>
+                            <li><strong>Serás desconectado automáticamente</strong></li>
+                            <li><strong>No podrás volver a acceder con estas credenciales</strong></li>
+                        </ul>
+                        <div class="bg-light p-3 rounded mt-3">
+                            <strong>⚠️ Esta acción NO se puede deshacer.</strong>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info border-0 mb-4">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-info-circle-fill me-2"></i>Información
+                        </h6>
+                        {% if otros_eventos %}
+                            <p class="mb-0">Tienes otros eventos registrados. Tu cuenta de usuario se mantendrá activa.</p>
+                        {% else %}
+                            <p class="mb-0">Tienes códigos de invitación activos, por lo que tu cuenta se mantendrá en el sistema.</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="confirmacion_eliminacion" name="confirmacion_eliminacion" value="confirmar" required data-advertencia="{{ advertencia_eliminacion_usuario|yesno:'true,false' }}">
+                            <label class="form-check-label fw-bold text-danger" for="confirmacion_eliminacion">
+                                {% if advertencia_eliminacion_usuario %}
+                                    He leído y entiendo que mi cuenta de usuario será eliminada permanentemente
+                                {% else %}
+                                    Confirmo que quiero eliminar este evento y toda su información
+                                {% endif %}
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'listar_eventos' %}" class="btn btn-secondary btn-lg px-4">
+                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-lg px-4" id="btnEliminar" disabled>
+                                <i class="bi bi-trash3-fill me-2"></i>
+                                {% if advertencia_eliminacion_usuario %}
+                                    Eliminar Evento y Mi Cuenta
+                                {% else %}
+                                    Eliminar Evento
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmacion_eliminacion');
+    const btnEliminar = document.getElementById('btnEliminar');
+    
+    checkbox.addEventListener('change', function() {
+        btnEliminar.disabled = !this.checked;
+        if (this.checked) {
+            btnEliminar.classList.remove('btn-secondary');
+            btnEliminar.classList.add('btn-danger');
+        } else {
+            btnEliminar.classList.remove('btn-danger');
+            btnEliminar.classList.add('btn-secondary');
+        }
+    });
+    
+    // Confirmación adicional al hacer submit
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const advertencia = document.getElementById('confirmacion_eliminacion').dataset.advertencia === 'true';
+        
+        if (advertencia) {
+            if (!confirm('ÚLTIMA CONFIRMACIÓN\n\n¿Realmente deseas eliminar tu cuenta de usuario del sistema?\n\nEsta acción NO se puede deshacer.')) {
+                e.preventDefault();
+            }
+        } else {
+            if (!confirm('¿Confirmas que deseas eliminar este evento y toda su información?')) {
+                e.preventDefault();
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.form-check-input:checked {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+</style>
+
+{% endblock %}

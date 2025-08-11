@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitación a {{ evento.eve_nombre }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #39A900;
+        }
+        .logo {
+            color: #007832;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .evento-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #39A900;
+        }
+        .evento-titulo {
+            color: #007832;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .tipo-invitacion {
+            background: #39A900;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .codigo-container {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 25px 0;
+            border: 2px dashed #2196f3;
+        }
+        .codigo {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1976d2;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .btn-registro {
+            display: inline-block;
+            background: #007832;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .btn-registro:hover {
+            background: #005a28;
+            color: white;
+            text-decoration: none;
+        }
+        .instrucciones {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎓 Eventsoft</div>
+            <h2>¡Has sido invitado(a) a participar!</h2>
+        </div>
+
+        <p>Estimado(a) invitado(a),</p>
+
+        <p>Es un placer invitarte a participar como <strong>{{ tipo }}</strong> en nuestro evento académico:</p>
+
+        <div class="evento-info">
+            <div class="evento-titulo">{{ evento.eve_nombre }}</div>
+            <p><strong>📍 Lugar:</strong> {{ evento.eve_ciudad }}, {{ evento.eve_lugar }}</p>
+            <p><strong>📅 Fecha:</strong> 
+                {% if evento.eve_fecha_inicio == evento.eve_fecha_fin %}
+                    {{ evento.eve_fecha_inicio|date:"d/m/Y" }}
+                {% else %}
+                    {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}
+                {% endif %}
+            </p>
+            {% if evento.eve_descripcion %}
+                <p><strong>📝 Descripción:</strong> {{ evento.eve_descripcion }}</p>
+            {% endif %}
+        </div>
+
+        <div class="tipo-invitacion">
+            {% if tipo == "Evaluador" %}
+                🌟 Invitación como Evaluador
+            {% else %}
+                👥 Invitación como Participante
+            {% endif %}
+        </div>
+
+        <div class="instrucciones">
+            <h4>📋 Instrucciones para completar tu registro:</h4>
+            <ol>
+                <li>Haz clic en el botón de registro de abajo</li>
+                <li>Completa el formulario con tus datos</li>
+                <li>Tu correo electrónico ya está confirmado</li>
+                <li>Recibirás las credenciales de acceso una vez completado</li>
+            </ol>
+        </div>
+
+        <div class="codigo-container">
+            <p><strong>Tu código de invitación:</strong></p>
+            <div class="codigo">{{ codigo }}</div>
+            <p><small>Guarda este código como referencia</small></p>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ url_registro }}" class="btn-registro">
+                🚀 Completar Registro
+            </a>
+        </div>
+
+        <div class="instrucciones">
+            <p><strong>⚠️ Importante:</strong></p>
+            <ul>
+                <li>Este enlace es <span class="highlight">único y personal</span></li>
+                <li>Solo puede ser usado <span class="highlight">una vez</span></li>
+                <li>No compartas este enlace con otras personas</li>
+                <li>Si tienes problemas, contacta al administrador del evento</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Este correo fue enviado automáticamente por el sistema Eventsoft.</p>
+            <p>Si no esperabas esta invitación, puedes ignorar este mensaje.</p>
+            <p><strong>¡Esperamos contar con tu participación!</strong> 🎓</p>
+        </div>
+    </div>
+</body>
+</html>

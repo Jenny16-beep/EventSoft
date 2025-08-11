@@ -24,16 +24,39 @@ def dashboard_participante_general(request):
         return redirect('ingreso_participante')
 
     eventos = []
+    estadisticas = {
+        'total': 0,
+        'pendientes': 0,
+        'aprobados': 0,
+        'rechazados': 0,
+        'cancelados': 0
+    }
+
     for inscripcion in inscripciones:
-        eventos.append({
+        evento_data = {
             'eve_id': inscripcion.evento.eve_id,
             'eve_nombre': inscripcion.evento.eve_nombre,
             'eve_fecha_inicio': inscripcion.evento.eve_fecha_inicio,
             'eve_fecha_fin': inscripcion.evento.eve_fecha_fin,
             'par_eve_estado': inscripcion.par_eve_estado,
-        })
+        }
+        eventos.append(evento_data)
+        
+        # Contar estadísticas
+        estadisticas['total'] += 1
+        if inscripcion.par_eve_estado == 'Pendiente':
+            estadisticas['pendientes'] += 1
+        elif inscripcion.par_eve_estado == 'Aprobado':
+            estadisticas['aprobados'] += 1
+        elif inscripcion.par_eve_estado == 'Rechazado':
+            estadisticas['rechazados'] += 1
+        elif inscripcion.par_eve_estado == 'Cancelado':
+            estadisticas['cancelados'] += 1
 
-    return render(request, 'dashboard_participante_general.html', {'eventos': eventos})
+    return render(request, 'dashboard_participante_general.html', {
+        'eventos': eventos,
+        'estadisticas': estadisticas
+    })
 
 
 
@@ -51,6 +74,8 @@ def dashboard_participante_evento(request, evento_id):
         'par_telefono': participante.usuario.telefono,
         'eve_nombre': inscripcion.evento.eve_nombre,
         'eve_programacion': inscripcion.evento.eve_programacion,
+        'eve_informacion_tecnica': inscripcion.evento.eve_informacion_tecnica,
+        'eve_memorias': inscripcion.evento.eve_memorias,
         'par_eve_estado': inscripcion.par_eve_estado,
         'par_id': participante.id,
         'eve_id': inscripcion.evento.eve_id
@@ -225,3 +250,65 @@ def ver_calificaciones_participante(request, evento_id):
         'calificaciones': calificaciones,
         'evento': evento,
     })
+
+
+@login_required
+@user_passes_test(es_participante, login_url='login')
+def descargar_informacion_tecnica(request, evento_id):
+    participante = request.user.participante
+    evento = get_object_or_404(Evento, pk=evento_id)
+    
+    # Verificar que el participante esté inscrito y aprobado
+    inscripcion = get_object_or_404(
+        ParticipanteEvento, 
+        participante=participante, 
+        evento=evento,
+        par_eve_estado='Aprobado'
+    )
+    
+    if not evento.eve_informacion_tecnica:
+        messages.error(request, "Este evento no tiene información técnica disponible.")
+        return redirect('dashboard_participante_evento', evento_id=evento_id)
+    
+    try:
+        response = HttpResponse(
+            evento.eve_informacion_tecnica.read(),
+            content_type='application/pdf'
+        )
+        filename = f'informacion_tecnica_{evento.eve_nombre.replace(" ", "_")}.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    except FileNotFoundError:
+        messages.error(request, "El archivo de información técnica no se encuentra disponible.")
+        return redirect('dashboard_participante_evento', evento_id=evento_id)
+
+
+@login_required
+@user_passes_test(es_participante, login_url='login')
+def descargar_memorias(request, evento_id):
+    participante = request.user.participante
+    evento = get_object_or_404(Evento, pk=evento_id)
+    
+    # Verificar que el participante esté inscrito y aprobado
+    inscripcion = get_object_or_404(
+        ParticipanteEvento, 
+        participante=participante, 
+        evento=evento,
+        par_eve_estado='Aprobado'
+    )
+    
+    if not evento.eve_memorias:
+        messages.error(request, "Este evento no tiene memorias disponibles.")
+        return redirect('dashboard_participante_evento', evento_id=evento_id)
+    
+    try:
+        response = HttpResponse(
+            evento.eve_memorias.read(),
+            content_type='application/pdf'
+        )
+        filename = f'memorias_{evento.eve_nombre.replace(" ", "_")}.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    except FileNotFoundError:
+        messages.error(request, "El archivo de memorias no se encuentra disponible.")
+        return redirect('dashboard_participante_evento', evento_id=evento_id)
