@@ -845,18 +845,23 @@ def registrarse_admin_evento(request):
         email = request.POST.get('email', '').strip()
         documento = request.POST.get('documento', '').strip()
         telefono = request.POST.get('telefono', '').strip()
-        username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
 
+        # Asignar username automáticamente
+        base_username = email.split('@')[0] if '@' in email else f'user{documento}'
+        username = base_username
+        contador = 1
+        while Usuario.objects.filter(username=username).exists():
+            username = f"{base_username}{contador}"
+            contador += 1
+
         errores = []
-        if not nombre or not apellido or not email or not documento or not username or not password:
+        if not nombre or not apellido or not email or not documento or not password:
             errores.append('Todos los campos son obligatorios.')
         if Usuario.objects.filter(email=email).exists():
             errores.append('Ya existe un usuario con ese correo.')
         if Usuario.objects.filter(documento=documento).exists():
             errores.append('Ya existe un usuario con ese documento.')
-        if Usuario.objects.filter(username=username).exists():
-            errores.append('Ya existe un usuario con ese nombre de usuario.')
         if errores:
             for e in errores:
                 messages.error(request, e)
@@ -882,4 +887,11 @@ def registrarse_admin_evento(request):
         return render(request, 'registro_admin_evento_exito.html', {'usuario': user})
 
     # GET: mostrar formulario
-    return render(request, 'registro_admin_evento.html', {'codigo': codigo, 'email': invitacion.email_destino})
+    username_sugerido = ''
+    if invitacion and invitacion.email_destino:
+        username_sugerido = invitacion.email_destino.split('@')[0]
+    return render(request, 'registro_admin_evento.html', {
+        'codigo': codigo,
+        'email': invitacion.email_destino,
+        'username_sugerido': username_sugerido
+    })

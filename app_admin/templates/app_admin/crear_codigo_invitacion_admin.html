@@ -1,26 +1,83 @@
+
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Generar código de invitación para Administrador de Evento</h2>
-    <form method="post" novalidate>
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="email_destino" class="form-label">Correo electrónico destino</label>
-            <input type="email" class="form-control" id="email_destino" name="email_destino" required>
-        </div>
-        <div class="mb-3">
-            <label for="limite_eventos" class="form-label">Límite de eventos</label>
-            <input type="number" class="form-control" id="limite_eventos" name="limite_eventos" min="1" value="1" required>
-        </div>
-        <div class="mb-3">
-            <label for="fecha_expiracion" class="form-label">Fecha de expiración</label>
-            <input type="datetime-local" class="form-control" id="fecha_expiracion" name="fecha_expiracion" required>
-        </div>
-        <div class="mb-3">
-            <label for="tiempo_limite_creacion" class="form-label">Tiempo límite para crear evento (opcional)</label>
-            <input type="datetime-local" class="form-control" id="tiempo_limite_creacion" name="tiempo_limite_creacion">
-        </div>
-        <button type="submit" class="btn btn-primary">Generar y enviar código</button>
-    </form>
+<style>
+    .modern-card {
+        max-width: 430px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 4px 24px 0 rgba(0,0,0,0.10);
+        padding: 2.5rem 2rem 2rem 2rem;
+        border: 1px solid #f0f0f0;
+    }
+    .modern-card h2 {
+        font-weight: 700;
+        font-size: 1.35rem;
+        color: #2d3748;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    .modern-card .form-label {
+        color: #4a5568;
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+    }
+    .modern-card .form-control {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 1rem;
+        padding: 0.7rem 1rem;
+        margin-bottom: 0.7rem;
+        background: #f9fafb;
+        transition: border-color 0.2s;
+    }
+    .modern-card .form-control:focus {
+        border-color: #3182ce;
+        background: #fff;
+        box-shadow: 0 0 0 2px #bee3f8;
+    }
+    .modern-card .btn-primary {
+        background: linear-gradient(90deg, #3182ce 0%, #00b4d8 100%);
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.08rem;
+        padding: 0.7rem 1.5rem;
+        transition: background 0.2s;
+        box-shadow: 0 2px 8px 0 rgba(49,130,206,0.10);
+    }
+    .modern-card .btn-primary:hover {
+        background: linear-gradient(90deg, #2563eb 0%, #00b4d8 100%);
+    }
+    .modern-card .form-text {
+        color: #6c757d;
+        font-size: 0.95em;
+        margin-bottom: 0.5rem;
+    }
+</style>
+<div class="modern-card">
+        <h2>Generar código de invitación para Administrador de Evento</h2>
+        <form method="post" novalidate autocomplete="off">
+                {% csrf_token %}
+                <div class="mb-3">
+                        <label for="email_destino" class="form-label">Correo electrónico destino</label>
+                        <input type="email" class="form-control" id="email_destino" name="email_destino" required placeholder="ejemplo@correo.com">
+                </div>
+                <div class="mb-3">
+                        <label for="limite_eventos" class="form-label">Límite de eventos</label>
+                        <input type="number" class="form-control" id="limite_eventos" name="limite_eventos" min="1" value="1" required placeholder="1 o más">
+                </div>
+                <div class="mb-3">
+                        <label for="fecha_expiracion" class="form-label">Fecha de expiración</label>
+                        <input type="datetime-local" class="form-control" id="fecha_expiracion" name="fecha_expiracion" required>
+                </div>
+                <div class="mb-3">
+                        <label for="tiempo_limite_creacion" class="form-label">Tiempo límite para crear evento <span style="color:#00b4d8;">(opcional)</span></label>
+                        <input type="datetime-local" class="form-control" id="tiempo_limite_creacion" name="tiempo_limite_creacion">
+                        <div class="form-text">Si se establece, el código solo podrá usarse hasta esta fecha para crear un evento.</div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Generar y enviar código</button>
+        </form>
 </div>
 {% endblock %}

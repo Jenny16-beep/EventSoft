@@ -271,9 +271,14 @@
                     </button>
                     
                     <a href="{% url 'previsualizar_certificado' evento.eve_id tipo %}" 
-                       class="btn btn-info btn-action w-100">
+                       class="btn btn-info btn-action w-100 mb-2">
                         <i class="bi bi-eye"></i> Vista Previa
                     </a>
+                    <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:0.97em;">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Para ver la vista previa del certificado con la configuración actual, primero debes guardar los cambios.<br>
+                        Si no guardas, se mostrará la vista previa del certificado por defecto (generalmente plantilla <strong>Elegante</strong>).
+                    </div>
                     
                     <a href="{% url 'seleccionar_tipo_certificado' evento.eve_id %}" 
                        class="btn btn-secondary btn-action w-100">

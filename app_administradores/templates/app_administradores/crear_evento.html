@@ -1,63 +1,127 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4 text-center">Crear Nuevo Evento</h2>
-    <form action="{% url 'crear_evento' %}" method="post" enctype="multipart/form-data" class="card p-4 shadow-lg rounded-4">
-        {% csrf_token %}
+<style>
+    .modern-card {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 4px 24px 0 rgba(0,0,0,0.10);
+        padding: 2.5rem 2rem 2rem 2rem;
+        border: 1px solid #f0f0f0;
+    }
+    .modern-card h2 {
+        font-weight: 700;
+        font-size: 1.35rem;
+        color: #2d3748;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    .modern-card .form-label {
+        color: #4a5568;
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+    }
+    .modern-card .form-control, .modern-card .form-select {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 1rem;
+        padding: 0.7rem 1rem;
+        margin-bottom: 0.7rem;
+        background: #f9fafb;
+        transition: border-color 0.2s;
+    }
+    .modern-card .form-control:focus, .modern-card .form-select:focus {
+        border-color: #3182ce;
+        background: #fff;
+        box-shadow: 0 0 0 2px #bee3f8;
+    }
+    .modern-card .btn-primary {
+        background: linear-gradient(90deg, #3182ce 0%, #00b4d8 100%);
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.08rem;
+        padding: 0.7rem 1.5rem;
+        transition: background 0.2s;
+        box-shadow: 0 2px 8px 0 rgba(49,130,206,0.10);
+    }
+    .modern-card .btn-primary:hover {
+        background: linear-gradient(90deg, #2563eb 0%, #00b4d8 100%);
+    }
+    .modern-card .btn-secondary, .modern-card .btn-outline-secondary {
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .modern-card .form-text {
+        color: #6c757d;
+        font-size: 0.95em;
+        margin-bottom: 0.5rem;
+    }
+    .modern-card .section-title {
+        font-size: 1.08rem;
+        color: #2563eb;
+        font-weight: 600;
+        margin-top: 1.2rem;
+        margin-bottom: 0.7rem;
+    }
+</style>
+<div class="modern-card">
+        <h2>Crear Nuevo Evento</h2>
+        <p class="form-text text-center mb-4">Completa los datos para crear un evento. Los campos marcados con <span style="color:#3182ce">*</span> son obligatorios.</p>
+        <form action="{% url 'crear_evento' %}" method="post" enctype="multipart/form-data" autocomplete="off">
+                {% csrf_token %}
 
-        <!-- Campos de información general del evento -->
-        <div class="mb-3">
-            <label class="form-label">Nombre</label>
-            <input type="text" name="nombre" class="form-control" required>
-        </div>
+                <div class="section-title">Información general</div>
+                <div class="mb-3">
+                        <label class="form-label">Nombre <span style="color:#3182ce">*</span></label>
+                        <input type="text" name="nombre" class="form-control" required placeholder="Ej: Congreso Nacional de Ciencia">
+                </div>
+                <div class="mb-3">
+                        <label class="form-label">Descripción <span style="color:#3182ce">*</span></label>
+                        <textarea name="descripcion" class="form-control" rows="3" required placeholder="Describe brevemente el evento"></textarea>
+                </div>
+                <div class="row">
+                        <div class="col-md-6 mb-3">
+                                <label class="form-label">Ciudad <span style="color:#3182ce">*</span></label>
+                                <input type="text" name="ciudad" class="form-control" required placeholder="Ej: Bogotá">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                                <label class="form-label">Lugar <span style="color:#3182ce">*</span></label>
+                                <input type="text" name="lugar" class="form-control" required placeholder="Ej: Centro de Convenciones">
+                        </div>
+                </div>
+                <div class="row">
+                        <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Inicio <span style="color:#3182ce">*</span></label>
+                                <input type="date" name="fecha_inicio" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Fin <span style="color:#3182ce">*</span></label>
+                                <input type="date" name="fecha_fin" class="form-control" required>
+                        </div>
+                </div>
+                <div class="mb-3">
+                        <label class="form-label">Capacidad <span style="color:#3182ce">*</span></label>
+                        <input type="number" name="capacidad" class="form-control" required min="1" placeholder="Ej: 200">
+                        <div class="form-text">Número máximo de asistentes permitidos.</div>
+                </div>
+                <div class="row">
+                        <div class="col-md-6 mb-3">
+                                <label class="form-label">¿Tiene Costo? <span style="color:#3182ce">*</span></label>
+                                <select name="tienecosto" class="form-select" required>
+                                        <option value="SI">Sí</option>
+                                        <option value="NO">No</option>
+                                </select>
+                                <div class="form-text">Selecciona "Sí" si el evento requiere pago para inscribirse.</div>
+                        </div>
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">Descripción</label>
-            <textarea name="descripcion" class="form-control" rows="3" required></textarea>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Ciudad</label>
-                <input type="text" name="ciudad" class="form-control" required>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Lugar</label>
-                <input type="text" name="lugar" class="form-control" required>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha Inicio</label>
-                <input type="date" name="fecha_inicio" class="form-control" required>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha Fin</label>
-                <input type="date" name="fecha_fin" class="form-control" required>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Capacidad</label>
-            <input type="number" name="capacidad" class="form-control" required>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">¿Tiene Costo?</label>
-                <select name="tienecosto" class="form-select" required>
-                    <option value="SI">Sí</option>
-                    <option value="NO">No</option>
-                </select>
-            </div>      
-        </div>
-
-        <!-- Áreas y Categorías -->
-        <div class="mb-3">
-            <label class="form-label">Áreas y Categorías</label>
-            <div id="areaCategoriaContainer">
+                <div class="section-title">Áreas y Categorías</div>
+                <div class="mb-3">
+                        <label class="form-label">Áreas y Categorías <span style="color:#3182ce">*</span></label>
+                        <div id="areaCategoriaContainer">
                 <div class="row mb-2 area-categoria-item align-items-end">
                     <div class="col-md-5">
                         <select class="form-select area-select" required>

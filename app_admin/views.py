@@ -177,7 +177,6 @@ def dashboard(request):
         ('Rechazado', 'danger', '❌'),
         ('Inscripciones Cerradas', 'info', '📋'),
         ('Finalizado', 'secondary', '🏁'),
-        ('Cerrado', 'dark', '🔒'),
     ]    
     return render(request, 'dashboard.html', {
         'notificaciones': notificaciones,
@@ -266,7 +265,8 @@ def listar_eventos_estado(request, estado):
     vistos[estado] = [e.eve_id for e in eventos]
     request.session['eventos_vistos'] = vistos
     return render(request, 'listado_eventos.html', {
-        'eventos_por_admin': eventos_por_admin.items(), 
+        'eventos_por_admin': eventos_por_admin.items(),
+        'estado': estado.title(),
     })
 
 

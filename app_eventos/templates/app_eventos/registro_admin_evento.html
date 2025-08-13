@@ -1,39 +1,104 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Registro como Administrador de Evento</h2>
-    <form method="post" novalidate>
-        {% csrf_token %}
-        <input type="hidden" name="codigo" value="{{ codigo }}">
-        <div class="mb-3">
-            <label for="email" class="form-label">Correo electrónico</label>
-            <input type="email" class="form-control" id="email" name="email" value="{{ email }}" required readonly>
-        </div>
-        <div class="mb-3">
-            <label for="username" class="form-label">Nombre de usuario</label>
-            <input type="text" class="form-control" id="username" name="username" required>
-        </div>
-        <div class="mb-3">
-            <label for="first_name" class="form-label">Nombres</label>
-            <input type="text" class="form-control" id="first_name" name="first_name" required>
-        </div>
-        <div class="mb-3">
-            <label for="last_name" class="form-label">Apellidos</label>
-            <input type="text" class="form-control" id="last_name" name="last_name" required>
-        </div>
-        <div class="mb-3">
-            <label for="documento" class="form-label">Documento</label>
-            <input type="text" class="form-control" id="documento" name="documento" required>
-        </div>
-        <div class="mb-3">
-            <label for="telefono" class="form-label">Teléfono</label>
-            <input type="text" class="form-control" id="telefono" name="telefono">
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Contraseña</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn btn-success">Registrarme</button>
-    </form>
+<style>
+    .modern-card {
+        max-width: 410px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px 0 rgba(0,0,0,0.10);
+        padding: 2.2rem 2rem 2rem 2rem;
+        border: 1px solid #f0f0f0;
+    }
+    .modern-card h2 {
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #2d3748;
+        margin-bottom: 1.2rem;
+        text-align: center;
+    }
+    .modern-card .form-label {
+        color: #4a5568;
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+    }
+    .modern-card .form-control {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 1rem;
+        padding: 0.7rem 1rem;
+        margin-bottom: 0.7rem;
+        background: #f9fafb;
+        transition: border-color 0.2s;
+    }
+    .modern-card .form-control:focus {
+        border-color: #38b2ac;
+        background: #fff;
+        box-shadow: 0 0 0 2px #b2f5ea;
+    }
+    .modern-card .btn-success {
+        background: linear-gradient(90deg, #38b2ac 0%, #4299e1 100%);
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.08rem;
+        padding: 0.7rem 1.5rem;
+        transition: background 0.2s;
+        box-shadow: 0 2px 8px 0 rgba(56,178,172,0.10);
+    }
+    .modern-card .btn-success:hover {
+        background: linear-gradient(90deg, #319795 0%, #3182ce 100%);
+    }
+    .modern-card .form-text {
+        color: #6c757d;
+        font-size: 0.95em;
+        margin-bottom: 0.5rem;
+    }
+    .modern-card .readonly-field {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.7rem 1rem;
+        font-size: 1rem;
+        color: #4a5568;
+        margin-bottom: 0.7rem;
+    }
+</style>
+<div class="modern-card">
+        <h2>Registro como Administrador de Evento</h2>
+        <form method="post" novalidate autocomplete="off">
+                {% csrf_token %}
+                <input type="hidden" name="codigo" value="{{ codigo }}">
+                <div class="mb-3">
+                        <label for="email" class="form-label">Correo electrónico</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ email }}" required readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre de usuario asignado</label>
+                    <div class="readonly-field">{{ username_sugerido }}</div>
+                    <div class="form-text">Tu nombre de usuario será asignado automáticamente con lo que va antes del @ de tu correo.</div>
+                </div>
+                <div class="mb-3">
+                        <label for="first_name" class="form-label">Nombres</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                </div>
+                <div class="mb-3">
+                        <label for="last_name" class="form-label">Apellidos</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                </div>
+                <div class="mb-3">
+                        <label for="documento" class="form-label">Documento</label>
+                        <input type="text" class="form-control" id="documento" name="documento" required>
+                </div>
+                <div class="mb-3">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="telefono" name="telefono">
+                </div>
+                <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Registrarme</button>
+        </form>
 </div>
 {% endblock %}

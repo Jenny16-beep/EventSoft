@@ -9,13 +9,27 @@
             <div class="col-md-8">
                 <div class="card-body">
                     <h3 class="card-title">{{ evento.eve_nombre }}</h3>
-                    <p class="card-text"><strong>Administrador:</strong> {{ administrador.usuario.first_name }} {{ administrador.usuario.last_name }}</p>
-                    <p class="card-text"><strong>Correo:</strong> {{ administrador.usuario.email }}</p>
-                    <p class="card-text"><strong>Teléfono:</strong> {{ administrador.usuario.telefono }}</p>
-                    <p class="card-text"><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</p>
-                    <p class="card-text"><strong>Lugar:</strong> {{ evento.eve_lugar }}</p>
-                    <p class="card-text"><strong>Capacidad:</strong> {{ evento.eve_capacidad }} personas</p>
-                    <p class="card-text"><strong>Fechas:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}</p>
+                    <p class="card-text mb-2"><strong>Descripción:</strong> {{ evento.eve_descripcion }}</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="card-text"><strong>Administrador:</strong> {{ administrador.usuario.first_name }} {{ administrador.usuario.last_name }}</p>
+                            <p class="card-text"><strong>Correo:</strong> {{ administrador.usuario.email }}</p>
+                            <p class="card-text"><strong>Teléfono:</strong> {{ administrador.usuario.telefono }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="card-text"><strong>Ciudad:</strong> {{ evento.eve_ciudad }}</p>
+                            <p class="card-text"><strong>Lugar:</strong> {{ evento.eve_lugar }}</p>
+                            <p class="card-text"><strong>Capacidad:</strong> {{ evento.eve_capacidad }} personas</p>
+                            <p class="card-text"><strong>Fechas:</strong> {{ evento.eve_fecha_inicio|date:"d/m/Y" }} - {{ evento.eve_fecha_fin|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                    <p class="card-text"><strong>Evento de costo:</strong> 
+                        {% if evento.eve_tienecosto == 'SI' %}
+                            <span class="badge bg-danger">Sí</span>
+                        {% else %}
+                            <span class="badge bg-success">No</span>
+                        {% endif %}
+                    </p>
                     <p class="card-text"><strong>Estado actual:</strong> <span class="badge bg-info text-dark">{{ evento.eve_estado }}</span></p>
 
                     {% if evento.eve_programacion %}

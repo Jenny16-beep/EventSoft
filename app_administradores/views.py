@@ -23,6 +23,12 @@ from app_asistentes.models import AsistenteEvento
 from app_evaluadores.models import Criterio, Calificacion
 from app_evaluadores.models import EvaluadorEvento, Evaluador
 from app_usuarios.models import Usuario
+from app_asistentes.models import Asistente, AsistenteEvento
+from app_participantes.models import Participante, ParticipanteEvento
+from app_evaluadores.models import Evaluador, EvaluadorEvento
+from app_administradores.models import CodigoInvitacionEvento
+from app_eventos.models import ConfiguracionCertificado, EventoCategoria
+from app_usuarios.models import RolUsuario
 from django.contrib.auth.decorators import login_required, user_passes_test
 from app_usuarios.permisos import es_administrador_evento
 import qrcode
@@ -258,7 +264,7 @@ def eliminar_evento(request, eve_id):
         else:
             messages.error(request, "Debes confirmar la eliminación.")
     
-    return render(request, 'app_administradores/confirmar_eliminacion_evento.html', {
+    return render(request, 'confirmar_eliminacion_evento.html', {
         'evento': evento,
         'advertencia_eliminacion_usuario': advertencia_eliminacion_usuario,
         'otros_eventos': otros_eventos
@@ -270,13 +276,6 @@ def _eliminar_informacion_evento_completo(evento):
     Función auxiliar para eliminar toda la información relacionada con un evento.
     Versión para administradores - misma lógica que app_admin
     """
-    # Importaciones necesarias
-    from app_asistentes.models import Asistente, AsistenteEvento
-    from app_participantes.models import Participante, ParticipanteEvento
-    from app_evaluadores.models import Evaluador, EvaluadorEvento
-    from app_administradores.models import CodigoInvitacionEvento
-    from app_eventos.models import ConfiguracionCertificado, EventoCategoria
-    from app_usuarios.models import RolUsuario
     
     # 1. Eliminar AsistenteEvento del evento
     asistentes_evento = AsistenteEvento.objects.filter(evento=evento)
@@ -1339,7 +1338,7 @@ def configurar_certificado(request, eve_id, tipo):
         messages.success(request, f"Configuración del certificado de {tipo} guardada correctamente.")
         return redirect('previsualizar_certificado', eve_id=eve_id, tipo=tipo)
     
-    return render(request, 'app_administradores/configurar_certificado.html', {
+    return render(request, 'configurar_certificado.html', {
         'evento': evento,
         'tipo': tipo,
         'configuracion': configuracion,
@@ -1406,7 +1405,7 @@ def previsualizar_certificado(request, eve_id, tipo):
         response['Content-Disposition'] = f'inline; filename="preview_certificado_{tipo}.pdf"'
         return response
     
-    return render(request, 'app_administradores/previsualizar_certificado.html', {
+    return render(request, 'previsualizar_certificado.html', {
         'evento': evento,
         'tipo': tipo,
         'configuracion': configuracion,
