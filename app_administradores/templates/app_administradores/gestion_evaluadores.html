@@ -36,5 +36,11 @@
     {% else %}
         <div class="alert alert-info">No hay evaluadores inscritos en este evento.</div>
     {% endif %}
+
+    <div class="mb-4">
+        <a href="{% url 'ver_inscripciones_evento' evento.eve_id %}" class="btn btn-outline-secondary rounded-pill">
+            ← Volver
+        </a>
+    </div>
 </div>
 {% endblock %}

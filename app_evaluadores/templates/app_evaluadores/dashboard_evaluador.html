@@ -130,6 +130,12 @@
     .btn-success-custom { background:#198754; color:#fff; border: none; }
     .btn-success-custom:hover { background:#146c3d; }
 
+    .btn-profile-custom { background:#0d6efd; color:#fff; border: none; }
+    .btn-profile-custom:hover { background:#0b5ed7; }
+
+    .btn-tech-custom { background:#6610f2; color:#fff; border: none; }
+    .btn-tech-custom:hover { background:#520dc2; }
+
     .btn-outline-primary-custom {
         background: transparent;
         color: #0d6efd;
@@ -148,6 +154,15 @@
 
 <div class="container mt-5">
     <h1 class="mb-5 text-center fw-bold text-success">👨‍🏫 Panel del Evaluador</h1>
+
+    <!-- Botón Manual -->
+    <div class="text-center mb-4">
+        <a href="{% url 'manual_evaluador' %}" 
+           class="btn btn-danger btn-lg fw-semibold shadow-sm" 
+           target="_blank">
+            <i class="bi bi-file-earmark-pdf"></i> Manual del Evaluador
+        </a>
+    </div>
 
     <div class="events-grid">
         {% for item in inscripciones_con_archivos %}
@@ -185,6 +200,17 @@
                             </a>
                             <a href="{% url 'informacion_detallada_evaluador' evento.eve_id %}" class="btn-action btn-info-custom" title="Consulta la información completa del evento">
                                 <i class="bi bi-info-circle"></i> Información Detallada
+                            </a>
+                            <a href="{% url 'perfil_evaluador' evento.eve_id %}" 
+                            class="btn-action btn-profile-custom" 
+                            title="Ver tu perfil de evaluador">
+                                <i class="bi bi-person-circle"></i> Ver mi perfil
+                            </a>
+
+                            <a href="{% url 'cargar_programacion_tecnica' evento.eve_id %}" 
+                            class="btn-action btn-tech-custom" 
+                            title="Sube la programación técnica">
+                                <i class="bi bi-file-earmark-text"></i> Cargar programación técnica
                             </a>
                         </div>
 

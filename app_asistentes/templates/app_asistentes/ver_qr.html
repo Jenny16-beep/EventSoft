@@ -68,6 +68,7 @@
                 </a>
               </div>
             {% endif %}
+            
 
             <form action="{% url 'cancelar_inscripcion_asistente' asi_id clave %}" method="POST" class="text-center mt-4">
               {% csrf_token %}

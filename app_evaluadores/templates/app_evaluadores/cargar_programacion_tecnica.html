@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Cargar programación técnica – {{ evento.eve_nombre }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Archivo PDF</label>
+            <input type="file" name="programacion_tecnica" accept=".pdf" class="form-control" required>
+            {% if evento.eve_programacion_tecnica %}
+                <small class="text-muted">Archivo actual: <a href="{{ evento.eve_programacion_tecnica.url }}" target="_blank">Ver</a></small>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Subir</button>
+        <a href="{% url 'dashboard_evaluador' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

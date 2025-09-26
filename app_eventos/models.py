@@ -7,7 +7,7 @@ class Evento(models.Model):
     eve_nombre = models.CharField(max_length=100)
     eve_descripcion = models.CharField(max_length=400)
     eve_ciudad = models.CharField(max_length=45)
-    eve_lugar = models.CharField(max_length=45)
+    eve_lugar = models.CharField(max_length=200)
     eve_fecha_inicio = models.DateField()
     eve_fecha_fin = models.DateField()
     eve_estado = models.CharField(max_length=45)

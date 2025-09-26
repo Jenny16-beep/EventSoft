@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Mi perfil como evaluador – {{ evento.eve_nombre }}</h2>
+    <ul class="list-group">
+        <li class="list-group-item"><strong>Nombre:</strong> {{ usuario.first_name }} {{ usuario.last_name }}</li>
+        <li class="list-group-item"><strong>Correo:</strong> {{ usuario.email }}</li>
+        <li class="list-group-item"><strong>Estado:</strong> {{ evaluador.eva_eve_estado }}</li>
+        {% if evaluador.eva_eve_documentos %}
+            <li class="list-group-item"><strong>Documentación:</strong> <a href="{{ evaluador.eva_eve_documentos.url }}" target="_blank">Ver PDF</a></li>
+        {% endif %}
+        {% if qr_url %}
+            <li class="list-group-item"><strong>QR:</strong> <img src="{{ qr_url }}" alt="QR" width="100"></li>
+        {% endif %}
+    </ul>
+    <a href="{% url 'dashboard_evaluador' %}" class="btn btn-secondary mt-3">← Volver</a>
+</div>
+{% endblock %}

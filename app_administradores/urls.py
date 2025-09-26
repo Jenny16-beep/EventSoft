@@ -27,6 +27,7 @@ urlpatterns = [
     path('editar-item-administrador/<int:criterio_id>/', views.editar_item_administrador, name='editar_item_administrador_evento'),
     path('eliminar-item-administrador/<int:criterio_id>/', views.eliminar_item_administrador, name='eliminar_item_administrador_evento'),
     path('tabla-posiciones-administrador/<int:eve_id>/', views.ver_tabla_posiciones, name='tabla_posiciones_administrador'),
+    path('descargar-tabla-posiciones-pdf/<int:eve_id>/', views.descargar_tabla_posiciones_pdf_admin, name='descargar_tabla_posiciones_pdf_admin'),
     path('informacion-detallada-administrador/<int:eve_id>/', views.info_detallada_admin, name='informacion_detallada_administrador_evento'),
     
     # Códigos de invitación para eventos
@@ -51,4 +52,8 @@ urlpatterns = [
     # URL específica para premiación debe ir antes que la URL general
     path('certificados/<int:eve_id>/premiacion/enviar/', views.enviar_certificados_premiacion, name='enviar_certificados_premiacion'),
     path('certificados/<int:eve_id>/<str:tipo>/enviar/', views.enviar_certificados, name='enviar_certificados'),
+
+    path('evento/<int:eve_id>/restriccion_rubrica/', views.restriccion_rubrica, name='restriccion_rubrica'),
+
+    path("manual/", views.manual_administrador_evento, name="manual_administrador_evento"),
 ]

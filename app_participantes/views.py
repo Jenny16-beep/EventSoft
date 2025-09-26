@@ -1,16 +1,15 @@
 from django.shortcuts import render , redirect, get_object_or_404
 from django.contrib import messages
-from app_participantes.models import ParticipanteEvento , Participante
+from app_participantes.models import ParticipanteEvento , Participante, Proyecto
 from app_eventos.models import EventoCategoria, Evento
 from app_evaluadores.models import Criterio, Calificacion
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from app_usuarios.permisos import es_participante
 from django.urls import reverse
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, FileResponse
+from django.conf import settings
 import os
-
-
 
 
 @login_required
@@ -58,8 +57,6 @@ def dashboard_participante_general(request):
         'estadisticas': estadisticas
     })
 
-
-
 @login_required
 @user_passes_test(es_participante, login_url='login')
 def dashboard_participante_evento(request, evento_id):
@@ -81,7 +78,6 @@ def dashboard_participante_evento(request, evento_id):
         'eve_id': inscripcion.evento.eve_id
     }
     return render(request, 'dashboard_participante.html', {'datos': datos})
-
 
 @login_required
 @user_passes_test(es_participante, login_url='login')
@@ -114,7 +110,6 @@ def modificar_preinscripcion(request, evento_id):
         'evento': evento,
     })
 
-
 @login_required
 @user_passes_test(es_participante, login_url='login')
 @require_POST
@@ -130,7 +125,6 @@ def cancelar_inscripcion(request):
     else:
         messages.warning(request, "No se encontró inscripción activa.")  
     return render(request, 'preinscripcion_cancelada.html')
-
 
 @login_required
 @user_passes_test(es_participante, login_url='login')
@@ -156,7 +150,6 @@ def ver_qr_participante(request, evento_id):
     except ParticipanteEvento.DoesNotExist:
         messages.error(request, "QR no encontrado para esta inscripción.")
         return redirect('dashboard_participante')
-    
 
 @login_required
 @user_passes_test(es_participante, login_url='login')
@@ -176,7 +169,6 @@ def descargar_qr_participante(request, evento_id):
         raise Http404("QR no disponible o archivo no encontrado")
     except ParticipanteEvento.DoesNotExist:
         raise Http404("QR no encontrado para esta inscripción")
-    
     
 @login_required
 @user_passes_test(es_participante, login_url='login')
@@ -215,7 +207,6 @@ def ver_evento_completo(request, evento_id):
 
     return render(request, 'evento_completo_participante.html', {'evento': evento_data})
 
-
 @login_required
 @user_passes_test(es_participante, login_url='login')
 def instrumento_evaluacion(request, evento_id):
@@ -230,7 +221,6 @@ def instrumento_evaluacion(request, evento_id):
         'evento': evento,
         'criterios': criterios,
     })
-
 
 @login_required
 @user_passes_test(es_participante, login_url='login')
@@ -250,7 +240,6 @@ def ver_calificaciones_participante(request, evento_id):
         'calificaciones': calificaciones,
         'evento': evento,
     })
-
 
 @login_required
 @user_passes_test(es_participante, login_url='login')
@@ -282,7 +271,6 @@ def descargar_informacion_tecnica(request, evento_id):
         messages.error(request, "El archivo de información técnica no se encuentra disponible.")
         return redirect('dashboard_participante_evento', evento_id=evento_id)
 
-
 @login_required
 @user_passes_test(es_participante, login_url='login')
 def descargar_memorias(request, evento_id):
@@ -312,3 +300,69 @@ def descargar_memorias(request, evento_id):
     except FileNotFoundError:
         messages.error(request, "El archivo de memorias no se encuentra disponible.")
         return redirect('dashboard_participante_evento', evento_id=evento_id)
+    
+# Agregar estas funciones actualizadas a tu views.py de app_participantes
+
+@login_required
+def mis_proyectos(request):
+    """Lista de proyectos en los que participa el usuario logueado"""
+    participante = getattr(request.user, 'participante', None)
+    if not participante:
+        return render(request, "mis_proyectos.html", {"proyectos": []})
+
+    # Obtener proyectos a través de ParticipanteEvento
+    inscripciones = ParticipanteEvento.objects.filter(
+        participante=participante,
+        proyecto__isnull=False
+    ).select_related('proyecto', 'evento').distinct()
+    
+    proyectos_data = []
+    for inscripcion in inscripciones:
+        proyecto = inscripcion.proyecto
+        proyectos_data.append({
+            'proyecto': proyecto,
+            'evento': inscripcion.evento,
+            'estado_inscripcion': inscripcion.par_eve_estado,
+        })
+
+    return render(request, "mis_proyectos.html", {"proyectos_data": proyectos_data})
+
+@login_required
+def detalle_proyecto(request, proyecto_id):
+    """Detalle de un proyecto del usuario"""
+    proyecto = get_object_or_404(Proyecto, pk=proyecto_id)
+    
+    # Verificar que el usuario tenga acceso a este proyecto
+    participante = getattr(request.user, 'participante', None)
+    if not participante:
+        messages.error(request, "No tienes acceso a este proyecto.")
+        return redirect('mis_proyectos')
+    
+    # Verificar que el participante esté asociado a este proyecto
+    tiene_acceso = ParticipanteEvento.objects.filter(
+        participante=participante,
+        proyecto=proyecto
+    ).exists()
+    
+    if not tiene_acceso:
+        messages.error(request, "No tienes acceso a este proyecto.")
+        return redirect('mis_proyectos')
+
+    # Obtener todos los integrantes del proyecto
+    integrantes = ParticipanteEvento.objects.filter(
+        proyecto=proyecto
+    ).select_related("participante__usuario", "evento")
+
+    return render(request, "detalle_proyecto.html", {
+        "proyecto": proyecto,
+        "integrantes": integrantes
+    })
+
+def manual_participante(request):
+    """
+    Sirve el manual del Participante en formato PDF.
+    """
+    ruta_manual = os.path.join(settings.MEDIA_ROOT, "manuales", "MANUAL_EXPOSITOR_SISTEMA_EVENTSOFT.pdf")
+    if os.path.exists(ruta_manual):
+        return FileResponse(open(ruta_manual, "rb"), content_type="application/pdf")
+    raise Http404("Manual no encontrado")

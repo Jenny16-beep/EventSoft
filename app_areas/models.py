@@ -10,5 +10,3 @@ class Categoria(models.Model):
     cat_nombre = models.CharField(max_length=45)
     cat_descripcion = models.CharField(max_length=400)
     cat_area_fk = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='categorias')
-
-  

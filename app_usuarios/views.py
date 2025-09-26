@@ -8,7 +8,6 @@ from app_participantes.models import ParticipanteEvento
 from app_asistentes.models import AsistenteEvento
 from app_evaluadores.models import EvaluadorEvento
 
-
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -51,7 +50,6 @@ def login_view(request):
             return redirect('login')
     return render(request, 'login.html', {})
 
-
 def redirect_por_rol(rol):
     if rol == 'superadmin':
         return redirect('dashboard_superadmin')
@@ -65,7 +63,6 @@ def redirect_por_rol(rol):
         return redirect('dashboard_asistente')
     else:
         return redirect('login')
-    
 
 @login_required
 def cambiar_contrasena(request):

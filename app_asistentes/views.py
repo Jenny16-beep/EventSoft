@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404, reverse
-from django.http import HttpResponse, FileResponse, JsonResponse
+from django.http import FileResponse, JsonResponse, Http404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.urls import reverse
-from django.template.loader import render_to_string
 from app_usuarios.permisos import es_asistente
 from app_asistentes.models import AsistenteEvento
-from app_eventos.models import EventoCategoria, Evento
+from app_eventos.models import Evento
 import mimetypes
 import os
+from django.conf import settings
 
 @login_required
 @user_passes_test(es_asistente, login_url='ver_eventos')
@@ -56,14 +56,16 @@ def detalle_evento_asistente(request, eve_id):
 
     # Agregar información sobre memorias disponibles
     tiene_memorias = bool(evento.eve_memorias)
+    
+    # Verificar si existe soporte de pago
+    tiene_soporte = bool(relacion.asi_eve_soporte)
 
     return render(request, 'app_asistentes/detalle_evento_asistente.html', {
         'evento': evento,
         'relacion': relacion,
         'tiene_memorias': tiene_memorias,
+        'tiene_soporte': tiene_soporte,
     })
-
-
 
 @login_required
 @user_passes_test(es_asistente, login_url='ver_eventos')
@@ -118,7 +120,6 @@ def compartir_evento(request, eve_id):
     
     return render(request, 'app_asistentes/compartir_evento.html', contexto_compartir)
 
-
 def descargar_programacion(request, evento_id):
     evento = get_object_or_404(Evento, pk=evento_id)
     if evento.eve_programacion:
@@ -136,7 +137,6 @@ def descargar_programacion(request, evento_id):
     else:
         messages.warning(request, "No hay programación disponible para este evento.")
         return redirect('ver_qr_asistente')
-
 
 @login_required
 @user_passes_test(es_asistente, login_url='ver_eventos')
@@ -173,3 +173,12 @@ def descargar_memorias_asistente(request, evento_id):
     except Exception as e:
         messages.error(request, "Error al descargar el archivo de memorias.")
         return redirect('dashboard_asistente')    
+
+def manual_asistente(request):
+    """
+    Sirve el manual del Asistente en formato PDF.
+    """
+    ruta_manual = os.path.join(settings.MEDIA_ROOT, "manuales", "MANUAL_ASISTENTE_SISTEMA_EVENTSOFT.pdf")
+    if os.path.exists(ruta_manual):
+        return FileResponse(open(ruta_manual, "rb"), content_type="application/pdf")
+    raise Http404("Manual no encontrado")

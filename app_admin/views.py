@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import FileResponse
+from django.http import FileResponse, Http404
 from django.contrib import messages
 from app_eventos.models import Evento
 from app_areas.models import Categoria, Area
@@ -20,9 +20,26 @@ from app_evaluadores.models import Evaluador, EvaluadorEvento
 from app_administradores.models import CodigoInvitacionEvento
 from app_eventos.models import ConfiguracionCertificado
 from app_eventos.models import EventoCategoria
+import os
+from django.conf import settings
 
+def manual_super_admin(request):
+    """
+    Sirve el manual del Super Admin en formato PDF.
+    """
+    ruta_manual = os.path.join(settings.MEDIA_ROOT, "manuales", "MANUAL_SUPER_ADMIN_SISTEMA_EVENTSOFT.pdf")
+    if os.path.exists(ruta_manual):
+        return FileResponse(open(ruta_manual, "rb"), content_type="application/pdf")
+    raise Http404("Manual de Super Admin no encontrado")
 
-
+def manual_tecnico_operacion(request):
+    """
+    Sirve el manual Técnico y de Operación en formato PDF.
+    """
+    ruta_manual = os.path.join(settings.MEDIA_ROOT, "manuales", "MANUAL_TECNICO_Y_DE_OPERACION_DEL_SISTEMA_EVENTSOFT.pdf")
+    if os.path.exists(ruta_manual):
+        return FileResponse(open(ruta_manual, "rb"), content_type="application/pdf")
+    raise Http404("Manual Técnico y de Operación no encontrado")
 
 def _eliminar_informacion_evento_cerrado(evento):
     """

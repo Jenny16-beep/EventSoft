@@ -3,13 +3,6 @@
 {% block content %}
 <div class="container mt-5">
     <h2 class="mb-4 text-center">Tabla de Posiciones - "{{ evento.eve_nombre }}"</h2>
-
-    <div class="mb-4 text-center">
-        <a href="{% url 'dashboard_evaluador' %}" class="btn btn-secondary btn-sm">
-            Volver al Dashboard
-        </a>
-    </div>
-
     <div class="table-responsive">
         <table class="table table-hover table-striped align-middle">
             <thead class="table-dark">
@@ -17,6 +10,7 @@
                     <th>Posición</th>
                     <th>Nombre del Participante</th>
                     <th>Correo</th>
+                    <th>Proyecto Grupal / Individual</th>
                     <th>Puntaje Total</th>
                 </tr>
             </thead>
@@ -39,15 +33,33 @@
                     </td>
                     <td>{{ p.participante.usuario.first_name }} {{ p.participante.usuario.last_name }}</td>
                     <td>{{ p.participante.usuario.email }}</td>
+                    <td>
+                        {% if p.proyecto %}
+                            {{ p.proyecto.titulo }}
+                        {% else %}
+                            Individual
+                        {% endif %}
+                    </td>
                     <td><strong>{{ p.puntaje }}</strong></td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay participantes calificados aún.</td>
+                    <td colspan="5" class="text-center">No hay participantes calificados aún.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        <div class="text-center mt-3">
+            <a href="{% url 'descargar_tabla_posiciones_pdf' evento.eve_id %}" class="btn btn-primary">
+                📄 Ver o Descargar Tabla de Posiciones (PDF)
+            </a>
+        </div>
+        <br>
+        <div class="text-center mb-4">
+            <a href="{% url 'dashboard_evaluador' %}" class="btn btn-secondary btn-sm">
+                ← Volver al Dashboard
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}

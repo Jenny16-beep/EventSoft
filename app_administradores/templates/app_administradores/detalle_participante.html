@@ -18,13 +18,30 @@
                     <h4 class="mb-0 text-primary">
                         {{ participante.participante.usuario.first_name }} {{ participante.participante.usuario.last_name }}
                     </h4>
-                    <span class="badge bg-info text-dark">{{ participante.par_eve_estado }}</span>
+                    <span class="badge 
+                        {% if participante.par_eve_estado == 'Aprobado' %}bg-success
+                        {% elif participante.par_eve_estado == 'Pendiente' %}bg-warning text-dark
+                        {% elif participante.par_eve_estado == 'Rechazado' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {{ participante.par_eve_estado }}
+                    </span>
                 </div>
 
                 <ul class="list-group list-group-flush mb-3">
                     <li class="list-group-item"><strong>Documento:</strong> {{ participante.participante.usuario.documento }}</li>
                     <li class="list-group-item"><strong>Correo:</strong> {{ participante.participante.usuario.email }}</li>
                     <li class="list-group-item"><strong>Teléfono:</strong> {{ participante.participante.usuario.telefono }}</li>
+                    {% if participante.codigo %}
+                    <li class="list-group-item">
+                        <strong>Tipo de Proyecto:</strong> 
+                        <span class="badge bg-info text-dark">Proyecto Grupal</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item">
+                        <strong>Tipo de Proyecto:</strong> 
+                        <span class="badge bg-primary">Proyecto Individual</span>
+                    </li>
+                    {% endif %}
                 </ul>
 
                 {% if participante.par_eve_qr %}
@@ -37,14 +54,69 @@
 
                 {% if participante.par_eve_documentos %}
                 <div class="mb-3">
-                    <p><strong>Documentación:</strong></p>
+                    <p><strong>Documentación Personal:</strong></p>
                     <a href="{{ participante.par_eve_documentos.url }}"
                        class="btn btn-outline-dark" target="_blank">
                         <i class="bi bi-file-earmark-arrow-down"></i> Ver Documento
                     </a>
                 </div>
                 {% endif %}
+
+                {% if participante.proyecto %}
+                <div class="mb-3">
+                    <p><strong>Proyecto Asociado:</strong></p>
+                    <div class="card bg-white">
+                        <div class="card-body p-3">
+                            <h6 class="mb-2">{{ participante.proyecto.titulo }}</h6>
+                            {% if participante.proyecto.descripcion %}
+                                <p class="text-muted mb-2">{{ participante.proyecto.descripcion }}</p>
+                            {% endif %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Estado: 
+                                    <span class="badge 
+                                        {% if participante.proyecto.estado == 'Aprobado' %}bg-success
+                                        {% elif participante.proyecto.estado == 'Pendiente' %}bg-warning text-dark
+                                        {% elif participante.proyecto.estado == 'Rechazado' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ participante.proyecto.estado }}
+                                    </span>
+                                </small>
+                                {% if participante.proyecto.archivo %}
+                                <a href="{{ participante.proyecto.archivo.url }}"
+                                   class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="bi bi-file-earmark-arrow-down"></i> Ver Proyecto
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
+
+            <!-- Alerta informativa para proyectos grupales -->
+            {% if participante.codigo %}
+            <div class="alert alert-info mb-4">
+                <h6 class="alert-heading">
+                    <i class="bi bi-info-circle me-2"></i>Proyecto Grupal
+                </h6>
+                <p class="mb-0">
+                    Al cambiar el estado de este expositor, también se actualizará automáticamente 
+                    el estado de todos los demás integrantes del proyecto grupal y del proyecto mismo.
+                </p>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-4">
+                <h6 class="alert-heading">
+                    <i class="bi bi-info-circle me-2"></i>Proyecto Individual
+                </h6>
+                <p class="mb-0">
+                    Al cambiar su estado como expositor, también se actualizará automáticamente 
+                    el estado de su proyecto.
+                </p>
+            </div>
+            {% endif %}
 
             <div class="card shadow-sm rounded-4 border-0 p-4 bg-white">
                 <form method="POST">

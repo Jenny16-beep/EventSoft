@@ -13,6 +13,7 @@ urlpatterns = [
     path('calificaciones-participante/<int:evento_id>/', views.ver_calificaciones_participante, name='calificaciones_participante'),
     path('descargar-informacion-tecnica/<int:evento_id>/', views.descargar_informacion_tecnica, name='descargar_informacion_tecnica_participante'),
     path('descargar-memorias/<int:evento_id>/', views.descargar_memorias, name='descargar_memorias_participante'),
-    
-    
+    path("mis-proyectos/", views.mis_proyectos, name="mis_proyectos"),
+    path("proyecto/<int:proyecto_id>/", views.detalle_proyecto, name="detalle_proyecto"),
+    path("manual/", views.manual_participante, name="manual_participante"),
 ]

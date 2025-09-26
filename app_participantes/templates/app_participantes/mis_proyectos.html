@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold mb-3">Mis Proyectos</h2>
+        <p class="text-muted">Lista de proyectos en los que participas</p>
+    </div>
+
+    {% if proyectos_data %}
+        <div class="row">
+            {% for item in proyectos_data %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm border-0 rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title fw-bold mb-0">{{ item.proyecto.titulo }}</h5>
+                            <span class="badge 
+                                {% if item.estado_inscripcion == 'Aprobado' %}bg-success
+                                {% elif item.estado_inscripcion == 'Pendiente' %}bg-warning text-dark
+                                {% elif item.estado_inscripcion == 'Rechazado' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ item.estado_inscripcion }}
+                            </span>
+                        </div>
+                        
+                        <p class="text-muted mb-3">
+                            <strong>Evento:</strong> {{ item.evento.eve_nombre }}
+                        </p>
+                        
+                        {% if item.proyecto.descripcion %}
+                            <p class="card-text text-truncate mb-3" style="max-height: 3em; overflow: hidden;">
+                                {{ item.proyecto.descripcion }}
+                            </p>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar-event"></i>
+                                {{ item.proyecto.fecha_subida|date:"d/m/Y" }}
+                            </small>
+                            <a href="{% url 'detalle_proyecto' item.proyecto.id %}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i> Ver detalles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-folder2-open text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h4 class="text-muted mb-3">No tienes proyectos registrados</h4>
+            <p class="text-muted mb-4">
+                Los proyectos aparecerán aquí cuando te inscribas como participante en eventos.
+            </p>
+            <a href="{% url 'ver_eventos' %}" class="btn btn-primary">
+                <i class="bi bi-search"></i> Ver eventos disponibles
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

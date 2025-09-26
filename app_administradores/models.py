@@ -1,9 +1,7 @@
 import uuid
 from django.utils import timezone
-
 from django.db import models
 from app_usuarios.models import Usuario
-
 class AdministradorEvento(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, null=True, blank=True, related_name='administrador')
 
@@ -30,7 +28,6 @@ class CodigoInvitacionAdminEvento(models.Model):
 
     def __str__(self):
         return f"Código {self.codigo} para {self.email_destino} ({self.estado})"
-
 
 class CodigoInvitacionEvento(models.Model):
     """Modelo para códigos de invitación de evaluadores y participantes a eventos específicos"""
@@ -62,7 +59,7 @@ class CodigoInvitacionEvento(models.Model):
 
     def __str__(self):
         return f"Código {self.codigo} - {self.evento.eve_nombre} ({self.get_tipo_display()}) - {self.email_destino}"
-
+    
     class Meta:
         verbose_name = "Código de Invitación a Evento"
         verbose_name_plural = "Códigos de Invitación a Eventos"

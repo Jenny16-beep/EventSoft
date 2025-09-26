@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold mb-3">{{ proyecto.titulo }}</h2>
+        <p class="text-muted">Evento: {{ integrantes.first.evento.eve_nombre }}</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Información del proyecto -->
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h4 class="text-primary mb-3">
+                        <i class="bi bi-folder2-open"></i> Información del Proyecto
+                    </h4>
+                    
+                    <div class="mb-3">
+                        <strong>Título:</strong>
+                        <p class="mb-2">{{ proyecto.titulo }}</p>
+                    </div>
+                    
+                    {% if proyecto.descripcion %}
+                    <div class="mb-3">
+                        <strong>Descripción:</strong>
+                        <p class="mb-2">{{ proyecto.descripcion }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Fecha de subida:</strong>
+                        <p class="mb-2">{{ proyecto.fecha_subida|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Estado:</strong>
+                        <span class="badge 
+                            {% if proyecto.estado == 'Aprobado' %}bg-success
+                            {% elif proyecto.estado == 'Pendiente' %}bg-warning text-dark
+                            {% elif proyecto.estado == 'Rechazado' %}bg-danger
+                            {% else %}bg-secondary{% endif %} ms-2">
+                            {{ proyecto.estado }}
+                        </span>
+                    </div>
+                    
+                    {% if proyecto.archivo %}
+                    <div class="mb-3">
+                        <strong>Archivo del proyecto:</strong>
+                        <div class="mt-2">
+                            <a href="{{ proyecto.archivo.url }}" 
+                               class="btn btn-outline-primary" target="_blank">
+                                <i class="bi bi-file-earmark-arrow-down"></i> Ver o Descargar proyecto
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Integrantes del proyecto -->
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h4 class="text-primary mb-3">
+                        <i class="bi bi-people"></i> Integrantes del Proyecto
+                    </h4>
+                    
+                    {% if integrantes %}
+                        <div class="row">
+                            {% for integrante in integrantes %}
+                            <div class="col-md-6 mb-3">
+                                <div class="border rounded-3 p-3 bg-light">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-1 fw-bold">
+                                            {{ integrante.participante.usuario.first_name }} 
+                                            {{ integrante.participante.usuario.last_name }}
+                                        </h6>
+                                        <span class="badge 
+                                            {% if integrante.par_eve_estado == 'Aprobado' %}bg-success
+                                            {% elif integrante.par_eve_estado == 'Pendiente' %}bg-warning text-dark
+                                            {% elif integrante.par_eve_estado == 'Rechazado' %}bg-danger
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ integrante.par_eve_estado }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="small text-muted">
+                                        <div><strong>Documento:</strong> {{ integrante.participante.usuario.documento }}</div>
+                                        <div><strong>Email:</strong> {{ integrante.participante.usuario.email }}</div>
+                                        {% if integrante.participante.usuario.telefono %}
+                                            <div><strong>Teléfono:</strong> {{ integrante.participante.usuario.telefono }}</div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if integrante.codigo %}
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <strong>Código de grupo:</strong> {{ integrante.codigo }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay integrantes registrados.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="text-center">
+                <a href="{% url 'mis_proyectos' %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left"></i> Volver a mis proyectos
+                </a>
+                
+                {% if user.participante in integrantes.all %}
+                    <a href="{% url 'dashboard_participante_evento' integrantes.first.evento.eve_id %}" 
+                       class="btn btn-primary">
+                        <i class="bi bi-speedometer2"></i> Ver dashboard del evento
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

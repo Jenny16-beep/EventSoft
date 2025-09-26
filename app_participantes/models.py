@@ -7,8 +7,19 @@ class Participante(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username}"
-    
 
+class Proyecto(models.Model):
+    evento = models.ForeignKey('app_eventos.Evento', on_delete=models.CASCADE, related_name="proyectos")
+    titulo = models.CharField(max_length=255)
+    descripcion = models.TextField(blank=True, null=True)
+    archivo = models.FileField(upload_to="proyectos/", blank=True, null=True)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, choices=[("Pendiente", "Pendiente"), ("Aprobado", "Aprobado"), ("Rechazado", "Rechazado")], default="Pendiente")
+    pro_valor = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.titulo} ({self.evento.eve_nombre})"
+    
 class ParticipanteEvento(models.Model):
     participante = models.ForeignKey(Participante, on_delete=models.CASCADE)
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
@@ -18,6 +29,8 @@ class ParticipanteEvento(models.Model):
     par_eve_qr = models.ImageField(upload_to='participantes/qr/', null=True, blank=True)
     par_eve_valor = models.FloatField(null=True, blank=True)
     confirmado = models.BooleanField(default=False)
+    codigo = models.CharField(max_length=20, blank=True, null=True, help_text="Código de proyecto grupal")
+    proyecto = models.ForeignKey('Proyecto', on_delete=models.SET_NULL, null=True, blank=True, related_name="participantes")
 
     class Meta:
         unique_together = (('participante', 'evento'),)

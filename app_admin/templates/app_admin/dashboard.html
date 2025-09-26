@@ -135,7 +135,6 @@
         </div>
         {% endfor %}
 
-
         <div class="col-md-4 mb-4">
             <div class="card dashboard-card">
                 <div class="card-body">
@@ -201,6 +200,35 @@
             </div>
         </div>
 
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="icon-circle bg-danger"><i class="bi bi-file-earmark-pdf"></i></span>
+                        Manual Super Admin
+                    </h5>
+                    <div class="form-text mb-2" style="font-size:0.98em; color:#2563eb;">
+                        Consulta la guía completa para la gestión como Super Administrador.
+                    </div>
+                    <a href="{% url 'manual_super_admin' %}" class="stretched-link" target="_blank"></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="icon-circle bg-warning"><i class="bi bi-gear-fill"></i></span>
+                        Manual Técnico y de Operación
+                    </h5>
+                    <div class="form-text mb-2" style="font-size:0.98em; color:#2563eb;">
+                        Consulta el manual técnico y de operación del sistema EventoSoft.
+                    </div>
+                    <a href="{% url 'manual_tecnico_operacion' %}" class="stretched-link" target="_blank"></a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

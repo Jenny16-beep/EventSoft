@@ -10,25 +10,55 @@
                 <tr>
                     <th>Nombre</th>
                     <th>Correo</th>
+                    <th>Proyecto Grupal / Individual</th>
+                    <th>Archivo Proyecto</th>
                     <th>Acción</th>
                 </tr>
             </thead>
             <tbody>
                 {% for p in participantes %}
                 <tr>
-                    <td>{{ p.participante.usuario.first_name }}</td>
+                    <td>{{ p.participante.usuario.first_name }} {{ p.participante.usuario.last_name }}</td>
                     <td>{{ p.participante.usuario.email }}</td>
                     <td>
-                        {% if p.participante.id not in calificados %}
-                            <a href="{% url 'calificar_participante_evaluador' evento.eve_id p.participante.id %}" class="btn btn-primary btn-sm">Calificar</a>
+                        {% if p.proyecto %}
+                            {{ p.proyecto.titulo }}
                         {% else %}
-                            <button class="btn btn-secondary btn-sm" disabled>Ya Calificado</button>
+                            Individual
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.proyecto and p.proyecto.archivo %}
+                            <a href="{{ p.proyecto.archivo.url }}" target="_blank" class="btn btn-primary btn-sm">
+                                Ver archivo de proyecto
+                            </a>
+                        {% else %}
+                            No hay archivo
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if p.proyecto %}
+                            <!-- Si es parte de un proyecto grupal, verificar si el proyecto ya fue calificado -->
+                            {% if p.proyecto in proyectos_calificados %}
+                                <button class="btn btn-secondary btn-sm" disabled>Ya Calificado</button>
+                            {% else %}
+                                <a href="{% url 'calificar_participante_evaluador' evento.eve_id p.participante.id %}" class="btn btn-primary btn-sm">Calificar</a>
+                            {% endif %}
+                        {% else %}
+                            <!-- Si es individual -->
+                            {% if p.participante.id not in calificados_ids %}
+                                <a href="{% url 'calificar_participante_evaluador' evento.eve_id p.participante.id %}" class="btn btn-primary btn-sm">Calificar</a>
+                            {% else %}
+                                <button class="btn btn-secondary btn-sm" disabled>Ya Calificado</button>
+                            {% endif %}
                         {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
     {% else %}
         <div class="alert alert-info mt-3" role="alert">
             Todavía no hay participantes inscritos en este evento.

@@ -161,6 +161,17 @@
                             </div>
                             {% endif %}
 
+                            {% if relacion.asi_eve_soporte %}
+                                <div class="col-lg-3 col-md-6">
+                                    <a href="{{ relacion.asi_eve_soporte.url }}" 
+                                    class="btn btn-outline-info w-100 py-3 fw-medium" 
+                                    target="_blank">
+                                        <i class="bi bi-file-earmark-check me-2"></i>
+                                        Ver Comprobante de Pago
+                                    </a>
+                                </div>
+                            {% endif %}
+
                             {% if evento.eve_programacion %}
                             <div class="col-lg-3 col-md-6">
                                 <a href="{{ evento.eve_programacion.url }}" 

@@ -76,7 +76,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "eventsoft_prueba",
         "USER": "root",
-        "PASSWORD": "0409",
+        "PASSWORD": "root",
         "HOST": "127.0.0.1",
         "PORT": "3307",
     }
@@ -109,7 +109,7 @@ LOGOUT_REDIRECT_URL = 'ver_eventos'
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es'
 
 TIME_ZONE = 'UTC'
 
@@ -140,6 +140,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'daviladani888@gmail.com'
-EMAIL_HOST_PASSWORD = 'hbqp ctml okwd wueg'
-DEFAULT_FROM_EMAIL = 'daviladani888@gmail.com'
+EMAIL_HOST_USER = 'correosdjango073@gmail.com'
+EMAIL_HOST_PASSWORD = 'rxxd fsng xrba qtmm '
+DEFAULT_FROM_EMAIL = 'correosdjango073@gmail.com'

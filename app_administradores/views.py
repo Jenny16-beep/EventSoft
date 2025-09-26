@@ -13,7 +13,12 @@ from django.db import transaction
 import base64
 import os
 import mimetypes
-
+from io import BytesIO
+from django.http import HttpResponse, Http404
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.contrib import messages
+from django.shortcuts import redirect
 from .models import AdministradorEvento, CodigoInvitacionAdminEvento, CodigoInvitacionEvento
 from app_eventos.models import Evento
 from app_eventos.models import EventoCategoria
@@ -33,24 +38,23 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from app_usuarios.permisos import es_administrador_evento
 import qrcode
 import io
-
 import mimetypes
 import os
-
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from app_usuarios.models import Rol, RolUsuario
-
 from django.template import Context, Template
 from app_eventos.models import ConfiguracionCertificado
 from django.contrib import messages
 from django.core.files.images import get_image_dimensions
 from django.conf import settings
 from django.utils import timezone
-import os
-
-
-
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.lib.styles import ParagraphStyle
 
 
 @login_required
@@ -512,22 +516,25 @@ def gestion_participantes(request, eve_id):
     }
     return render(request, 'gestion_participantes.html', context)
 
-
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def detalle_participante(request, eve_id, participante_id):
     evento = get_object_or_404(Evento, pk=eve_id)
     participante = get_object_or_404(Participante, pk=participante_id)
-    participante_evento = ParticipanteEvento.objects.select_related('participante__usuario', 'evento')\
-        .filter(evento=evento, participante=participante).first()
+    participante_evento = ParticipanteEvento.objects.select_related(
+        'participante__usuario', 'evento'
+    ).filter(evento=evento, participante=participante).first()
+
     if not participante_evento:
         messages.error(request, "Participante no encontrado en este evento")
         return redirect('ver_participantes_evento', eve_id=eve_id)
+
     if request.method == 'POST':
         nuevo_estado = request.POST.get('estado')
         if nuevo_estado:
             usuario = participante.usuario
             enviar_qr = False
+
             if nuevo_estado == 'Aprobado':
                 if not participante_evento.par_eve_qr:
                     data_qr = f"Participante: {usuario.first_name} {usuario.last_name} - Evento: {evento.eve_nombre}"
@@ -539,28 +546,162 @@ def detalle_participante(request, eve_id, participante_id):
                     enviar_qr = True
                 else:
                     enviar_qr = True
+
                 participante_evento.par_eve_estado = nuevo_estado
                 participante_evento.save()
-                messages.success(request, "Inscripción aprobada")
+
+                # 🔹 Actualizar estado del proyecto asociado
+                if participante_evento.proyecto:
+                    participante_evento.proyecto.estado = nuevo_estado
+                    participante_evento.proyecto.save()
+
+                # 🔹 NUEVO: Actualizar estado de todos los integrantes del proyecto grupal
+                if participante_evento.codigo:  # Si tiene código, es proyecto grupal
+                    # Buscar todos los participantes con el mismo código (mismo proyecto)
+                    integrantes_grupo = ParticipanteEvento.objects.filter(
+                        evento=evento,
+                        codigo=participante_evento.codigo
+                    ).exclude(participante=participante)  # Excluir el actual
+                    
+                    for integrante in integrantes_grupo:
+                        if integrante.par_eve_estado != 'Aprobado':  # Solo actualizar si no está ya aprobado
+                            # Generar QR para cada integrante
+                            if not integrante.par_eve_qr:
+                                data_qr_int = f"Participante: {integrante.participante.usuario.first_name} {integrante.participante.usuario.last_name} - Evento: {evento.eve_nombre}"
+                                img_int = qrcode.make(data_qr_int)
+                                buffer_int = io.BytesIO()
+                                img_int.save(buffer_int, format='PNG')
+                                file_name_int = f"qr_{get_random_string(8)}.png"
+                                integrante.par_eve_qr.save(file_name_int, ContentFile(buffer_int.getvalue()), save=False)
+                            
+                            integrante.par_eve_estado = nuevo_estado
+                            integrante.save()
+                            
+                            # Enviar correo a cada integrante
+                            if integrante.participante.usuario.email:
+                                cuerpo_html = render_to_string('correo_estado_participante.html', {
+                                    'evento': evento,
+                                    'participante': integrante.participante.usuario,
+                                    'nuevo_estado': nuevo_estado,
+                                })
+                                email = EmailMessage(
+                                    subject=f'Actualización de estado de tu inscripción como participante en {evento.eve_nombre}',
+                                    body=cuerpo_html,
+                                    to=[integrante.participante.usuario.email],
+                                )
+                                email.content_subtype = 'html'
+                                if integrante.par_eve_qr:
+                                    qr_path = integrante.par_eve_qr.path
+                                    email.attach_file(qr_path)
+                                email.send(fail_silently=True)
+                    
+                    messages.success(request, f"Inscripción aprobada junto con {integrantes_grupo.count()} integrantes más del proyecto grupal")
+                else:
+                    messages.success(request, "Inscripción aprobada")
+
             elif nuevo_estado == 'Pendiente':
                 if participante_evento.par_eve_qr:
                     participante_evento.par_eve_qr.delete(save=False)
                     participante_evento.par_eve_qr = None
                 participante_evento.par_eve_estado = nuevo_estado
                 participante_evento.save()
-                messages.info(request, "Estado restablecido a pendiente y QR eliminado")
+
+                # 🔹 Actualizar proyecto también a pendiente
+                if participante_evento.proyecto:
+                    participante_evento.proyecto.estado = nuevo_estado
+                    participante_evento.proyecto.save()
+
+                # 🔹 NUEVO: Actualizar estado de todos los integrantes del proyecto grupal
+                if participante_evento.codigo:  # Si tiene código, es proyecto grupal
+                    integrantes_grupo = ParticipanteEvento.objects.filter(
+                        evento=evento,
+                        codigo=participante_evento.codigo
+                    ).exclude(participante=participante)
+                    
+                    for integrante in integrantes_grupo:
+                        if integrante.par_eve_qr:
+                            integrante.par_eve_qr.delete(save=False)
+                            integrante.par_eve_qr = None
+                        integrante.par_eve_estado = nuevo_estado
+                        integrante.save()
+                        
+                        # Enviar correo a cada integrante
+                        if integrante.participante.usuario.email:
+                            cuerpo_html = render_to_string('correo_estado_participante.html', {
+                                'evento': evento,
+                                'participante': integrante.participante.usuario,
+                                'nuevo_estado': nuevo_estado,
+                            })
+                            email = EmailMessage(
+                                subject=f'Actualización de estado de tu inscripción como participante en {evento.eve_nombre}',
+                                body=cuerpo_html,
+                                to=[integrante.participante.usuario.email],
+                            )
+                            email.content_subtype = 'html'
+                            email.send(fail_silently=True)
+                    
+                    messages.info(request, f"Estado restablecido a pendiente junto con {integrantes_grupo.count()} integrantes más del proyecto grupal")
+                else:
+                    messages.info(request, "Estado restablecido a pendiente y QR eliminado")
+
             elif nuevo_estado == 'Rechazado':
+                # 🔹 Actualizar estado del proyecto antes de eliminar
+                if participante_evento.proyecto:
+                    participante_evento.proyecto.estado = nuevo_estado
+                    participante_evento.proyecto.save()
+
+                # 🔹 NUEVO: Actualizar/eliminar todos los integrantes del proyecto grupal
+                if participante_evento.codigo:  # Si tiene código, es proyecto grupal
+                    integrantes_grupo = ParticipanteEvento.objects.filter(
+                        evento=evento,
+                        codigo=participante_evento.codigo
+                    ).exclude(participante=participante)
+                    
+                    # Enviar correos y eliminar integrantes
+                    integrantes_eliminados = 0
+                    for integrante in integrantes_grupo:
+                        # Enviar correo antes de eliminar
+                        if integrante.participante.usuario.email:
+                            cuerpo_html = render_to_string('correo_estado_participante.html', {
+                                'evento': evento,
+                                'participante': integrante.participante.usuario,
+                                'nuevo_estado': nuevo_estado,
+                            })
+                            email = EmailMessage(
+                                subject=f'Actualización de estado de tu inscripción como participante en {evento.eve_nombre}',
+                                body=cuerpo_html,
+                                to=[integrante.participante.usuario.email],
+                            )
+                            email.content_subtype = 'html'
+                            email.send(fail_silently=True)
+                        
+                        # Eliminar inscripción del integrante
+                        participante_int = integrante.participante
+                        integrante.delete()
+                        
+                        # Eliminar participante si no tiene otras inscripciones
+                        otros_eventos = ParticipanteEvento.objects.filter(participante=participante_int).exists()
+                        if not otros_eventos:
+                            participante_int.delete()
+                        
+                        integrantes_eliminados += 1
+                    
+                    messages.warning(request, f"Inscripción rechazada junto con {integrantes_eliminados} integrantes más del proyecto grupal")
+                else:
+                    messages.warning(request, "Inscripción rechazada")
+
+                # Eliminar la inscripción principal
                 participante_evento.delete()
                 otros_eventos = ParticipanteEvento.objects.filter(participante=participante).exists()
                 if not otros_eventos:
                     participante.delete()
-                    messages.warning(request, "Inscripción rechazada y participante eliminado completamente")
+                    messages.warning(request, "Participante eliminado completamente")
                     return redirect('ver_participantes_evento', eve_id=eve_id)
                 else:
-                    messages.warning(request, "Inscripción rechazada y eliminado del evento")
+                    messages.warning(request, "Participante eliminado del evento")
                     return redirect('ver_participantes_evento', eve_id=eve_id)
 
-            # Enviar correo al participante
+            # Enviar correo al participante principal
             usuario_participante = participante.usuario
             if usuario_participante and usuario_participante.email:
                 cuerpo_html = render_to_string('correo_estado_participante.html', {
@@ -580,12 +721,12 @@ def detalle_participante(request, eve_id, participante_id):
                 email.send(fail_silently=True)
 
             return redirect('detalle_participante_evento', eve_id=eve_id, participante_id=participante_id)
+
     return render(request, 'detalle_participante.html', {
         'participante': participante_evento,
         'evento': evento,
         'eve_id': eve_id,
     })
-
 
 def descargar_documento_participante(request, eve_id, participante_id):
     participante_evento = get_object_or_404(
@@ -928,6 +1069,32 @@ def eliminar_item_administrador(request, criterio_id):
     messages.success(request, 'Ítem eliminado correctamente.')
     return redirect('gestion_item_administrador_evento', eve_id=evento_id)
 
+@login_required
+@user_passes_test(es_administrador_evento, login_url='login')
+def restriccion_rubrica(request, eve_id):
+    evento = get_object_or_404(Evento, pk=eve_id)
+    if evento.eve_estado.lower() not in ['aprobado', 'inscripciones cerradas']:
+        messages.warning(request, "Solo se puede gestionar rúbricas en eventos aprobados o con inscripciones cerradas.")
+        return redirect('listar_eventos')
+
+    evaluadores = EvaluadorEvento.objects.filter(evento=evento)
+    
+    if request.method == 'POST':
+        eval_id = request.POST.get('evaluador_id')
+        accion = request.POST.get('accion')
+        evaluador_evento = get_object_or_404(EvaluadorEvento, pk=eval_id)
+        if accion == 'autorizar':
+            evaluador_evento.puede_gestionar_rubrica = True
+        else:
+            evaluador_evento.puede_gestionar_rubrica = False
+        evaluador_evento.save()
+        messages.success(request, "Permiso de gestión de rúbrica actualizado correctamente.")
+        return redirect('restriccion_rubrica', eve_id=eve_id)
+
+    return render(request, 'restriccion_rubrica.html', {
+        'evento': evento,
+        'evaluadores': evaluadores
+    })
 
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
@@ -936,12 +1103,152 @@ def ver_tabla_posiciones(request, eve_id):
     if evento.eve_estado.lower() != 'aprobado':
         messages.error(request, "Solo puedes acceder a esta función si el evento está aprobado.")
         return redirect('listar_eventos')
+
     criterios = Criterio.objects.filter(cri_evento_fk=evento)
     peso_total = sum(c.cri_peso for c in criterios) or 1
+
+    # Obtener participantes aprobados y cargar proyecto
     participantes_evento = ParticipanteEvento.objects.filter(
         evento=evento,
         par_eve_estado='Aprobado'
+    ).select_related('participante', 'proyecto')  # 👈 Agregar 'proyecto'
+
+    posiciones = []
+    for pe in participantes_evento:
+        participante = pe.participante
+        
+        # Si ya tenemos la nota guardada, la usamos; si no, la calculamos
+        if pe.par_eve_valor is not None:
+            puntaje_ponderado = pe.par_eve_valor
+        else:
+            calificaciones = Calificacion.objects.filter(
+                participante=participante,
+                criterio__cri_evento_fk=evento
+            ).select_related('criterio')
+            evaluadores_ids = set(c.evaluador_id for c in calificaciones)
+            num_evaluadores = len(evaluadores_ids)
+            if num_evaluadores > 0:
+                puntaje_ponderado = sum(
+                    c.cal_valor * c.criterio.cri_peso for c in calificaciones
+                ) / (peso_total * num_evaluadores)
+                puntaje_ponderado = round(puntaje_ponderado, 2)
+                pe.par_eve_valor = puntaje_ponderado
+                pe.save()
+            else:
+                puntaje_ponderado = 0
+
+        posiciones.append({
+            'participante': participante,
+            'puntaje': puntaje_ponderado,
+            'proyecto': pe.proyecto  # 👈 Guardar el proyecto
+        })
+
+    posiciones.sort(key=lambda x: x['puntaje'], reverse=True)
+
+    return render(request, 'tabla_posiciones.html', {
+        'evento': evento,
+        'posiciones': posiciones
+    })
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='login')
+def descargar_tabla_posiciones_pdf_admin(request, eve_id):
+    evento = get_object_or_404(Evento, pk=eve_id)
+    if evento.eve_administrador_fk.usuario != request.user:
+        messages.error(request, "No tienes permiso para acceder a este evento.")
+        return redirect('dashboard_adminevento')
+
+    # Obtener participantes calificados y ordenados
+    participantes_evento = ParticipanteEvento.objects.filter(
+        evento=evento,
+        par_eve_estado='Aprobado',
+        par_eve_valor__isnull=False
+    ).select_related('participante__usuario', 'proyecto').order_by('-par_eve_valor')
+
+    # Crear la respuesta HTTP con el contenido PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="tabla_posiciones_{evento.eve_nombre}.pdf"'
+
+    # Crear el documento PDF
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=30,
+        alignment=1,  # Centrado
+    )
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=20,
+        alignment=1,
+    )
+
+    # Título
+    elements.append(Paragraph(f"Tabla de Posiciones", title_style))
+    elements.append(Paragraph(f"Evento: {evento.eve_nombre}", subtitle_style))
+    elements.append(Spacer(1, 20))
+
+    # Preparar datos para la tabla
+    data = [["Posición", "Nombre del Participante", "Correo", "Proyecto Grupal / Individual", "Puntaje"]]
+
+    for i, pe in enumerate(participantes_evento, start=1):
+        nombre = f"{pe.participante.usuario.first_name} {pe.participante.usuario.last_name}"
+        correo = pe.participante.usuario.email
+        proyecto = pe.proyecto.titulo if pe.proyecto else "Individual"
+        puntaje = f"{pe.par_eve_valor:.2f}"
+
+        data.append([str(i), nombre, correo, Paragraph(proyecto, styles['Normal']), puntaje])
+
+    # Ajustar anchos de columna
+    col_widths = [
+        0.8*inch,  # Posición
+        2.2*inch,  # Nombre
+        2.0*inch,  # Correo
+        2.5*inch,  # Proyecto Grupal / Individual (más ancho)
+        0.8*inch,  # Puntaje
+    ]
+
+    # Crear la tabla
+    table = Table(data, colWidths=col_widths)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+    ]))
+
+    elements.append(table)
+
+    # Generar el PDF
+    doc.build(elements)
+
+    return response
+
+@login_required
+@user_passes_test(es_administrador_evento, login_url='ver_eventos')
+def descargar_tabla_posiciones_pdf(request, eve_id):
+    evento = get_object_or_404(Evento, pk=eve_id)
+
+    criterios = Criterio.objects.filter(cri_evento_fk=evento)
+    peso_total = sum(c.cri_peso for c in criterios) or 1
+
+    participantes_evento = ParticipanteEvento.objects.filter(
+        evento=evento, par_eve_estado='Aprobado'
     ).select_related('participante')
+
     posiciones = []
     for pe in participantes_evento:
         participante = pe.participante
@@ -951,22 +1258,35 @@ def ver_tabla_posiciones(request, eve_id):
         )
         evaluadores = set(c.evaluador_id for c in calificaciones)
         num_evaluadores = len(evaluadores)
-        if num_evaluadores > 0:
-            puntaje_ponderado = sum(
-                c.cal_valor * c.criterio.cri_peso for c in calificaciones
-            ) / (peso_total * num_evaluadores)
-        else:
-            puntaje_ponderado = 0
+        puntaje_ponderado = (
+            sum(c.cal_valor * c.criterio.cri_peso for c in calificaciones) /
+            (peso_total * num_evaluadores)
+        ) if num_evaluadores > 0 else 0
         posiciones.append({
             'participante': participante,
             'puntaje': round(puntaje_ponderado, 2)
         })
-    posiciones.sort(key=lambda x: x['puntaje'], reverse=True)
-    return render(request, 'tabla_posiciones.html', {
-        'evento': evento,
-        'posiciones': posiciones
-    })
 
+    posiciones.sort(key=lambda x: x['puntaje'], reverse=True)
+
+    # Validar si hay datos
+    if not posiciones:
+        messages.warning(request, "No se puede descargar porque no hay información en la tabla.")
+        return redirect('tabla_posiciones_administrador', eve_id=eve_id)
+
+    # Renderizar PDF
+    template_path = 'tabla_posiciones_pdf.html'
+    context = {'evento': evento, 'posiciones': posiciones}
+    template = get_template(template_path)
+    html = template.render(context)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="tabla_posiciones_{evento.eve_id}.pdf"'
+
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    if pisa_status.err:
+        return HttpResponse('Error al generar el PDF', status=500)
+    return response
 
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
@@ -1279,7 +1599,6 @@ def seleccionar_tipo_certificado(request, eve_id):
         'evento': evento
     })
 
-
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
 def configurar_certificado(request, eve_id, tipo):
@@ -1360,7 +1679,29 @@ def previsualizar_certificado(request, eve_id, tipo):
     try:
         configuracion = ConfiguracionCertificado.objects.get(evento=evento, tipo=tipo)
     except ConfiguracionCertificado.DoesNotExist:
-        messages.error(request, "Debe configurar el certificado primero.")
+        messages.error(request, "No has guardado una configuración para este tipo de certificado. Primero debes configurar y guardar el certificado.")
+        return redirect('configurar_certificado', eve_id=eve_id, tipo=tipo)
+    
+    # Verificar que la configuración tenga contenido guardado (no sea solo la configuración por defecto)
+    # Validamos que tenga al menos título y cuerpo personalizados
+    if not configuracion.titulo or not configuracion.cuerpo:
+        messages.error(request, "La configuración del certificado está incompleta. Debes guardar una configuración válida primero.")
+        return redirect('configurar_certificado', eve_id=eve_id, tipo=tipo)
+    
+    # Verificar que no sea la configuración por defecto (comparamos con los mensajes por defecto)
+    mensajes_defecto = {
+        'asistencia': 'Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** ha asistido al evento **EVENTO** realizado el **FECHA** en **CIUDAD**.',
+        'participacion': 'Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** ha participado activamente en el evento **EVENTO** realizado el **FECHA** en **CIUDAD**.',
+        'evaluador': 'Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** se ha desempeñado como evaluador en el evento **EVENTO** realizado el **FECHA** en **CIUDAD**.',
+        'premiacion': '¡Felicitaciones! Certificamos que **NOMBRE** identificado(a) con documento **DOCUMENTO** obtuvo un destacado desempeño y calificación en el evento **EVENTO** realizado el **FECHA** en **CIUDAD**, alcanzando el **PUESTO** lugar con una puntuación sobresaliente.'
+    }
+    
+    # Si el cuerpo es exactamente igual al mensaje por defecto y el título es genérico, 
+    # consideramos que no ha sido realmente configurado
+    titulo_defecto = f'Certificado de {tipo.title()}'
+    if (configuracion.cuerpo == mensajes_defecto.get(tipo, '') and 
+        configuracion.titulo == titulo_defecto):
+        messages.warning(request, "Debes personalizar la configuración del certificado antes de poder previsualizarlo. Los valores actuales son solo plantillas por defecto.")
         return redirect('configurar_certificado', eve_id=eve_id, tipo=tipo)
     
     # Datos de ejemplo para la previsualización usando datos reales del evento
@@ -1389,7 +1730,7 @@ def previsualizar_certificado(request, eve_id, tipo):
         firma_base64, firma_format = imagen_to_base64(configuracion.firma)
         
         # Generar PDF de previsualización
-        html_content = render_to_string('app_administradores/certificado_plantilla.html', {
+        html_content = render_to_string('certificado_plantilla.html', {
             'configuracion': configuracion,
             'cuerpo_renderizado': cuerpo_con_datos,
             'datos': datos_ejemplo,
@@ -1412,7 +1753,6 @@ def previsualizar_certificado(request, eve_id, tipo):
         'cuerpo_renderizado': cuerpo_con_datos,
         'datos_ejemplo': datos_ejemplo
     })
-
 
 @login_required
 @user_passes_test(es_administrador_evento, login_url='ver_eventos')
@@ -1842,6 +2182,11 @@ def cancelar_codigo_invitacion(request, codigo_id):
     messages.success(request, f"Código de invitación para {codigo.email_destino} cancelado exitosamente.")
     return redirect('listar_codigos_invitacion')
 
-
-
-
+def manual_administrador_evento(request):
+    """
+    Sirve el manual del Administrador de Evento en formato PDF.
+    """
+    ruta_manual = os.path.join(settings.MEDIA_ROOT, "manuales", "MANUAL_ADMINISTRADOR_DE_EVENTO_SISTEMA_EVENTSOFT.pdf")
+    if os.path.exists(ruta_manual):
+        return FileResponse(open(ruta_manual, "rb"), content_type="application/pdf")
+    raise Http404("Manual no encontrado")

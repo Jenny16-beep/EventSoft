@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block content %}
 <div class="container mt-5">
     <h2 class="mb-4 text-center">Modificar Evento</h2>
@@ -57,122 +56,156 @@
         <div class="mb-3">
             <label class="form-label">Áreas y Categorías</label>
             <div id="areaCategoriaContainer">
-                {% for cat in categorias_info %}
-                <div class="row mb-2 area-categoria-item align-items-end">
-                    <div class="col-md-5">
-                        <select class="form-select area-select" required>
-                            <option value="">Seleccione un área</option>
-                            {% for area in todas_areas %}
-                                <option value="{{ area.are_codigo }}" {% if area.are_codigo == cat.area_id %}selected{% endif %}>{{ area.are_nombre }}</option>
-                            {% endfor %}
-                        </select>
+                {% for info in categorias_info %}
+                    <div class="row mb-2 area-categoria-item align-items-end">
+                        <div class="col-md-5">
+                            <select class="form-select area-select" required>
+                                <option value="">Seleccione un área</option>
+                                {% for area in todas_areas %}
+                                    <option value="{{ area.are_codigo }}"
+                                        {% if area.are_codigo == info.area_id %}selected{% endif %}>
+                                        {{ area.are_nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <select name="categoria_id[]" class="form-select categoria-select" required>
+                                <option value="{{ info.categoria_id }}" selected>Seleccionando...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="button" class="btn btn-outline-danger btn-remove {% if forloop.first %}d-none{% endif %}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-5">
-                        <select name="categoria_id[]" class="form-select categoria-select" required data-selected="{{ cat.categoria_id }}">
-                            <option value="">Seleccione una categoría</option>
-                        </select>
+                {% empty %}
+                    <div class="row mb-2 area-categoria-item align-items-end">
+                        <div class="col-md-5">
+                            <select class="form-select area-select" required>
+                                <option value="">Seleccione un área</option>
+                                {% for area in todas_areas %}
+                                    <option value="{{ area.are_codigo }}">{{ area.are_nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <select name="categoria_id[]" class="form-select categoria-select" required>
+                                <option value="">Seleccione una categoría</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="button" class="btn btn-outline-danger btn-remove d-none">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-2 text-end">
-                        <button type="button" class="btn btn-outline-danger btn-remove d-none">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
                 {% endfor %}
             </div>
             <button type="button" class="btn btn-secondary mt-2" id="agregarAreaCategoria">Agregar otra categoría</button>
         </div>
 
+        <!-- Imagen -->
         <div class="mb-3">
             <label class="form-label">Imagen del Evento</label>
             <input type="file" name="imagen" accept="image/*" class="form-control">
+            {% if evento.eve_imagen %}
+                <div class="mt-2">
+                    <img src="{{ evento.eve_imagen.url }}" alt="Imagen actual" style="max-height: 200px;">
+                </div>
+            {% endif %}
         </div>
 
+        <!-- Programación -->
         <div class="mb-3">
             <label class="form-label">Archivo de Programación (PDF)</label>
             <input type="file" name="programacion" accept=".pdf" class="form-control">
+            {% if evento.eve_programacion %}
+                <div class="mt-2">
+                    <a href="{{ evento.eve_programacion.url }}" target="_blank" class="btn btn-outline-primary">
+                        Ver archivo actual
+                    </a>
+                </div>
+            {% endif %}
         </div>
-
         <div class="d-flex justify-content-between mt-4">
-            <a href="{% url 'dashboard_adminevento' %}" class="btn btn-outline-secondary">⬅️ Volver</a>
+            <a href="{% url 'listar_eventos' %}" class="btn btn-outline-secondary">⬅️ Volver</a>
             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
         </div>
     </form>
 </div>
 
-<!-- Script JS -->
 <script>
-    const obtenerCategoriasUrl = "{% url 'obtener_categorias_por_area' 0 %}".replace('/0/', '/');
+const obtenerCategoriasUrl = "{% url 'obtener_categorias_por_area' 0 %}".slice(0, -"3".length);
 
-    function cargarCategorias(areaSelect, categoriaSelect, selectedValue = null) {
-        const areaId = areaSelect.value;
-        if (!areaId) return;
+function cargarCategorias(areaSelect, categoriaSelect, selectedCategoriaId = null) {
+    const areaId = areaSelect.value;
+    if (!areaId) return;
 
-        fetch(`${obtenerCategoriasUrl}${areaId}/`)
-            .then(response => response.json())
-            .then(data => {
-                categoriaSelect.innerHTML = '<option value="">Seleccione una categoría</option>';
-                data.forEach(cat => {
-                    const selected = selectedValue && cat.cat_codigo == selectedValue ? 'selected' : '';
-                    categoriaSelect.innerHTML += `<option value="${cat.cat_codigo}" ${selected}>${cat.cat_nombre}</option>`;
-                });
+    fetch(`${obtenerCategoriasUrl}${areaId}/`)
+        .then(res => res.json())
+        .then(data => {
+            categoriaSelect.innerHTML = '<option value="">Seleccione una categoría</option>';
+            data.forEach(cat => {
+                const selected = selectedCategoriaId == cat.cat_codigo ? 'selected' : '';
+                categoriaSelect.innerHTML += `<option value="${cat.cat_codigo}" ${selected}>${cat.cat_nombre}</option>`;
             });
-    }
-
-    function actualizarVisibilidadBotones() {
-        const items = document.querySelectorAll('.area-categoria-item');
-        items.forEach((item, index) => {
-            const btn = item.querySelector('.btn-remove');
-            if (items.length > 1) {
-                btn.classList.remove('d-none');
-            } else {
-                btn.classList.add('d-none');
-            }
         });
-    }
+}
 
-    document.addEventListener('change', function (e) {
-        if (e.target.classList.contains('area-select')) {
-            const categoriaSelect = e.target.closest('.area-categoria-item').querySelector('.categoria-select');
-            cargarCategorias(e.target, categoriaSelect);
-        }
+function actualizarVisibilidadBotones() {
+    const items = document.querySelectorAll('.area-categoria-item');
+    items.forEach((item, idx) => {
+        const btn = item.querySelector('.btn-remove');
+        btn.classList.toggle('d-none', items.length <= 1);
     });
+}
 
-    document.getElementById('agregarAreaCategoria').addEventListener('click', function () {
+document.addEventListener('change', e => {
+    if (e.target.classList.contains('area-select')) {
+        const container = e.target.closest('.area-categoria-item');
+        const categoriaSelect = container.querySelector('.categoria-select');
+        cargarCategorias(e.target, categoriaSelect);
+    }
+});
+
+document.getElementById('agregarAreaCategoria').addEventListener('click', () => {
+    const container = document.getElementById('areaCategoriaContainer');
+    const original = container.querySelector('.area-categoria-item');
+    const clone = original.cloneNode(true);
+
+    clone.querySelector('.area-select').value = '';
+
+    const categoriaSelect = clone.querySelector('.categoria-select');
+    categoriaSelect.innerHTML = '<option value="">Seleccione una categoría</option>';
+    categoriaSelect.name = 'categoria_id[]';
+
+    container.appendChild(clone);
+    actualizarVisibilidadBotones();
+});
+
+document.addEventListener('click', e => {
+    if (e.target.closest('.btn-remove')) {
+        const item = e.target.closest('.area-categoria-item');
         const container = document.getElementById('areaCategoriaContainer');
-        const nuevoItem = container.querySelector('.area-categoria-item').cloneNode(true);
+        if (container.children.length > 1) {
+            item.remove();
+            actualizarVisibilidadBotones();
+        }
+    }
+});
 
-        nuevoItem.querySelector('.area-select').value = '';
-        const categoriaSelect = nuevoItem.querySelector('.categoria-select');
-        categoriaSelect.innerHTML = '<option value="">Seleccione una categoría</option>';
-
-        container.appendChild(nuevoItem);
-        actualizarVisibilidadBotones();
-    });
-
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('.btn-remove')) {
-            const item = e.target.closest('.area-categoria-item');
-            const container = document.getElementById('areaCategoriaContainer');
-            if (container.children.length > 1) {
-                item.remove();
-                actualizarVisibilidadBotones();
-            }
+document.addEventListener('DOMContentLoaded', () => {
+    actualizarVisibilidadBotones();
+    document.querySelectorAll('.area-categoria-item').forEach(item => {
+        const areaSelect = item.querySelector('.area-select');
+        const categoriaSelect = item.querySelector('.categoria-select');
+        const selectedCategoriaId = categoriaSelect.querySelector('option[selected]')?.value;
+        if (areaSelect && categoriaSelect) {
+            cargarCategorias(areaSelect, categoriaSelect, selectedCategoriaId);
         }
     });
-
-    // Al cargar, aplicar los valores iniciales
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.area-categoria-item').forEach(function (item) {
-            const areaSelect = item.querySelector('.area-select');
-            const categoriaSelect = item.querySelector('.categoria-select');
-            const selectedCategoria = categoriaSelect.dataset.selected;
-            if (areaSelect && categoriaSelect) {
-                cargarCategorias(areaSelect, categoriaSelect, selectedCategoria);
-            }
-        });
-
-        actualizarVisibilidadBotones();
-    });
+});
 </script>
 {% endblock %}

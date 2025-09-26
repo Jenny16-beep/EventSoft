@@ -18,6 +18,7 @@ class EvaluadorEvento(models.Model):
     eva_eve_estado = models.CharField(max_length=45)
     eva_eve_qr = models.ImageField(upload_to='evaluadores/qr/', null=True, blank=True)
     confirmado = models.BooleanField(default=False)
+    puede_gestionar_rubrica = models.BooleanField(default=False)
 
     class Meta:
         unique_together = (('evaluador', 'evento'),)

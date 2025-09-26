@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="fw-bold text-success">Restricciones Rúbrica - {{ evento.eve_nombre }}</h2>
+    <a href="{% url 'listar_eventos' %}" class="btn btn-outline-secondary mb-3">⬅️ Volver</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Evaluador</th>
+                <th>Email</th>
+                <th>Gestión de Rúbrica</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ev in evaluadores %}
+            <tr>
+                <td>{{ ev.evaluador.usuario.get_full_name }}</td>
+                <td>{{ ev.evaluador.usuario.email }}</td>
+                <td>
+                    <form method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="evaluador_id" value="{{ ev.pk }}">
+                        {% if ev.puede_gestionar_rubrica %}
+                            <button type="submit" name="accion" value="restringir" class="btn btn-sm btn-outline-danger">
+                                Restringir
+                            </button>
+                        {% else %}
+                            <button type="submit" name="accion" value="autorizar" class="btn btn-sm btn-outline-success">
+                                Autorizar
+                            </button>
+                        {% endif %}
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center text-muted">No hay evaluadores registrados en este evento.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

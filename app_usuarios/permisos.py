@@ -1,4 +1,3 @@
-
 def get_rol_usuario(user):
     if not user.is_authenticated:
         return None
