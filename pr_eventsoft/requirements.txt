@@ -1,0 +1,6 @@
+Django
+gunicorn
+mysqlclient
+whitenoise
+django-environ
+djangorestframework
